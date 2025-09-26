@@ -9,8 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"polyforge/internal/kumi/fsutil"
 )
 
 func (s *Service) downloadAndExtract(url, destination, explicitName string) error {
@@ -88,13 +86,13 @@ func extractZip(zipPath, destination string) error {
 		}
 
 		if file.FileInfo().IsDir() {
-			if err := fsutil.EnsureDir(targetPath); err != nil {
+			if err := ensureDir(targetPath); err != nil {
 				return err
 			}
 			continue
 		}
 
-		if err := fsutil.EnsureDir(filepath.Dir(targetPath)); err != nil {
+		if err := ensureDir(filepath.Dir(targetPath)); err != nil {
 			return err
 		}
 

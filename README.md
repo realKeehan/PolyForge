@@ -16,11 +16,11 @@ Keehan's Universal Modpack Installer (KUMI) rebuilt as a [Wails](https://wails.i
 │   │   └── bind.go
 │   └── kumi/                  # Installer domain logic (downloads, profiles, search)
 │       ├── assets/            # Embedded data (launcher icon, etc.)
-│       ├── fsutil/            # File-system helpers shared across installers
 │       ├── install/           # Per-launcher installers and shared helpers
 │       ├── types/             # Shared request/result structs
 │       ├── custom.go          # Custom + manual install wrappers
-│       ├── download.go        # HTTP download and zip extraction helpers
+│       ├── fs.go              # File-system helpers shared across installers
+│       ├── net.go             # HTTP download and zip extraction helpers
 │       ├── launchers.go       # Switchboard into install package
 │       ├── mc_profiles.go     # Minecraft launcher profile utilities
 │       ├── modrinth.go        # Modrinth profile cloning helpers

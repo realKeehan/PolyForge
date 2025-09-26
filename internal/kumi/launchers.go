@@ -1,83 +1,56 @@
 package kumi
 
 import (
-	"os"
-	"path/filepath"
+	"fmt"
 
 	"polyforge/internal/kumi/install"
 )
 
 func (s *Service) installMultiMC(explicitRoot string) (*ActionResult, error) {
-	return install.MultiMC(s.installDependencies(), explicitRoot, multimcZipURL)
+	candidates := multiMCCandidates(explicitRoot)
+	return install.MultiMC(s.installDependencies(), candidates, multimcZipURL)
 }
 
 func (s *Service) installCurseForge() (*ActionResult, error) {
-	return install.CurseForge(s.installDependencies(), curseforgeZipURL)
+	target, err := curseForgeTarget()
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve CurseForge path: %w", err)
+	}
+	return install.CurseForge(s.installDependencies(), target, curseforgeZipURL)
 }
 
 func (s *Service) installModrinth() (*ActionResult, error) {
-	return install.Modrinth(s.installDependencies(), modrinthZipURL)
+	target, err := modrinthTarget()
+	if err != nil {
+		return nil, fmt.Errorf("unable to resolve Modrinth path: %w", err)
+	}
+	return install.Modrinth(s.installDependencies(), target, modrinthZipURL)
 }
 
 func (s *Service) installGDLauncher(explicitRoot string) (*ActionResult, error) {
-	candidates := []string{
-		explicitRoot,
-		filepath.Join(os.Getenv("APPDATA"), "gdlauncher_next"),
-		filepath.Join(os.Getenv("APPDATA"), "gdlauncher"),
-	}
-	return install.InstanceWithOptionalZip(s.installDependencies(), "GDLauncher", candidates, "instances", "TurtelSMP5", "", emptyZipWarning)
+	return install.GDLauncher(s.installDependencies(), gdLauncherCandidates(explicitRoot), "", emptyZipWarning)
 }
 
 func (s *Service) installATLauncher(explicitRoot string) (*ActionResult, error) {
-	candidates := []string{
-		explicitRoot,
-		filepath.Join(os.Getenv("APPDATA"), "ATLauncher"),
-		`C:\\ATLauncher`,
-	}
-	return install.InstanceWithOptionalZip(s.installDependencies(), "ATLauncher", candidates, "Instances", "TurtelSMP5", "", emptyZipWarning)
+	return install.ATLauncher(s.installDependencies(), atLauncherCandidates(explicitRoot), "", emptyZipWarning)
 }
 
 func (s *Service) installPrismLauncher(explicitRoot string) (*ActionResult, error) {
-	candidates := []string{
-		explicitRoot,
-		filepath.Join(os.Getenv("APPDATA"), "PrismLauncher"),
-		filepath.Join(os.Getenv("APPDATA"), "PrismLauncher", "minecraft"),
-	}
-	return install.InstanceWithOptionalZip(s.installDependencies(), "PrismLauncher", candidates, "instances", "TurtelSMP5", "", emptyZipWarning)
+	return install.PrismLauncher(s.installDependencies(), prismLauncherCandidates(explicitRoot), "", emptyZipWarning)
 }
 
 func (s *Service) installBakaXL(explicitRoot string) (*ActionResult, error) {
-	candidates := []string{
-		explicitRoot,
-		filepath.Join(os.Getenv("APPDATA"), "BakaXL"),
-		`C:\\BakaXL`,
-	}
-	return install.InstanceWithOptionalZip(s.installDependencies(), "BakaXL", candidates, "instances", "TurtelSMP5", "", emptyZipWarning)
+	return install.BakaXL(s.installDependencies(), bakaXLCandidates(explicitRoot), "", emptyZipWarning)
 }
 
 func (s *Service) installFeather(explicitRoot string) (*ActionResult, error) {
-	candidates := []string{
-		explicitRoot,
-		filepath.Join(os.Getenv("APPDATA"), "feather"),
-		filepath.Join(os.Getenv("APPDATA"), "FeatherClient"),
-	}
-	return install.InstanceWithOptionalZip(s.installDependencies(), "Feather", candidates, "profiles", "TurtelSMP5", "", emptyZipWarning)
+	return install.Feather(s.installDependencies(), featherCandidates(explicitRoot), "", emptyZipWarning)
 }
 
 func (s *Service) installTechnic(explicitRoot string) (*ActionResult, error) {
-	candidates := []string{
-		explicitRoot,
-		filepath.Join(os.Getenv("APPDATA"), ".technic"),
-		`C:\\.technic`,
-	}
-	return install.InstanceWithOptionalZip(s.installDependencies(), "Technic", candidates, "modpacks", "TurtelSMP5", "", emptyZipWarning)
+	return install.Technic(s.installDependencies(), technicCandidates(explicitRoot), "", emptyZipWarning)
 }
 
 func (s *Service) installPolyMC(explicitRoot string) (*ActionResult, error) {
-	candidates := []string{
-		explicitRoot,
-		filepath.Join(os.Getenv("APPDATA"), "PolyMC"),
-		filepath.Join(os.Getenv("APPDATA"), "polymc"),
-	}
-	return install.InstanceWithOptionalZip(s.installDependencies(), "PolyMC", candidates, "instances", "TurtelSMP5", "", emptyZipWarning)
+	return install.PolyMC(s.installDependencies(), polyMCCandidates(explicitRoot), "", emptyZipWarning)
 }
