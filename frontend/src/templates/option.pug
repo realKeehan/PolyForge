@@ -1,6 +1,7 @@
-button.option-button(type="button" data-id=id)
-  span.option-title #{title}
+button.option-card(type="button" data-id=id data-requires=requiresPath)
+  span.option-card__title #{title}
   if description
-    span.option-description #{description}
+    span.option-card__description #{description}
   if requiresPath
-    span.option-badge Requires path
+    span.option-card__badge Path required
+
