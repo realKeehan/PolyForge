@@ -1,4 +1,5 @@
-import type { ActionResult, ExecutionPayload, OptionDescriptor } from './types';
+import type { ActionResult, ExecutionPayload, OptionDescriptor } from './app/types';
+
 
 export interface ModrinthCloneRequest {
   dbPath: string;
