@@ -1,4 +1,4 @@
-package kumi
+package types
 
 import "time"
 
@@ -21,11 +21,9 @@ type LogEntry struct {
 }
 
 type ActionResult struct {
-	Success  bool       `json:"success"`
-	Messages []LogEntry `json:"messages"`
-	// Timestamp marks when the result was produced which helps the frontend
-	// merge log batches during long running actions.
-	Timestamp time.Time `json:"timestamp"`
+	Success   bool       `json:"success"`
+	Messages  []LogEntry `json:"messages"`
+	Timestamp time.Time  `json:"timestamp"`
 }
 
 type ModrinthCloneRequest struct {
@@ -55,7 +53,7 @@ type ApplicationInfo struct {
 	Type            string `json:"type"`
 }
 
-func newResult() *ActionResult {
+func NewResult() *ActionResult {
 	return &ActionResult{Messages: make([]LogEntry, 0, 4), Timestamp: time.Now().UTC()}
 }
 
