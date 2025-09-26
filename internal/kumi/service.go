@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"polyforge/internal/kumi/install"
 )
 
 const (
@@ -104,7 +106,7 @@ func (s *Service) Execute(optionID string, payload ExecutionPayload) (*ActionRes
 }
 
 func (s *Service) aboutMessage() *ActionResult {
-	result := newResult()
+	result := NewResult()
 	result.Success = true
 	result.Info("Keehan's Universal Modpack Installer (PolyForge) " + version)
 	result.Info("Turtel Forever")
@@ -113,11 +115,18 @@ func (s *Service) aboutMessage() *ActionResult {
 }
 
 func (s *Service) cakeMessage() *ActionResult {
-	result := newResult()
+	result := NewResult()
 	result.Success = true
 	result.Warning("Nice computer, can I have it?!")
 	result.Warning("The easter egg video is only available in the Windows build.")
 	return result
+}
+
+func (s *Service) installDependencies() install.Dependencies {
+	return install.Dependencies{
+		DownloadAndExtract: s.downloadAndExtract,
+		AddLauncherProfile: addLauncherProfile,
+	}
 }
 
 func (s *Service) requirePath(path string) error {

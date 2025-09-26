@@ -9,11 +9,13 @@ import (
 	"sort"
 	"strings"
 
+	"polyforge/internal/kumi/fsutil"
+
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 func (s *Service) SearchExecutable(query ExecutableSearchRequest) (*ActionResult, error) {
-	result := newResult()
+	result := NewResult()
 	exeName, args := splitExecutableQuery(query.Query)
 	if exeName == "" {
 		result.Error("no executable name found in query")
@@ -44,7 +46,7 @@ func (s *Service) SearchExecutable(query ExecutableSearchRequest) (*ActionResult
 }
 
 func (s *Service) EnumerateApplications() (*ActionResult, error) {
-	result := newResult()
+	result := NewResult()
 	infos, err := enumerateApplications()
 	if err != nil {
 		result.Error(fmt.Sprintf("failed to enumerate applications: %v", err))
@@ -94,7 +96,7 @@ func formatArgs(args string) string {
 func (s *Service) collectPreferredRoots() []string {
 	roots := []string{}
 	add := func(path string) {
-		if path != "" && pathExists(path) {
+		if path != "" && fsutil.PathExists(path) {
 			roots = append(roots, path)
 		}
 	}
@@ -167,7 +169,7 @@ func (s *Service) enumerateDrives() []string {
 	}
 	for _, letter := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
 		root := fmt.Sprintf("%c:\\", letter)
-		if pathExists(root) {
+		if fsutil.PathExists(root) {
 			drives = append(drives, root)
 		}
 	}
