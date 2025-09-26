@@ -46,4 +46,7 @@ export interface AppState {
   busy: boolean;
   lastResult?: ActionResult | null;
   error?: string | null;
+  loadingMessages: string[];
+  loadingStarted: boolean;
+  loadingComplete: boolean;
 }

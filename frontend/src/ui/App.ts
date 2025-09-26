@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../app/constants';
 import { createStore } from '../app/state';
 import { Step } from '../app/types';
 import { fetchMenuOptions } from '../app/ipc';
@@ -19,7 +20,7 @@ export async function createApp(root: HTMLElement) {
   header.innerHTML = `
     <div class="brand">
       <span class="brand__mark">KUMI</span>
-      <span class="brand__version">v5.5.1</span>
+      <span class="brand__version">v${APP_VERSION}</span>
     </div>
     <div class="brand__subtitle">Keehan&apos;s Universal Modpack Installer</div>
   `;
@@ -42,7 +43,7 @@ export async function createApp(root: HTMLElement) {
     let screen: HTMLElement;
     switch (state.step) {
       case Step.Loading:
-        screen = renderLoading();
+        screen = renderLoading(store);
         break;
       case Step.License:
         screen = renderLicense(store);
@@ -67,17 +68,21 @@ export async function createApp(root: HTMLElement) {
 
   store.subscribe(render);
 
+  const loadingReady = store.waitForLoadingComplete();
+
   try {
     const options = await fetchMenuOptions();
     store.setOptions(options);
+    await loadingReady;
     store.setStep(Step.License);
   } catch (error) {
     console.error('Failed to load menu options', error);
     store.setOptions([]);
-    store.setStep(Step.Status);
     store.appendLogs([
       { level: 'error', message: 'Unable to load installer options from backend. Please restart the application.' },
     ]);
     store.setResult({ success: false, messages: store.getState().logs });
+    await loadingReady;
+    store.setStep(Step.Status);
   }
 }
