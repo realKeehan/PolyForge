@@ -124,8 +124,12 @@ func (s *Service) cakeMessage() *ActionResult {
 
 func (s *Service) installDependencies() install.Dependencies {
 	return install.Dependencies{
-		DownloadAndExtract: s.downloadAndExtract,
-		AddLauncherProfile: addLauncherProfile,
+		DownloadAndExtract:     s.downloadAndExtract,
+		AddLauncherProfile:     addLauncherProfile,
+		EnsureDir:              ensureDir,
+		PathExists:             pathExists,
+		FirstExisting:          firstExisting,
+		FirstExistingDirectory: firstExistingDirectory,
 	}
 }
 
