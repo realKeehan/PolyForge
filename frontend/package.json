@@ -1,0 +1,19 @@
+{
+  "name": "polyforge-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "pug": "^3.0.2",
+    "pug-runtime": "^3.0.1"
+  },
+  "devDependencies": {
+    "sass": "^1.69.5",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.0"
+  }
+}
