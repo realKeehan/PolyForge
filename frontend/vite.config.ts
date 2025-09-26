@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import pugPlugin from 'vite-plugin-pug';
 
 export default defineConfig({
   root: '.',
@@ -6,4 +7,5 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
   },
+  plugins: [pugPlugin()],
 });

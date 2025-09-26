@@ -1,6 +1,8 @@
 # PolyForge
 
+
 Keehan's Universal Modpack Installer (KUMI) rebuilt as a [Wails](https://wails.io/) desktop app. The backend mirrors the original PowerShell automation in Go and the frontend is a multi-step wizard implemented with Pug, SCSS, and TypeScript.
+
 
 ## Project layout
 
@@ -32,6 +34,7 @@ Keehan's Universal Modpack Installer (KUMI) rebuilt as a [Wails](https://wails.i
    npm run build
    ```
 3. From the project root start the app in development mode:
+
    ```bash
    wails dev
    ```
