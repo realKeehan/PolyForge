@@ -8,18 +8,32 @@ Keehan's Universal Modpack Installer (KUMI) rebuilt as a [Wails](https://wails.i
 
 ```
 .
-├── cmd/kumi/                  # Wails entrypoint
+├── cmd/
+│   └── kumi/main.go           # Application entrypoint for Wails
 ├── internal/
 │   ├── app/                   # Lifecycle bindings exposed to the frontend
+│   │   ├── app.go
+│   │   └── bind.go
 │   └── kumi/                  # Installer domain logic (downloads, profiles, search)
-│       ├── assets/            # Embedded data (launcher icons, etc.)
-│       └── install/           # Per-launcher installers
+│       ├── assets/            # Embedded data (launcher icon, etc.)
+│       ├── fsutil/            # File-system helpers shared across installers
+│       ├── install/           # Per-launcher installers and shared helpers
+│       ├── types/             # Shared request/result structs
+│       ├── custom.go          # Custom + manual install wrappers
+│       ├── download.go        # HTTP download and zip extraction helpers
+│       ├── launchers.go       # Switchboard into install package
+│       ├── mc_profiles.go     # Minecraft launcher profile utilities
+│       ├── modrinth.go        # Modrinth profile cloning helpers
+│       ├── search.go          # Executable search + app enumeration
+│       └── service.go         # KUMI service coordinating installs and actions
 ├── frontend/                  # Vite + Pug + SCSS + TypeScript UI
+│   ├── package.json
 │   └── src/
 │       ├── app/               # Client-side state + IPC helpers
 │       ├── ui/                # Wizard shell and individual screens
 │       ├── templates/         # Pug partials
 │       └── styles.scss        # Global styling
+├── assets.go                  # Wails asset embedding helper
 ├── go.mod / go.sum            # Go module configuration
 └── wails.json                 # Wails build configuration
 ```

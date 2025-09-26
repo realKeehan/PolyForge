@@ -1,15 +1,15 @@
-package kumi
+package fsutil
 
 import (
 	"os"
 	"path/filepath"
 )
 
-func ensureDir(path string) error {
+func EnsureDir(path string) error {
 	return os.MkdirAll(path, 0o755)
 }
 
-func pathExists(path string) bool {
+func PathExists(path string) bool {
 	if path == "" {
 		return false
 	}
@@ -17,7 +17,7 @@ func pathExists(path string) bool {
 	return err == nil
 }
 
-func firstExisting(candidates []string, exeName string) string {
+func FirstExisting(candidates []string, exeName string) string {
 	for _, candidate := range candidates {
 		if candidate == "" {
 			continue
@@ -26,14 +26,14 @@ func firstExisting(candidates []string, exeName string) string {
 		if filepath.Ext(candidate) == "" {
 			probe = filepath.Join(candidate, exeName)
 		}
-		if pathExists(probe) {
+		if PathExists(probe) {
 			return probe
 		}
 	}
 	return ""
 }
 
-func firstExistingDirectory(candidates []string) string {
+func FirstExistingDirectory(candidates []string) string {
 	for _, candidate := range candidates {
 		if candidate == "" {
 			continue
