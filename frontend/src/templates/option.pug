@@ -1,0 +1,6 @@
+button.option-button(type="button" data-id=id)
+  span.option-title #{title}
+  if description
+    span.option-description #{description}
+  if requiresPath
+    span.option-badge Requires path
