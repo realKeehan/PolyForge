@@ -11,12 +11,16 @@ function createInitialState(): AppState {
     busy: false,
     lastResult: null,
     error: null,
+    loadingMessages: [],
+    loadingStarted: false,
+    loadingComplete: false,
   };
 }
 
 export class Store {
   private state: AppState = createInitialState();
   private listeners = new Set<Listener>();
+  private loadingResolvers: Array<() => void> = [];
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
@@ -34,7 +38,40 @@ export class Store {
 
   reset() {
     this.state = createInitialState();
+    this.loadingResolvers = [];
     this.emit();
+  }
+
+  startLoading(): boolean {
+    if (this.state.loadingStarted) return false;
+    this.state = { ...this.state, loadingStarted: true, loadingMessages: [] };
+    this.emit();
+    return true;
+  }
+
+  appendLoadingMessage(message: string) {
+    this.state = {
+      ...this.state,
+      loadingMessages: [...this.state.loadingMessages, message],
+    };
+    this.emit();
+  }
+
+  markLoadingComplete() {
+    if (this.state.loadingComplete) return;
+    this.state = { ...this.state, loadingComplete: true };
+    this.emit();
+    this.loadingResolvers.forEach((resolve) => resolve());
+    this.loadingResolvers = [];
+  }
+
+  waitForLoadingComplete(): Promise<void> {
+    if (this.state.loadingComplete) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      this.loadingResolvers.push(resolve);
+    });
   }
 
   setOptions(options: OptionDescriptor[]) {
