@@ -9,8 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"polyforge/internal/kumi/fsutil"
-
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -96,7 +94,7 @@ func formatArgs(args string) string {
 func (s *Service) collectPreferredRoots() []string {
 	roots := []string{}
 	add := func(path string) {
-		if path != "" && fsutil.PathExists(path) {
+		if path != "" && pathExists(path) {
 			roots = append(roots, path)
 		}
 	}
@@ -169,7 +167,7 @@ func (s *Service) enumerateDrives() []string {
 	}
 	for _, letter := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
 		root := fmt.Sprintf("%c:\\", letter)
-		if fsutil.PathExists(root) {
+		if pathExists(root) {
 			drives = append(drives, root)
 		}
 	}
