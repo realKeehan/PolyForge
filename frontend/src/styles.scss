@@ -1,0 +1,457 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(circle at 10% 20%, #321349 0%, #0c0914 65%);
+  min-height: 100vh;
+  color: #f7f4ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+#app {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.app-shell {
+  width: min(1100px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: rgba(15, 8, 26, 0.9);
+  border-radius: 24px;
+  padding: 1.75rem;
+  border: 1px solid rgba(154, 95, 255, 0.2);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.app-shell__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.brand__mark {
+  font-size: 1.6rem;
+  color: #f1d8ff;
+}
+
+.brand__version {
+  font-size: 0.9rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(143, 92, 255, 0.25);
+  border: 1px solid rgba(143, 92, 255, 0.4);
+  color: #ecd9ff;
+}
+
+.brand__subtitle {
+  font-size: 0.95rem;
+  color: rgba(230, 213, 255, 0.78);
+}
+
+.app-shell__content {
+  background: rgba(9, 5, 16, 0.72);
+  border-radius: 18px;
+  padding: 2rem;
+  border: 1px solid rgba(154, 95, 255, 0.18);
+  min-height: 540px;
+}
+
+.app-shell__overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 2, 8, 0.55);
+  backdrop-filter: blur(8px);
+  border-radius: 24px;
+  pointer-events: none;
+}
+
+.overlay__spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid rgba(151, 95, 255, 0.25);
+  border-top-color: #b180ff;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 100%;
+}
+
+.screen__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.screen__title {
+  font-size: 1.75rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.screen__subtitle {
+  margin: 0;
+  color: rgba(225, 210, 255, 0.8);
+}
+
+.screen__actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 0.65rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: linear-gradient(135deg, #b077ff, #7d4aff);
+  color: #fff;
+  box-shadow: 0 12px 22px rgba(122, 67, 255, 0.35);
+}
+
+.btn--primary:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.btn--ghost {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f3eaff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.screen--loading {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.loading-console {
+  background: rgba(14, 6, 26, 0.82);
+  border: 1px solid rgba(194, 165, 255, 0.16);
+  border-radius: 16px;
+  padding: 1.25rem 1.4rem;
+  box-shadow: inset 0 0 0 1px rgba(134, 93, 255, 0.06);
+  min-height: 260px;
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', monospace;
+  font-size: 0.95rem;
+  color: rgba(215, 197, 255, 0.88);
+  backdrop-filter: blur(12px);
+}
+
+.loading-console::-webkit-scrollbar {
+  width: 8px;
+}
+
+.loading-console::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.loading-console::-webkit-scrollbar-thumb {
+  background: rgba(153, 115, 255, 0.45);
+  border-radius: 12px;
+}
+
+.loading-console__line {
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  position: relative;
+  padding-left: 1.4rem;
+}
+
+.loading-console__line::before {
+  content: '›';
+  position: absolute;
+  left: 0.1rem;
+  color: rgba(155, 120, 255, 0.7);
+}
+
+.loading-console__line--empty::before {
+  content: '';
+}
+
+.loading-console__line--empty {
+  min-height: 0.6rem;
+}
+
+.loading-console--complete {
+  border-color: rgba(185, 150, 255, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(185, 150, 255, 0.25), 0 18px 42px rgba(94, 54, 180, 0.35);
+}
+
+.card {
+  border: 1px solid transparent;
+  border-radius: 16px;
+  padding: 1.1rem;
+  background: rgba(23, 13, 34, 0.8);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: border-color 0.2s ease, transform 0.16s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card.is-active {
+  border-color: rgba(176, 135, 255, 0.8);
+  box-shadow: 0 14px 28px rgba(116, 78, 200, 0.4);
+}
+
+.card__title {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.card__description {
+  color: rgba(214, 196, 255, 0.8);
+  font-size: 0.95rem;
+}
+
+.mode-grid,
+.modpack-grid,
+.installer-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.mode-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.modpack-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.installer-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.installer-details {
+  border-top: 1px solid rgba(121, 81, 197, 0.25);
+  padding-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.field__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+}
+
+.field__label {
+  font-size: 0.85rem;
+  color: rgba(211, 190, 255, 0.85);
+}
+
+.field__input {
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(174, 134, 255, 0.3);
+  background: rgba(19, 10, 30, 0.8);
+  color: inherit;
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 109, 141, 0.16);
+  border: 1px solid rgba(255, 109, 141, 0.45);
+  color: #ffd6e1;
+}
+
+.license {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.95rem;
+  color: rgba(222, 206, 255, 0.9);
+}
+
+.license__accept {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+}
+
+.license__accept input {
+  width: 18px;
+  height: 18px;
+}
+
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.status-banner--success {
+  background: rgba(110, 222, 170, 0.18);
+  color: #c2ffe5;
+  border: 1px solid rgba(110, 222, 170, 0.38);
+}
+
+.status-banner--error {
+  background: rgba(255, 136, 168, 0.18);
+  color: #ffd6e1;
+  border: 1px solid rgba(255, 136, 168, 0.38);
+}
+
+.status-banner__icon::before {
+  content: '★';
+  font-size: 1rem;
+}
+
+.log-view {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.log-view__entry {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.85rem;
+  align-items: baseline;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(20, 12, 30, 0.7);
+}
+
+.log-view__badge {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(143, 92, 255, 0.25);
+}
+
+.log-view__entry--warning .log-view__badge {
+  background: rgba(255, 193, 94, 0.25);
+}
+
+.log-view__entry--error .log-view__badge {
+  background: rgba(255, 130, 130, 0.3);
+}
+
+.boot-error {
+  width: min(420px, 100%);
+  padding: 2.5rem 2rem;
+  border-radius: 20px;
+  background: rgba(9, 5, 16, 0.85);
+  border: 1px solid rgba(200, 140, 255, 0.25);
+  box-shadow: 0 32px 60px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  color: #f7f4ff;
+  display: grid;
+  gap: 1rem;
+}
+
+.boot-error__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.boot-error__message {
+  margin: 0;
+  color: rgba(225, 210, 255, 0.85);
+  line-height: 1.5;
+}
+
+@media (max-width: 840px) {
+  .app-shell {
+    padding: 1.25rem;
+  }
+
+  .app-shell__content {
+    padding: 1.5rem;
+  }
+
+  .screen__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .field__row {
+    grid-template-columns: 1fr;
+  }
+}

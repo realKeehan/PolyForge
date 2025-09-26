@@ -1,0 +1,7 @@
+- const accessibleLabel = requiresPath ? `${title} (Path required)` : title
+button.option-card(type="button" data-id=id data-requires=requiresPath aria-label=accessibleLabel)
+  span.option-card__title #{title}
+  if description
+    span.option-card__description #{description}
+  if requiresPath
+    span.option-card__badge Path required
