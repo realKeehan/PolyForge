@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Service) CloneModrinthProfile(request ModrinthCloneRequest) (*ActionResult, error) {
-	result := newResult()
+	result := NewResult()
 
 	if request.DBPath == "" {
 		return nil, errors.New("database path is required")
