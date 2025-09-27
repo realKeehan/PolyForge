@@ -49,8 +49,16 @@ Keehan's Universal Modpack Installer (KUMI) rebuilt as a [Wails](https://wails.i
    ```
 3. From the project root start the app in development mode:
 
-   ```bash
-   wails dev
-   ```
+   - macOS/Linux:
+
+     ```bash
+     wails dev
+     ```
+
+   - Windows (ensures the Go toolchain emits a 64-bit `wailsbindings.exe` and clears out stale helpers):
+
+     ```powershell
+     pwsh scripts/wails-dev.ps1
+     ```
 
 The wizard guides users through accepting the licence, selecting an action, choosing the modpack and launcher, and finally streams structured logs as the backend performs the installation. Utilities for Modrinth profile cloning, executable search, and launcher profile generation are exposed through the Go service for future UI integration.
