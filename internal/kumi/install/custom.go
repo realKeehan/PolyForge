@@ -12,6 +12,8 @@ import (
 func CustomMods(deps Dependencies, modsDir, zipURL string) (*ktypes.ActionResult, error) {
 	result := ktypes.NewResult()
 
+	modsDir = strings.Trim(modsDir, "\"")
+
 	if strings.TrimSpace(modsDir) == "" {
 		result.Error("mods directory is required")
 		result.Success = false

@@ -11,6 +11,8 @@ import (
 func Manual(deps Dependencies, target, zipURL string) (*ktypes.ActionResult, error) {
 	result := ktypes.NewResult()
 
+	target = strings.Trim(target, "\"")
+
 	var err error
 	if strings.TrimSpace(target) == "" {
 		target, err = os.Getwd()
