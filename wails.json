@@ -19,11 +19,11 @@
     "devServerURL": "http://127.0.0.1:5173",
     "compiler": "esbuild",
     "platform": {
-      "linux": {
+      "windows": {
         "arch": ["amd64"]
       },
-      "windows": {
-        "arch": ["x64"]
+      "linux": {
+        "arch": ["amd64"]
       }
     }
   }
