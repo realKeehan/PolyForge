@@ -1,17 +1,25 @@
 {
   "name": "PolyForge",
-  "author": "Keehan",
+  "author": {
+    "name": "Keehan"
+  },
   "description": "Keehan's Universal Modpack Installer",
   "outputfilename": "PolyForge",
-  "frontend:install": "cd frontend && npm install",
-  "frontend:build": "cd frontend && npm run build",
-  "frontend:dev": "cd frontend && npm run dev",
+  "frontend": {
+    "dir": "frontend",
+    "install": "npm install",
+    "build": "npm run build",
+    "dev": "npm run dev"
+  },
   "assetdir": "frontend/dist",
   "wailsjsdir": "frontend/wailsjs",
   "build": {
     "devServerURL": "http://127.0.0.1:5173",
     "compiler": "esbuild",
     "platform": {
+      "linux": {
+        "arch": ["amd64"]
+      },
       "windows": {
         "arch": ["x64"]
       }
