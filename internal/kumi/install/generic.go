@@ -33,6 +33,7 @@ func InstanceWithOptionalZip(deps Dependencies, label string, candidates []strin
 
 	if strings.TrimSpace(zipURL) == "" {
 		result.Warning(warning)
+		result.Info(fmt.Sprintf("%s install complete.", label))
 		result.Success = true
 		return result, nil
 	}
@@ -44,6 +45,7 @@ func InstanceWithOptionalZip(deps Dependencies, label string, candidates []strin
 	}
 
 	result.Info(fmt.Sprintf("Installed %s instance to %s", label, target))
+	result.Info(fmt.Sprintf("%s install complete.", label))
 	result.Success = true
 	return result, nil
 }

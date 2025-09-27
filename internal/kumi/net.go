@@ -56,6 +56,10 @@ func (s *Service) downloadFile(url string, file *os.File) error {
 	}
 	req.Header.Set("User-Agent", userAgent)
 
+	if s.ctx != nil {
+		req = req.WithContext(s.ctx)
+	}
+
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return err
