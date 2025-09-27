@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 
+	"crypto/tls"
+
 	"polyforge/internal/kumi/install"
 )
 
@@ -41,7 +43,8 @@ type Service struct {
 }
 
 func NewService() *Service {
-	return &Service{client: &http.Client{}}
+	transport := &http.Transport{TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12}}
+	return &Service{client: &http.Client{Transport: transport}}
 }
 
 func (s *Service) SetContext(ctx context.Context) {
