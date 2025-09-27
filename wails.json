@@ -1,6 +1,10 @@
 {
   "name": "PolyForge",
-  "author": "Keehan",
+  "author": {
+    "name": "Keehan",
+    "email": "",
+    "url": ""
+  },
   "description": "Keehan's Universal Modpack Installer",
   "outputfilename": "PolyForge",
   "frontend:install": "cd frontend && npm install",
