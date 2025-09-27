@@ -12,6 +12,7 @@
     "pug-runtime": "^3.0.1"
   },
   "devDependencies": {
+    "vite-plugin-pug": "^0.4.1",
     "sass": "^1.69.5",
     "typescript": "^5.3.3",
     "vite": "^5.1.0"
