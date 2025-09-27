@@ -61,4 +61,17 @@ Keehan's Universal Modpack Installer (KUMI) rebuilt as a [Wails](https://wails.i
      pwsh scripts/wails-dev.ps1
      ```
 
+4. To produce a release build on Windows use the companion helper, which performs the same environment normalisation before
+   delegating to `wails build`:
+
+   ```powershell
+   pwsh scripts/wails-build.ps1
+   ```
+
+### Troubleshooting Windows binding errors
+
+If Wails reports `This version of %1 is not compatible with the version of Windows you're running` when generating bindings,
+the cached helper at `%TEMP%\wailsbindings.exe` is usually a stale 32-bit binary. The PowerShell helpers above delete the cache
+automatically, but you can also remove the file manually and retry the command if you need to invoke `wails` directly.
+
 The wizard guides users through accepting the licence, selecting an action, choosing the modpack and launcher, and finally streams structured logs as the backend performs the installation. Utilities for Modrinth profile cloning, executable search, and launcher profile generation are exposed through the Go service for future UI integration.
