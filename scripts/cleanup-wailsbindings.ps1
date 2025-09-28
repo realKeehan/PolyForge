@@ -10,7 +10,7 @@ if (Test-Path $bindingPath) {
         Write-Host "Removed stale Wails binding helper at $bindingPath" -ForegroundColor DarkGray
     }
     catch {
-        Write-Error "Failed to remove cached wailsbindings helper at $bindingPath: $_"
+        Write-Error "Failed to remove cached wailsbindings helper at ${bindingPath}: $_"
         exit 1
     }
 } else {
