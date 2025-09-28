@@ -62,7 +62,8 @@ Keehan's Universal Modpack Installer (KUMI) rebuilt as a [Wails](https://wails.i
      ```
 
 4. To produce a release build on Windows use the companion helper, which performs the same environment normalisation before
-   delegating to `wails build`:
+   delegating to `wails build`. A pre-build hook now also removes any cached `wailsbindings.exe`, so invoking `wails build`
+   directly works as long as your Go toolchain is already targeting 64-bit Windows:
 
    ```powershell
    pwsh scripts/wails-build.ps1
@@ -71,7 +72,9 @@ Keehan's Universal Modpack Installer (KUMI) rebuilt as a [Wails](https://wails.i
 ### Troubleshooting Windows binding errors
 
 If Wails reports `This version of %1 is not compatible with the version of Windows you're running` when generating bindings,
-the cached helper at `%TEMP%\wailsbindings.exe` is usually a stale 32-bit binary. The PowerShell helpers above delete the cache
-automatically, but you can also remove the file manually and retry the command if you need to invoke `wails` directly.
+the cached helper at `%TEMP%\wailsbindings.exe` is usually a stale helper compiled for the wrong architecture. A Windows
+pre-build hook now deletes the cache automatically before each build, and the PowerShell helpers above perform the same step
+alongside forcing the Go toolchain to emit a 64-bit binary. If you still encounter the error, remove the file manually and
+retry the command to ensure a fresh helper is generated.
 
 The wizard guides users through accepting the licence, selecting an action, choosing the modpack and launcher, and finally streams structured logs as the backend performs the installation. Utilities for Modrinth profile cloning, executable search, and launcher profile generation are exposed through the Go service for future UI integration.
