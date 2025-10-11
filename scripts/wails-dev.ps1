@@ -1,48 +1,100 @@
-[CmdletBinding()]
 param(
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$ArgsToForward
+  [string]$Platform,
+  [switch]$Verbose
 )
 
 $ErrorActionPreference = 'Stop'
 
-function Ensure-Command {
-    param(
-        [string]$CommandName
-    )
+$previousEnv = @{
+  GOOS = $env:GOOS
+  GOARCH = $env:GOARCH
+}
 
-    if (-not (Get-Command $CommandName -ErrorAction SilentlyContinue)) {
-        throw "Required command '$CommandName' was not found in PATH."
+function Clear-GoEnv {
+  Remove-Item env:GOOS -ErrorAction SilentlyContinue
+  Remove-Item env:GOARCH -ErrorAction SilentlyContinue
+}
+
+function Restore-GoEnv {
+  param($Saved)
+
+  if ($Saved.GOOS) {
+    Set-Item env:GOOS $Saved.GOOS
+  } else {
+    Remove-Item env:GOOS -ErrorAction SilentlyContinue
+  }
+
+  if ($Saved.GOARCH) {
+    Set-Item env:GOARCH $Saved.GOARCH
+  } else {
+    Remove-Item env:GOARCH -ErrorAction SilentlyContinue
+  }
+}
+
+function Resolve-GoPlatform {
+  param([string]$Specified)
+
+  if ($Specified) {
+    $parts = $Specified.Split('/', 2, [System.StringSplitOptions]::RemoveEmptyEntries)
+    if ($parts.Count -ne 2) {
+      throw "Platform must be in the form <goos>/<goarch>."
     }
-}
 
-Ensure-Command -CommandName 'go'
-Ensure-Command -CommandName 'wails'
-
-$expectedGoOS = 'windows'
-$expectedGoArch = 'amd64'
-$currentGoOS = (& go env GOOS).Trim()
-$currentGoArch = (& go env GOARCH).Trim()
-
-if ($currentGoOS -ne $expectedGoOS -or $currentGoArch -ne $expectedGoArch) {
-    Write-Host "Normalising Go toolchain environment for Wails (GOOS=$expectedGoOS, GOARCH=$expectedGoArch)." -ForegroundColor Yellow
-    $env:GOOS = $expectedGoOS
-    $env:GOARCH = $expectedGoArch
-} else {
-    # Clear the variables so Go falls back to its defaults when they already match.
-    Remove-Item Env:GOOS -ErrorAction SilentlyContinue
-    Remove-Item Env:GOARCH -ErrorAction SilentlyContinue
-}
-
-$tempBindings = Join-Path ([System.IO.Path]::GetTempPath()) 'wailsbindings.exe'
-if (Test-Path $tempBindings) {
-    try {
-        Remove-Item $tempBindings -ErrorAction Stop
-        Write-Host "Removed stale binding helper at $tempBindings" -ForegroundColor DarkGray
-    } catch {
-        Write-Warning "Unable to remove existing binding helper ($tempBindings): $_"
+    return [PSCustomObject]@{
+      Goos = $parts[0].ToLowerInvariant()
+      Goarch = $parts[1].ToLowerInvariant()
     }
+  }
+
+  $arch = $env:PROCESSOR_ARCHITECTURE
+  if ([string]::IsNullOrWhiteSpace($arch) -and $env:PROCESSOR_ARCHITEW6432) {
+    $arch = $env:PROCESSOR_ARCHITEW6432
+  }
+
+  if (-not $arch) {
+    $arch = ''
+  }
+
+  switch ($arch.ToUpperInvariant()) {
+    'AMD64' { $goArch = 'amd64' }
+    'X86' { $goArch = '386' }
+    'ARM64' { $goArch = 'arm64' }
+    'ARM' { $goArch = 'arm' }
+    default { throw "Unsupported processor architecture '$arch'. Set -Platform explicitly." }
+  }
+
+  return [PSCustomObject]@{
+    Goos = 'windows'
+    Goarch = $goArch
+  }
 }
 
-Write-Host "Executing: wails dev $ArgsToForward" -ForegroundColor Cyan
-& wails dev @ArgsToForward
+function Set-GoEnv {
+  param(
+    [string]$Goos,
+    [string]$Goarch
+  )
+
+  Set-Item env:GOOS $Goos
+  Set-Item env:GOARCH $Goarch
+}
+
+Clear-GoEnv
+$resolved = Resolve-GoPlatform -Specified $Platform
+Set-GoEnv -Goos $resolved.Goos -Goarch $resolved.Goarch
+
+try {
+  Remove-Item -LiteralPath (Join-Path $env:TEMP 'wailsbindings.exe') -Force -ErrorAction SilentlyContinue
+
+  if ($Verbose) {
+    Write-Host 'go env (selected):'
+    & go env GOHOSTOS GOHOSTARCH GOOS GOARCH | ForEach-Object { Write-Host ('  ' + $_) }
+  }
+
+  Write-Host ("Resolved platform: {0}/{1}" -f $resolved.Goos, $resolved.Goarch)
+  Write-Host 'Executing: wails dev'
+  & wails dev
+}
+finally {
+  Restore-GoEnv -Saved $previousEnv
+}

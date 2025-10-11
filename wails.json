@@ -28,6 +28,6 @@
     }
   },
   "preBuildHooks": {
-    "windows/amd64": "powershell -NoProfile -ExecutionPolicy Bypass -File ..\\\\..\\\\scripts\\\\cleanup-wailsbindings.ps1"
+    "windows/amd64": "powershell -NoProfile -ExecutionPolicy Bypass -File ..\\..\\scripts\\cleanup-wailsbindings.ps1"
   }
 }
