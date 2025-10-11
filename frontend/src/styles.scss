@@ -93,6 +93,10 @@ body {
   pointer-events: none;
 }
 
+.app-shell__overlay[hidden] {
+  display: none !important;
+}
+
 .overlay__spinner {
   width: 42px;
   height: 42px;
