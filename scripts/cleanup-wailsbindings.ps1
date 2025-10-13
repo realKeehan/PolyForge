@@ -16,3 +16,4 @@ if (Test-Path $bindingPath) {
 } else {
     Write-Host "No cached Wails binding helper found at $bindingPath" -ForegroundColor DarkGray
 }
+#update
