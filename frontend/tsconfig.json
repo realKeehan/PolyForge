@@ -3,10 +3,14 @@
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "baseUrl": ".",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "paths": {
+      "@wailsapp/runtime": ["wailsjs/wailsjs/runtime"]
+    },
     "types": [
       "vite/client"
     ]

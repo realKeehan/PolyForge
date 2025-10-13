@@ -1,4 +1,5 @@
 import { APP_VERSION } from '../app/constants';
+import { Quit, WindowMinimise } from '@wailsapp/runtime';
 import { createStore } from '../app/state';
 import { Step } from '../app/types';
 import { fetchMenuOptions } from '../app/ipc';
@@ -8,6 +9,7 @@ import { renderMode } from './screens/Mode';
 import { renderModpack } from './screens/Modpack';
 import { renderInstaller } from './screens/Installer';
 import { renderStatus } from './screens/Status';
+import brandIcon from '../assets/app-icon.png';
 
 export async function createApp(root: HTMLElement) {
   const store = createStore();
@@ -16,14 +18,46 @@ export async function createApp(root: HTMLElement) {
   shell.className = 'app-shell';
 
   const header = document.createElement('header');
-  header.className = 'app-shell__header';
+  header.className = 'app-shell__topbar';
   header.innerHTML = `
-    <div class="brand">
-      <span class="brand__mark">KUMI</span>
-      <span class="brand__version">v${APP_VERSION}</span>
+    <div class="topbar__brand" role="presentation">
+      <span class="topbar__glyph" aria-hidden="true" style="background-image: url('${brandIcon}');"></span>
+      <span class="topbar__title">KUMI</span>
+      <span class="topbar__version">v${APP_VERSION}</span>
     </div>
-    <div class="brand__subtitle">Keehan&apos;s Universal Modpack Installer</div>
+    <div class="topbar__controls" role="toolbar" aria-label="Window controls">
+      <button type="button" class="window-btn window-btn--min" aria-label="Minimize window">
+        <svg class="window-btn__icon" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+          <rect x="2" y="5.3" width="8" height="1.4" rx="0.7" />
+        </svg>
+      </button>
+      <button type="button" class="window-btn window-btn--close" aria-label="Close window">
+        <svg class="window-btn__icon" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+          <path d="M3.2 3.2l5.6 5.6M8.8 3.2l-5.6 5.6" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
   `;
+
+  const minimiseBtn = header.querySelector('.window-btn--min') as HTMLButtonElement;
+  const closeBtn = header.querySelector('.window-btn--close') as HTMLButtonElement;
+
+  minimiseBtn.addEventListener('click', () => {
+    try {
+      WindowMinimise();
+    } catch (error) {
+      console.error('Failed to minimise window', error);
+    }
+  });
+
+  closeBtn.addEventListener('click', () => {
+    try {
+      Quit();
+    } catch (error) {
+      console.error('Failed to close window', error);
+    }
+  });
+
 
   const contentHost = document.createElement('main');
   contentHost.className = 'app-shell__content';
