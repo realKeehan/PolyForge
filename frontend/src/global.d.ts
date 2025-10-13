@@ -18,6 +18,11 @@ export interface ExecutableSearchRequest {
   searchAllDrives?: boolean;
 }
 
+declare module '*.png' {
+  const src: string;
+  export default src;
+}
+
 declare global {
   interface Window {
     go: {
