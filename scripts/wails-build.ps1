@@ -3,7 +3,7 @@ param(
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ArgsToForward
 )
-# idk
+
 $ErrorActionPreference = 'Stop'
 
 function Ensure-Command {
