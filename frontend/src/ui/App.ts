@@ -14,33 +14,35 @@ import brandIcon from '../assets/app-icon.png';
 export async function createApp(root: HTMLElement) {
   const store = createStore();
 
+  const frame = document.createElement('div');
+  frame.className = 'app-root';
+
   const shell = document.createElement('div');
-  shell.className = 'app-shell';
+  shell.className = 'app-window';
 
   const header = document.createElement('header');
-  header.className = 'app-shell__topbar';
+  header.className = 'app-header';
   header.innerHTML = `
-    <div class="topbar__brand" role="presentation">
-      <span class="topbar__glyph" aria-hidden="true" style="background-image: url('${brandIcon}');"></span>
-      <span class="topbar__title">KUMI</span>
-      <span class="topbar__version">v${APP_VERSION}</span>
+    <div class="app-header__brand" role="presentation">
+      <img class="app-header__logo" src="${brandIcon}" alt="PolyForge logo" draggable="false" />
+      <span class="app-header__title">PolyForge v${APP_VERSION}</span>
     </div>
-    <div class="topbar__controls" role="toolbar" aria-label="Window controls">
-      <button type="button" class="window-btn window-btn--min" aria-label="Minimize window">
-        <svg class="window-btn__icon" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
-          <rect x="2" y="5.3" width="8" height="1.4" rx="0.7" />
+    <div class="app-header__controls" role="toolbar" aria-label="Window controls">
+      <button type="button" class="window-control window-control--minimise" data-action="minimise" aria-label="Minimise window">
+        <svg viewBox="0 0 26 2" width="18" height="18" aria-hidden="true" focusable="false">
+          <path d="M1 1H25" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
         </svg>
       </button>
-      <button type="button" class="window-btn window-btn--close" aria-label="Close window">
-        <svg class="window-btn__icon" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
-          <path d="M3.2 3.2l5.6 5.6M8.8 3.2l-5.6 5.6" stroke-width="1.6" stroke-linecap="round" />
+      <button type="button" class="window-control window-control--close" data-action="close" aria-label="Close window">
+        <svg viewBox="0 0 14 14" width="16" height="16" aria-hidden="true" focusable="false">
+          <path d="M1 13L13 1M13 13L1 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
         </svg>
       </button>
     </div>
   `;
 
-  const minimiseBtn = header.querySelector('.window-btn--min') as HTMLButtonElement;
-  const closeBtn = header.querySelector('.window-btn--close') as HTMLButtonElement;
+  const minimiseBtn = header.querySelector('[data-action="minimise"]') as HTMLButtonElement;
+  const closeBtn = header.querySelector('[data-action="close"]') as HTMLButtonElement;
 
   minimiseBtn.addEventListener('click', () => {
     try {
@@ -58,17 +60,22 @@ export async function createApp(root: HTMLElement) {
     }
   });
 
-
   const contentHost = document.createElement('main');
-  contentHost.className = 'app-shell__content';
+  contentHost.className = 'app-content';
 
   const overlay = document.createElement('div');
-  overlay.className = 'app-shell__overlay';
-  overlay.innerHTML = '<div class="overlay__spinner"></div>';
+  overlay.className = 'app-overlay';
+  overlay.innerHTML = `
+    <div class="overlay__panel" role="status" aria-live="polite">
+      <span class="overlay__spinner" aria-hidden="true"></span>
+      <span class="overlay__label">Working...</span>
+    </div>
+  `;
   overlay.hidden = true;
 
   shell.append(header, contentHost, overlay);
-  root.appendChild(shell);
+  frame.appendChild(shell);
+  root.appendChild(frame);
 
   const render = () => {
     const state = store.getState();
