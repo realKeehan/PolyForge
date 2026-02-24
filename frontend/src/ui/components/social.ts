@@ -68,9 +68,8 @@ export function createSocialLinks(): HTMLElement {
   container.className = 'social-links';
 
   container.innerHTML = `
-    <button type="button" class="social-links__button social-links__button--primary" data-action="about">
+    <button type="button" class="social-links__button social-links__button--primary" data-action="about" aria-label="About">
       ${createAboutIcon()}
-      <span class="social-links__label">About</span>
     </button>
     <a class="social-links__button" href="https://polyforge.gg" target="_blank" rel="noopener noreferrer" aria-label="Website">
       ${createGlobeIcon(unique)}

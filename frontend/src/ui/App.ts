@@ -4,6 +4,7 @@ import { createStore } from '../app/state';
 import { Step } from '../app/types';
 import { fetchMenuOptions } from '../app/ipc';
 import { renderLoading } from './screens/Loading';
+import { renderStartup } from './screens/Startup';
 import { renderLicense } from './screens/License';
 import { renderMode } from './screens/Mode';
 import { renderModpack } from './screens/Modpack';
@@ -86,6 +87,9 @@ export async function createApp(root: HTMLElement) {
       case Step.Loading:
         screen = renderLoading(store);
         break;
+      case Step.Startup:
+        screen = renderStartup(store);
+        break;
       case Step.License:
         screen = renderLicense(store);
         break;
@@ -115,7 +119,7 @@ export async function createApp(root: HTMLElement) {
     const options = await fetchMenuOptions();
     store.setOptions(options);
     await loadingReady;
-    store.setStep(Step.License);
+    store.setStep(Step.Startup);
   } catch (error) {
     console.error('Failed to load menu options', error);
     store.setOptions([]);

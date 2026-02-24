@@ -1,6 +1,5 @@
 import { APP_VERSION } from '../../app/constants';
 import type { Store } from '../../app/state';
-import splashImage from '../../assets/splash.png';
 
 const DEFAULT_DELAY = 45;
 const FINAL_DELAY = 1000;
@@ -8,6 +7,7 @@ const FINAL_DELAY = 1000;
 interface LoadingStep {
   text: string;
   delay?: number;
+  highlight?: boolean;
 }
 
 function formatTimestamp(date: Date): string {
@@ -31,16 +31,26 @@ function buildSteps(): LoadingStep[] {
   const timezone = resolveTimezoneName(now);
 
   return [
-    { text: 'PolyForge launcher waking up...' },
-    { text: `Runtime version ${APP_VERSION} initialised at ${timestamp} (${timezone})`, delay: 140 },
-    { text: 'Seeding installer pipeline' },
-    { text: 'Scanning launchers' },
-    { text: 'Inspecting profile manifests' },
-    { text: 'Warming up renderer', delay: 120 },
-    { text: 'Fetching manifest signatures' },
-    { text: 'Syncing trusted mirrors' },
-    { text: 'Linking shared assets' },
-    { text: 'Finalising splash sequence', delay: 160 },
+    { text: `Welcome to PolyForge!`, highlight: true },
+    { text: `PolyForge version ${APP_VERSION} boot at ${timestamp}`, delay: 100 },
+    { text: `Timezone: ${timezone}` },
+    { text: 'Loading active theme' },
+    { text: 'Locating directories' },
+    { text: 'Inspecting manifests' },
+    { text: 'Checking for updates...' },
+    { text: 'Download time slicing stopwatch started', delay: 80 },
+    { text: 'rsubs bonds bkr, process started' },
+    { text: 'Linking assets...' },
+    { text: 'Bootleggers Bootleg' },
+    { text: 'Boot User to Server in Timeouts', delay: 100 },
+    { text: 'Reticulating splines' },
+    { text: 'Configuring arcane runes' },
+    { text: 'Alt-clicking nether portals' },
+    { text: 'cake mode' },
+    { text: '' },
+    { text: 'Sort pigs best to the bongoing' },
+    { text: 'Reading the quantum bookmarks', delay: 80 },
+    { text: 'Deploying anti-monster 1s to kill the duo', delay: 160 },
   ];
 }
 
@@ -62,13 +72,39 @@ function runLoadingSequence(store: Store) {
 }
 
 export function renderLoading(store: Store): HTMLElement {
+  const state = store.getState();
   const container = document.createElement('section');
   container.className = 'screen screen--startup';
-  container.innerHTML = `
-    <div class="loading-splash">
-      <img class="loading-splash__image" src="${splashImage}" alt="PolyForge bootstrap splash" draggable="false" />
-    </div>
-  `;
+
+  const terminal = document.createElement('div');
+  terminal.className = 'terminal-log';
+
+  state.loadingMessages.forEach((msg, index) => {
+    const line = document.createElement('div');
+    line.className = 'terminal-log__line';
+    if (index === 0) {
+      line.classList.add('terminal-log__line--highlight');
+    }
+    line.textContent = msg;
+    terminal.appendChild(line);
+  });
+
+  // Add blinking cursor at the end
+  if (!state.loadingComplete) {
+    const cursorLine = document.createElement('div');
+    cursorLine.className = 'terminal-log__line';
+    const cursor = document.createElement('span');
+    cursor.className = 'terminal-log__cursor';
+    cursorLine.appendChild(cursor);
+    terminal.appendChild(cursorLine);
+  }
+
+  container.appendChild(terminal);
+
+  // Auto-scroll to bottom
+  requestAnimationFrame(() => {
+    terminal.scrollTop = terminal.scrollHeight;
+  });
 
   if (store.startLoading()) {
     runLoadingSequence(store);

@@ -63,7 +63,8 @@ body {
 .app-window {
   width: 750px;
   max-width: 750px;
-  min-height: 450px;
+  height: 485px;
+  max-height: 485px;
   background: var(--kumi-dark);
   border-radius: 10px;
   display: flex;
@@ -96,7 +97,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 5;
+  z-index: 50;
 }
 
 .app-header__brand {
@@ -161,6 +162,7 @@ body {
 
 .app-content {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background-color: var(--kumi-dark-secondary);
@@ -184,6 +186,7 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
   gap: 1rem;
   color: var(--text-primary);
 }
@@ -192,7 +195,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .stage__icon {
@@ -432,7 +435,7 @@ body {
 
 .screen-footer {
   margin-top: auto;
-  padding-top: 1.5rem;
+  padding-top: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -468,8 +471,8 @@ body {
 }
 
 .social-links__button {
-  width: 56px;
-  height: 56px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(17, 17, 17, 0.9);
@@ -482,6 +485,11 @@ body {
   text-decoration: none;
 }
 
+.social-links__button svg {
+  width: 18px;
+  height: 18px;
+}
+
 .social-links__button:hover {
   background: rgba(40, 32, 56, 0.9);
   border-color: rgba(143, 0, 255, 0.4);
@@ -489,21 +497,24 @@ body {
 }
 
 .social-links__button--primary {
-  width: auto;
-  height: 56px;
-  padding: 0 1.5rem;
-  gap: 0.75rem;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  gap: 0;
   border-radius: 999px;
   background: rgba(17, 17, 17, 0.9);
-  font-family: 'M PLUS Rounded 1c', 'JetBrains Mono', monospace;
-  font-weight: 600;
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .social-links__label {
   white-space: nowrap;
+}
+
+.stage__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.75rem;
+  min-height: 0;
 }
 
 .scroll-panel {
@@ -511,14 +522,25 @@ body {
   background: var(--kumi-dark-secondary);
   border-radius: 6px;
   padding: 1rem;
-  max-height: 275px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
+.scroll-panel__splash {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+  margin: 1rem auto 1.5rem;
+  border-radius: 6px;
+}
+
 .scroll-panel__copy {
-  position: absolute;
-  right: 0.75rem;
-  bottom: 0.75rem;
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
 }
 
 .copy-button {
@@ -698,4 +720,210 @@ body {
   width: min(90%, 675px);
   height: auto;
   display: block;
+}
+
+/* ── Startup Splash Screen ─────────────────────────── */
+
+.startup-splash {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--kumi-dark-secondary);
+  border-radius: 6px;
+}
+
+.startup-splash__image {
+  width: min(85%, 550px);
+  height: auto;
+  display: block;
+}
+
+/* ── Terminal Boot Log ─────────────────────────────── */
+
+.terminal-log {
+  flex: 1;
+  background: var(--kumi-dark-secondary);
+  border-radius: 6px;
+  padding: 1.1rem 1.2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.terminal-log__line {
+  color: var(--success);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.terminal-log__line--highlight {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.terminal-log__cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  background: var(--success);
+  vertical-align: text-bottom;
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Radio Selection List ──────────────────────────── */
+
+.radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.radio-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.radio-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.radio-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  background: transparent;
+  border: 1.5px solid transparent;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.radio-item:hover {
+  background: rgba(33, 33, 33, 0.85);
+}
+
+.radio-item.is-active {
+  background: var(--kumi-purple-bg);
+  border-color: var(--kumi-purple);
+}
+
+.radio-item--card {
+  padding: 0.85rem 1rem;
+}
+
+.radio-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease;
+}
+
+.radio-dot__inner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.radio-item.is-active .radio-dot {
+  border-color: var(--kumi-purple);
+}
+
+.radio-item.is-active .radio-dot__inner {
+  background: var(--kumi-purple);
+}
+
+.radio-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.radio-item__label {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.radio-item__desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* ── Status Log Dots ───────────────────────────────── */
+
+.log-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  line-height: 1.6;
+}
+
+.log-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.45em;
+}
+
+.log-dot--info {
+  background: var(--kumi-purple);
+}
+
+.log-dot--success,
+.log-dot--complete {
+  background: var(--success);
+}
+
+.log-dot--warning {
+  background: #ffc14d;
+}
+
+.log-dot--error {
+  background: var(--danger);
+}
+
+.log-line__text {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log-panel--formatted {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  white-space: normal;
 }

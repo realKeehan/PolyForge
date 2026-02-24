@@ -12,6 +12,37 @@ const STATUS_ICON = `
   </svg>
 `;
 
+function getDotClass(level: string): string {
+  switch (level) {
+    case 'error':
+      return 'log-dot--error';
+    case 'warning':
+      return 'log-dot--warning';
+    case 'info':
+    default:
+      return 'log-dot--success';
+  }
+}
+
+function buildLogHTML(store: Store): string {
+  const logEntries = store.getState().logs;
+  if (logEntries.length === 0) {
+    return '<div class="log-line"><span class="log-dot log-dot--info"></span><span class="log-line__text">Logs will appear here once an installer has run.</span></div>';
+  }
+  return logEntries
+    .map(
+      (entry) =>
+        `<div class="log-line"><span class="log-dot ${getDotClass(entry.level)}"></span><span class="log-line__text">${escapeHtml(entry.message)}</span></div>`,
+    )
+    .join('');
+}
+
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function buildLogText(store: Store): string {
   const logEntries = store.getState().logs;
   if (logEntries.length === 0) {
@@ -47,22 +78,12 @@ export function renderStatus(store: Store): HTMLElement {
     <span class="stage__icon">${STATUS_ICON}</span>
     <div>
       <h2 class="stage__title">Status Log</h2>
-      <p class="stage__subtitle">Review the output from the previous action.</p>
     </div>
   `;
 
-  const result = store.getState().lastResult;
-  const isSuccess = result?.success ?? false;
-
-  const banner = document.createElement('div');
-  banner.className = `status-banner ${isSuccess ? '' : 'status-banner--error'}`.trim();
-  banner.innerHTML = isSuccess
-    ? '<span>Installer completed successfully.</span>'
-    : '<span>Installer finished with warnings or errors.</span>';
-
-  const logPanel = document.createElement('pre');
-  logPanel.className = 'log-panel';
-  logPanel.textContent = buildLogText(store);
+  const logPanel = document.createElement('div');
+  logPanel.className = 'log-panel log-panel--formatted';
+  logPanel.innerHTML = buildLogHTML(store);
 
   const copyButton = document.createElement('button');
   copyButton.type = 'button';
@@ -83,18 +104,23 @@ export function renderStatus(store: Store): HTMLElement {
   const closeButton = document.createElement('button');
   closeButton.type = 'button';
   closeButton.className = 'btn btn--primary';
-  closeButton.textContent = isSuccess ? 'Done' : 'Dismiss';
+  closeButton.textContent = 'Close';
 
   actions.append(backButton, closeButton);
   footer.append(social, actions);
 
-  container.append(header, banner, logPanel, footer);
+  container.append(header, logPanel, footer);
   logPanel.appendChild(copyButton);
+
+  // Auto-scroll log panel to bottom
+  requestAnimationFrame(() => {
+    logPanel.scrollTop = logPanel.scrollHeight;
+  });
 
   copyButton.addEventListener('click', async () => {
     const original = copyButton.textContent;
     try {
-      await copyLogs(logPanel.textContent ?? '');
+      await copyLogs(buildLogText(store));
       copyButton.textContent = 'Copied!';
     } catch (error) {
       console.error('Failed to copy logs', error);

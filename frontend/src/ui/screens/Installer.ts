@@ -13,112 +13,8 @@ const LAUNCHER_ICON = `
   </svg>
 `;
 
-const ICONS: Record<string, string> = {
-  vanilla: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M12 18L24 12L36 18V30L24 36L12 30V18Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M12 18L24 24L36 18" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M24 24V36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `,
-  multimc: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <rect x="10" y="10" width="10" height="10" rx="2" stroke="currentColor" stroke-width="2.5"></rect>
-      <rect x="18" y="18" width="14" height="14" rx="3" stroke="currentColor" stroke-width="2.5"></rect>
-      <circle cx="34" cy="14" r="4" stroke="currentColor" stroke-width="2.5"></circle>
-    </svg>
-  `,
-  curseforge: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M14 30H20L22 26H30L34 20H18L14 14" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
-      <path d="M22 12V18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `,
-  modrinth: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M14 32V16H19L24 24L29 16H34V32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-      <path d="M34 32L29 24L24 32L19 24L14 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `,
-  gdlauncher: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M18 34L22 24L16 22L24 12L32 20L26 22L30 30L18 34Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-      <circle cx="24" cy="24" r="3" stroke="currentColor" stroke-width="2.5"></circle>
-    </svg>
-  `,
-  atlauncher: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M24 12L36 30H28L24 36L20 30H12L24 12Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M24 36V30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `,
-  prismlauncher: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M24 10L38 34H10L24 10Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M24 16L32 30H16L24 16Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-    </svg>
-  `,
-  bakaxl: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M16 12H26C31 12 34 16 34 20C34 24 31 28 26 28H16V12Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M16 28H28C32 28 36 31 36 36H20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `,
-  feather: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M32 12C25 14 16 22 16 32C22 30 28 24 28 24C26 30 22 32 20 34C24 36 30 34 34 28C36 24 36 16 32 12Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-    </svg>
-  `,
-  technic: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <circle cx="20" cy="20" r="7" stroke="currentColor" stroke-width="2.5"></circle>
-      <path d="M20 12L22 16L26 18L22 20L20 24L18 20L14 18L18 16L20 12Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <rect x="26" y="22" width="8" height="12" rx="2" stroke="currentColor" stroke-width="2.5"></rect>
-    </svg>
-  `,
-  polymc: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M24 10L36 18V32L24 40L12 32V18L24 10Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M24 16L30 20V26L24 30L18 26V20L24 16Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-    </svg>
-  `,
-  custom: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M14 16H28L32 20V34H14V16Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M28 16V22H34" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `,
-  manual: `
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
-      <path d="M16 12H32V36H16C13.7909 36 12 34.2091 12 32V16C12 13.7909 13.7909 12 16 12Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M16 16H30M16 24H30M16 32H26" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `,
-  about: `
-    <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <circle cx="20" cy="20" r="17" stroke="currentColor" stroke-width="3"></circle>
-      <path d="M20 28V18" stroke="currentColor" stroke-width="3" stroke-linecap="round"></path>
-      <circle cx="20" cy="13" r="2.5" fill="currentColor"></circle>
-    </svg>
-  `,
-  cake: `
-    <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <path d="M10 20H30V30C30 31.1046 29.1046 32 28 32H12C10.8954 32 10 31.1046 10 30V20Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"></path>
-      <path d="M10 20C13 20 14 18 16 18C18 18 19 20 22 20C25 20 26 18 28 18C30 18 31 20 34 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-      <path d="M20 10V16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-      <path d="M18 12L20 10L22 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `,
-};
-
-function getIconForOption(optionId: string): string {
-  return ICONS[optionId] ?? `
-    <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <rect x="11" y="11" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2.5"></rect>
-      <path d="M11 19.5H29" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-      <path d="M20 11V29" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
-    </svg>
-  `;
+function radioDot(): string {
+  return `<span class="radio-dot"><span class="radio-dot__inner"></span></span>`;
 }
 
 export function renderInstaller(store: Store): HTMLElement {
@@ -131,12 +27,11 @@ export function renderInstaller(store: Store): HTMLElement {
     <span class="stage__icon">${LAUNCHER_ICON}</span>
     <div>
       <h2 class="stage__title">Choose Launcher</h2>
-      <p class="stage__subtitle">Pick the launcher you want PolyForge to configure.</p>
     </div>
   `;
 
   const list = document.createElement('div');
-  list.className = 'select-list';
+  list.className = 'radio-list';
 
   const pathField = document.createElement('div');
   pathField.className = 'field';
@@ -219,15 +114,11 @@ export function renderInstaller(store: Store): HTMLElement {
   store.getState().options.forEach((option) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'select-card';
+    button.className = 'radio-item';
     button.dataset.optionId = option.id;
     button.innerHTML = `
-      <span class="select-card__icon">${getIconForOption(option.id)}</span>
-      <span class="select-card__body">
-        <span class="select-card__title">${option.title}</span>
-        <span class="select-card__description">${option.description}</span>
-      </span>
-      ${option.requiresPath ? '<span class="select-card__badge">Path</span>' : ''}
+      ${radioDot()}
+      <span class="radio-item__label">${option.title}</span>
     `;
     if (store.getState().selectedInstaller?.id === option.id) {
       button.classList.add('is-active');
