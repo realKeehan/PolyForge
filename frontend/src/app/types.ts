@@ -26,6 +26,7 @@ export interface ActionResult {
 
 export enum Step {
   Loading = 'loading',
+  Startup = 'startup',
   License = 'license',
   Mode = 'mode',
   Modpack = 'modpack',

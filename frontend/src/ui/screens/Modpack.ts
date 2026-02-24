@@ -15,10 +15,15 @@ const CHECK_ICON = `
 `;
 
 const MODPACKS = [
-  { id: 'turtel-smp5', name: 'Turtel SMP Season 5', tagline: 'Official experience with Quilt, QoL tweaks, and parity improvements.' },
+  { id: 'turtel-smp', name: 'Turtel SMP' },
+  { id: 'event-pack', name: 'Event Pack' },
 ];
 
 let cleanInstallPreference = true;
+
+function radioDot(): string {
+  return `<span class="radio-dot"><span class="radio-dot__inner"></span></span>`;
+}
 
 export function renderModpack(store: Store): HTMLElement {
   const container = document.createElement('section');
@@ -30,12 +35,11 @@ export function renderModpack(store: Store): HTMLElement {
     <span class="stage__icon">${MODPACK_ICON}</span>
     <div>
       <h2 class="stage__title">Choose Modpack</h2>
-      <p class="stage__subtitle">Pick the pack you want to manage today.</p>
     </div>
   `;
 
   const list = document.createElement('div');
-  list.className = 'select-list';
+  list.className = 'radio-list';
 
   const toggle = document.createElement('label');
   toggle.className = 'toggle';
@@ -103,17 +107,12 @@ export function renderModpack(store: Store): HTMLElement {
   MODPACKS.forEach((pack) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'select-card';
+    button.className = 'radio-item radio-item--card';
     button.dataset.modpack = pack.id;
     button.innerHTML = `
-      <span class="select-card__icon">
-        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-          <path d="M21.1345 11.0384L25.1729 7L32.24 14.0672L28.2016 18.1056M21.1345 11.0384L7.41819 24.7547C7.15043 25.0224 7 25.3856 7 25.7642V32.24H13.4758C13.8545 32.24 14.2176 32.0897 14.4854 31.8218L28.2016 18.1056M21.1345 11.0384L28.2016 18.1056" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-        </svg>
-      </span>
-      <span class="select-card__body">
-        <span class="select-card__title">${pack.name}</span>
-        <span class="select-card__description">${pack.tagline}</span>
+      ${radioDot()}
+      <span class="radio-item__body">
+        <span class="radio-item__label">${pack.name}</span>
       </span>
     `;
     if (pack.id === selected) {

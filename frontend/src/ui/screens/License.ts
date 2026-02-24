@@ -65,7 +65,6 @@ export function renderLicense(store: Store): HTMLElement {
     <span class="stage__icon">${LICENSE_ICON}</span>
     <div>
       <h2 class="stage__title">License Agreement</h2>
-      <p class="stage__subtitle">Please review before continuing.</p>
     </div>
   `;
 
@@ -77,7 +76,7 @@ export function renderLicense(store: Store): HTMLElement {
   licensePanel.setAttribute('role', 'document');
   licensePanel.innerHTML = `
     <div class="license-prose">
-      <p>End-User License Agreement for PolyForge.</p>
+      <p><strong>End-User License Agreement for PolyForge.</strong></p>
       <p>PLEASE READ THIS AGREEMENT CAREFULLY. IT CONTAINS IMPORTANT TERMS THAT AFFECT YOU AND YOUR USE OF THE SOFTWARE. BY INSTALLING, COPYING OR USING THE SOFTWARE, YOU AGREE TO BE BOUND BY THE TERMS OF THIS AGREEMENT. IF YOU DO NOT AGREE TO THESE TERMS, DO NOT INSTALL, COPY, OR USE THE SOFTWARE.</p>
       <p>This End-User License Agreement (EULA) is a legal agreement between you--either an individual or a single entity--and the author(s) of this Software for the product identified above, which includes computer software and may include associated media, and online or electronic documentation ("Software").</p>
       <p>By installing, copying, or otherwise using the Software, you agree to be bounded by the terms of this EULA. If you do not agree to the terms of this EULA, do not install or use the Software.</p>
