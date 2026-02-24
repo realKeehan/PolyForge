@@ -3,12 +3,18 @@ import { Step, type Mode } from '../../app/types';
 import { createSocialLinks } from '../components/social';
 
 const HERO_ICON = `
-  <svg viewBox="0 0 52 52" fill="none" aria-hidden="true">
-    <circle cx="26" cy="26" r="24" stroke="#C8A4FF" stroke-opacity="0.25" stroke-width="2.5"></circle>
-    <path d="M26.0002 28.9997C28.7616 28.9997 31.0002 26.7612 31.0002 23.9997C31.0002 21.2383 28.7616 18.9997 26.0002 18.9997C23.2387 18.9997 21.0002 21.2383 21.0002 23.9997C21.0002 26.7612 23.2387 28.9997 26.0002 28.9997Z" stroke="#EBD7FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
-    <path d="M38.9995 40.9998C38.9995 35.4768 33.5224 30.9998 27.9995 30.9998H23.9995C18.4765 30.9998 12.9995 35.4768 12.9995 40.9998" stroke="#EBD7FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <path d="M20 22C22.7614 22 25 19.7614 25 17C25 14.2386 22.7614 12 20 12C17.2386 12 15 14.2386 15 17C15 19.7614 17.2386 22 20 22Z" stroke="#8F00FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M33 34C33 28.477 27.523 24 22 24H18C12.477 24 7 28.477 7 34" stroke="#8F00FF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
   </svg>
 `;
+
+const MODE_ICONS: Record<string, string> = {
+  install: `<svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#8F00FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  update: `<svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M4 4v5h5M20 20v-5h-5" stroke="#8F00FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 9A9 9 0 005.64 5.64L4 4m16 16l-1.64-1.64A9 9 0 013.51 15" stroke="#8F00FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  uninstall: `<svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" stroke="#8F00FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  repair: `<svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" stroke="#8F00FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+};
 
 const MODE_CARDS: Array<{ id: Mode; label: string }> = [
   { id: 'install', label: 'Install Modpack' },
@@ -50,7 +56,8 @@ export function renderMode(store: Store): HTMLElement {
   nextButton.type = 'button';
   nextButton.className = 'btn btn--primary';
   nextButton.textContent = 'Next';
-  nextButton.disabled = !store.getState().selectedMode;
+  // Install is selected by default so always enabled
+  nextButton.disabled = false;
   actions.append(backButton, nextButton);
   footer.append(social, actions);
 
@@ -67,18 +74,21 @@ export function renderMode(store: Store): HTMLElement {
     nextButton.disabled = false;
   };
 
+  const currentMode = store.getState().selectedMode ?? 'install';
+
   MODE_CARDS.forEach((card) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'radio-item radio-item--card';
+    button.className = 'radio-item radio-item--card radio-item--has-bg';
     button.dataset.mode = card.id;
     button.innerHTML = `
       ${radioDot()}
+      <span class="radio-item__icon">${MODE_ICONS[card.id] ?? ''}</span>
       <span class="radio-item__body">
         <span class="radio-item__label">${card.label}</span>
       </span>
     `;
-    if (store.getState().selectedMode === card.id) {
+    if (currentMode === card.id) {
       button.classList.add('is-active');
     }
     button.addEventListener('click', () => {
@@ -93,7 +103,7 @@ export function renderMode(store: Store): HTMLElement {
   });
 
   nextButton.addEventListener('click', () => {
-    const selected = store.getState().selectedMode ?? MODE_CARDS[0].id;
+    const selected = store.getState().selectedMode ?? 'install';
     activate(selected);
     store.setStep(Step.Modpack);
   });

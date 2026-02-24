@@ -86,21 +86,25 @@ export class Store {
   }
 
   setMode(mode: Mode) {
+    if (this.state.selectedMode === mode) return;
     this.state = { ...this.state, selectedMode: mode };
     this.emit();
   }
 
   setModpack(modpack: string) {
+    if (this.state.selectedModpack === modpack) return;
     this.state = { ...this.state, selectedModpack: modpack };
     this.emit();
   }
 
   setInstaller(option: OptionDescriptor | undefined) {
+    if (this.state.selectedInstaller?.id === option?.id) return;
     this.state = { ...this.state, selectedInstaller: option };
     this.emit();
   }
 
   setPath(path: string | undefined) {
+    if (this.state.selectedPath === path) return;
     this.state = { ...this.state, selectedPath: path };
     this.emit();
   }

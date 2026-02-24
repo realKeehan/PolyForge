@@ -1,5 +1,6 @@
 import { APP_VERSION } from '../../app/constants';
 import type { Store } from '../../app/state';
+import stdoutSfx from '../../assets/audio/stdout.wav';
 
 const DEFAULT_DELAY = 45;
 const FINAL_DELAY = 1000;
@@ -8,6 +9,14 @@ interface LoadingStep {
   text: string;
   delay?: number;
   highlight?: boolean;
+}
+
+function playStdout() {
+  try {
+    const audio = new Audio(stdoutSfx);
+    audio.volume = 0.3;
+    audio.play().catch(() => {});
+  } catch {}
 }
 
 function formatTimestamp(date: Date): string {
@@ -31,26 +40,56 @@ function buildSteps(): LoadingStep[] {
   const timezone = resolveTimezoneName(now);
 
   return [
-    { text: `Welcome to PolyForge!`, highlight: true },
-    { text: `PolyForge version ${APP_VERSION} boot at ${timestamp}`, delay: 100 },
-    { text: `Timezone: ${timezone}` },
-    { text: 'Loading active theme' },
+    { text: 'Welcome to PolyForge!', highlight: true },
+    { text: `PolyForge version ${APP_VERSION} boot at ${timestamp} ${timezone}`, delay: 120 },
+    { text: 'loading startup sequence' },
     { text: 'Locating directories' },
-    { text: 'Inspecting manifests' },
-    { text: 'Checking for updates...' },
-    { text: 'Download time slicing stopwatch started', delay: 80 },
-    { text: 'rsubs bonds bkr, process started' },
-    { text: 'Linking assets...' },
-    { text: 'Bootleggers Bootleg' },
-    { text: 'Boot User to Server in Timeouts', delay: 100 },
+    { text: 'Loading splash images' },
+    { text: 'Checking for updates...', delay: 160 },
+    { text: 'Quantumn time slicing stopwatch started', delay: 80 },
+    { text: 'yadda yadda etc. process started', delay: 140 },
+    { text: 'Checked on Jerry', delay: 90 },
+    { text: 'Bootloaders Found', delay: 120 },
+    { text: 'Bootleggers Spotted', delay: 140 },
+    { text: 'Sent data to Server in Timbuktu', delay: 180 },
     { text: 'Reticulating splines' },
     { text: 'Configuring arcane runes' },
-    { text: 'Alt-clicking nether portals' },
-    { text: 'cake mode' },
+    { text: 'Polishing magic orbs' },
+    { text: 'Re-aligning nether portals' },
+    { text: 'John Died' },
+    { text: '', delay: 500 },
+    { text: 'Sent pipe bomb to the bungalow' },
+    { text: 'Feeding the quantum hamsters' },
+    { text: 'Whispering sweet nothings to the CPU fan' },
+    { text: 'Tempering cosmic rays' },
+    { text: 'Enchanting progress bars with glitter' },
+    { text: 'Untangling spaghetti code' },
+    { text: 'Defragmenting existential dread' },
+    { text: 'Calibrating ducks in a row' },
+    { text: 'Warming up flux capacitor' },
+    { text: 'Compressing logs with duct tape' },
+    { text: 'Negotiating with unpaid interns' },
+    { text: 'Smoothing jagged timelines' },
+    { text: 'Priming coffee machine responsibly', delay: 90 },
+    { text: 'Counting turtles (and also turtels)' },
+    { text: 'Checking insomnia logs for phantoms' },
+    { text: 'Re-seating loose bolts' },
     { text: '' },
-    { text: 'Sort pigs best to the bongoing' },
-    { text: 'Reading the quantum bookmarks', delay: 80 },
-    { text: 'Deploying anti-monster 1s to kill the duo', delay: 160 },
+    { text: 'Optimizing interdimensional aerodynamics' },
+    { text: 'Applying owl-based compression' },
+    { text: 'Spinning up conspiracy API' },
+    { text: 'Brewing speed potion (IRL edition)' },
+    { text: "Consulting magic 8-ball: 'Signs point to yes'", delay: 110 },
+    { text: 'Taming stray threads' },
+    { text: 'Loading gremlins (do not feed after midnight)' },
+    { text: 'Rehydrating dehydrated water' },
+    { text: 'Installing extra RAM stickers' },
+    { text: 'Teaching rubber ducks conflict resolution' },
+    { text: 'Preheating furnace to 9001°', delay: 100 },
+    { text: 'Aligning quantum foam with bedrock reality' },
+    { text: "Verifying 'it works on my machine' certificate" },
+    { text: 'Hydrating developers' },
+    { text: 'Petting penguins' },
   ];
 }
 
@@ -62,6 +101,9 @@ function runLoadingSequence(store: Store) {
     accumulated += step.delay ?? DEFAULT_DELAY;
     window.setTimeout(() => {
       store.appendLoadingMessage(step.text);
+      if (step.text.length > 0) {
+        playStdout();
+      }
       if (index === steps.length - 1) {
         window.setTimeout(() => {
           store.markLoadingComplete();
