@@ -1,7 +1,5 @@
 import { APP_VERSION } from '../../app/constants';
 
-const ABOUT_COPY = `PolyForge Launcher\nBuild ${APP_VERSION}`;
-
 function createAboutIcon(): string {
   return `
     <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
@@ -62,6 +60,47 @@ function createHeartIcon(idPrefix: string): string {
   `;
 }
 
+function showAboutDialog() {
+  // Remove existing dialog if any
+  const existing = document.querySelector('.about-dialog-overlay');
+  if (existing) {
+    existing.remove();
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'about-dialog-overlay';
+  overlay.innerHTML = `
+    <div class="about-dialog">
+      <h3 class="about-dialog__title">About PolyForge</h3>
+      <p class="about-dialog__version">Version ${APP_VERSION}</p>
+      <p class="about-dialog__desc">
+        PolyForge is a modpack installer and launcher manager for Minecraft.
+        It simplifies the process of installing, updating, and managing modpacks
+        across multiple launcher platforms.
+      </p>
+      <p class="about-dialog__desc">
+        Built with care for the community. Select your preferred launcher,
+        choose a modpack, and PolyForge handles the rest.
+      </p>
+      <button type="button" class="btn btn--primary about-dialog__close">Close</button>
+    </div>
+  `;
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) {
+      overlay.remove();
+    }
+  });
+
+  const closeBtn = overlay.querySelector('.about-dialog__close') as HTMLButtonElement;
+  closeBtn.addEventListener('click', () => {
+    overlay.remove();
+  });
+
+  document.querySelector('.app-window')?.appendChild(overlay);
+}
+
 export function createSocialLinks(): HTMLElement {
   const unique = `pf-${Math.random().toString(36).slice(2, 8)}`;
   const container = document.createElement('div');
@@ -71,20 +110,20 @@ export function createSocialLinks(): HTMLElement {
     <button type="button" class="social-links__button social-links__button--primary" data-action="about" aria-label="About">
       ${createAboutIcon()}
     </button>
-    <a class="social-links__button" href="https://polyforge.gg" target="_blank" rel="noopener noreferrer" aria-label="Website">
+    <a class="social-links__button" href="https://polyforge.dev" target="_blank" rel="noopener noreferrer" aria-label="Website">
       ${createGlobeIcon(unique)}
     </a>
-    <a class="social-links__button" href="https://github.com/PolyForge" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+    <a class="social-links__button" href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
       ${createGithubIcon(unique)}
     </a>
-    <a class="social-links__button" href="https://discord.gg/polyforge" target="_blank" rel="noopener noreferrer" aria-label="Community">
+    <a class="social-links__button" href="https://keehan.co/donate" target="_blank" rel="noopener noreferrer" aria-label="Donate">
       ${createHeartIcon(unique)}
     </a>
   `;
 
   const aboutButton = container.querySelector('[data-action="about"]') as HTMLButtonElement;
   aboutButton.addEventListener('click', () => {
-    window.alert(ABOUT_COPY);
+    showAboutDialog();
   });
 
   return container;

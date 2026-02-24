@@ -10,10 +10,65 @@ import { renderMode } from './screens/Mode';
 import { renderModpack } from './screens/Modpack';
 import { renderInstaller } from './screens/Installer';
 import { renderStatus } from './screens/Status';
-import brandIcon from '../assets/app-icon.png';
+import brandIcon from '../assets/app-icon.ico';
+
+const KONAMI_CODE = [
+  'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+  'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
+  'KeyB', 'KeyA',
+];
+
+const EASTER_EGG_VIDEO = 'https://keehan.co/KUMI_Files/NiceComputer.mp4';
+
+function setupKonamiCode(shell: HTMLElement) {
+  let konamiIndex = 0;
+
+  document.addEventListener('keydown', (event) => {
+    if (event.code === KONAMI_CODE[konamiIndex]) {
+      konamiIndex++;
+      if (konamiIndex === KONAMI_CODE.length) {
+        konamiIndex = 0;
+        showEasterEgg(shell);
+      }
+    } else {
+      konamiIndex = 0;
+    }
+  });
+}
+
+function showEasterEgg(shell: HTMLElement) {
+  const overlay = document.createElement('div');
+  overlay.className = 'easter-egg-overlay';
+  overlay.innerHTML = `
+    <video class="easter-egg-video" autoplay controls>
+      <source src="${EASTER_EGG_VIDEO}" type="video/mp4" />
+    </video>
+  `;
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) {
+      const video = overlay.querySelector('video');
+      if (video) {
+        video.pause();
+        video.src = '';
+      }
+      overlay.remove();
+    }
+  });
+
+  const video = overlay.querySelector('video') as HTMLVideoElement;
+  video.addEventListener('ended', () => {
+    overlay.remove();
+  });
+
+  shell.appendChild(overlay);
+}
 
 export async function createApp(root: HTMLElement) {
   const store = createStore();
+
+  // Default to install mode
+  store.setMode('install');
 
   const frame = document.createElement('div');
   frame.className = 'app-root';
@@ -24,8 +79,10 @@ export async function createApp(root: HTMLElement) {
   const header = document.createElement('header');
   header.className = 'app-header';
   header.innerHTML = `
-    <div class="app-header__brand" role="presentation">
+    <div class="app-header__side" role="presentation">
       <img class="app-header__logo" src="${brandIcon}" alt="PolyForge logo" draggable="false" />
+    </div>
+    <div class="app-header__center" role="presentation">
       <span class="app-header__title">PolyForge v${APP_VERSION}</span>
     </div>
     <div class="app-header__controls" role="toolbar" aria-label="Window controls">
@@ -77,6 +134,9 @@ export async function createApp(root: HTMLElement) {
   shell.append(header, contentHost, overlay);
   frame.appendChild(shell);
   root.appendChild(frame);
+
+  // Setup Konami code easter egg (works on any screen)
+  setupKonamiCode(shell);
 
   const render = () => {
     const state = store.getState();

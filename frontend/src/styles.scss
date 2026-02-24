@@ -34,7 +34,7 @@ body {
 body {
   margin: 0;
   height: 100%;
-  background: var(--kumi-dark);
+  background: transparent;
   color: var(--text-primary);
   font: 400 14px/1.5 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
   -webkit-font-smoothing: antialiased;
@@ -57,7 +57,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: var(--kumi-dark);
+  background: transparent;
 }
 
 .app-window {
@@ -65,7 +65,7 @@ body {
   max-width: 750px;
   height: 485px;
   max-height: 485px;
-  background: var(--kumi-dark);
+  background: rgba(17, 17, 17, 0.88);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -89,15 +89,36 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 0.5rem;
-  background: var(--kumi-dark);
+  background: rgba(17, 17, 17, 0.95);
   color: var(--kumi-gray);
   -webkit-app-region: drag;
+  --wails-draggable: drag;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 50;
+  border-radius: 10px 10px 0 0;
+}
+
+.app-header__side {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+  -webkit-app-region: drag;
+  --wails-draggable: drag;
+  min-width: 80px;
+}
+
+.app-header__center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: drag;
+  --wails-draggable: drag;
 }
 
 .app-header__brand {
@@ -123,10 +144,11 @@ body {
 }
 
 .app-header__title {
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--kumi-gray);
   -webkit-app-region: drag;
+  letter-spacing: 0.02em;
 }
 
 .app-header__controls {
@@ -134,6 +156,7 @@ body {
   align-items: center;
   gap: 1rem;
   -webkit-app-region: no-drag;
+  --wails-draggable: no-drag;
 }
 
 .window-control {
@@ -150,6 +173,7 @@ body {
   cursor: pointer;
   transition: color 0.15s ease;
   -webkit-app-region: no-drag;
+  --wails-draggable: no-drag;
 }
 
 .window-control--close {
@@ -165,14 +189,30 @@ body {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background-color: var(--kumi-dark-secondary);
-  background-image: var(--topography);
-  background-size: cover;
-  background-position: center;
+  background: var(--kumi-dark-secondary);
   padding: 1rem;
   padding-top: 0.75rem;
   overflow: hidden;
   position: relative;
+  border-radius: 0 0 10px 10px;
+}
+
+.app-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--topography);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+.app-content > * {
+  position: relative;
+  z-index: 1;
 }
 
 @media (min-width: 640px) {
@@ -729,8 +769,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--kumi-dark-secondary);
-  border-radius: 6px;
+  background: transparent;
 }
 
 .startup-splash__image {
@@ -880,6 +919,37 @@ body {
   font-weight: 400;
 }
 
+/* Background variant for radio items (always visible bg) */
+.radio-item--has-bg {
+  background: rgba(24, 20, 27, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.radio-item--has-bg:hover {
+  background: rgba(33, 33, 33, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.radio-item--has-bg.is-active {
+  background: var(--kumi-purple-bg);
+  border-color: var(--kumi-purple);
+}
+
+/* Icon slot in radio items (for mode screen) */
+.radio-item__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.radio-item__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
 /* ── Status Log Dots ───────────────────────────────── */
 
 .log-line {
@@ -926,4 +996,76 @@ body {
   flex-direction: column;
   gap: 0.2rem;
   white-space: normal;
+}
+
+/* ── About Dialog ──────────────────────────────────── */
+
+.about-dialog-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(17, 17, 17, 0.82);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+}
+
+.about-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 420px;
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  background: rgba(24, 20, 27, 0.98);
+  border: 1px solid rgba(143, 0, 255, 0.25);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.about-dialog__title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: 'M PLUS Rounded 1c', 'JetBrains Mono', monospace;
+}
+
+.about-dialog__version {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--kumi-purple);
+  letter-spacing: 0.06em;
+}
+
+.about-dialog__desc {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.about-dialog__close {
+  margin-top: 0.5rem;
+}
+
+/* ── Easter Egg Overlay (Konami Code) ──────────────── */
+
+.easter-egg-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  cursor: pointer;
+}
+
+.easter-egg-video {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
 }

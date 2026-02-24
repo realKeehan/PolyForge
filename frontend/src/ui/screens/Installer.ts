@@ -13,6 +13,45 @@ const LAUNCHER_ICON = `
   </svg>
 `;
 
+// Test dummy launcher option
+const TEST_DUMMY: OptionDescriptor = {
+  id: '__test_dummy__',
+  title: 'Test',
+  description: 'Dummy test launcher for development',
+  requiresPath: false,
+};
+
+// Dummy log messages for test
+const DUMMY_LOG_MESSAGES = [
+  { level: 'info' as const, message: 'Starting Install...' },
+  { level: 'info' as const, message: '' },
+  { level: 'info' as const, message: 'Creating required directories...' },
+  { level: 'info' as const, message: '✅ Directory exists: C:\\Users\\USER\\AppData\\Roaming\\BetterMinecraft' },
+  { level: 'info' as const, message: '✅ Directory exists: C:\\Users\\USER\\AppData\\Roaming\\BetterMinecraft\\data' },
+  { level: 'info' as const, message: '✅ Directory exists: C:\\Users\\USER\\AppData\\Roaming\\BetterMinecraft\\themes' },
+  { level: 'info' as const, message: '✅ Directory exists: C:\\Users\\USER\\AppData\\Roaming\\BetterMinecraft\\plugins' },
+  { level: 'info' as const, message: '✅ Directories created' },
+  { level: 'info' as const, message: '' },
+  { level: 'info' as const, message: 'Downloading asar file' },
+  { level: 'info' as const, message: '✅ Downloaded BetterMinecraft version undefined from the official website' },
+  { level: 'info' as const, message: '✅ Package downloaded' },
+  { level: 'info' as const, message: '' },
+  { level: 'info' as const, message: 'Injecting shims...' },
+  { level: 'info' as const, message: 'Injecting into: C:\\Users\\USER\\AppData\\Local\\Minecraft\\app-1.0.9211\\modules\\Minecraft_desktop_core-1\\Minecraft_desktop_core' },
+  { level: 'info' as const, message: '✅ Injection successful' },
+  { level: 'info' as const, message: '✅ Shims injected' },
+  { level: 'info' as const, message: '' },
+  { level: 'info' as const, message: 'Restarting Minecraft...' },
+  { level: 'info' as const, message: 'Attempting to kill Minecraft' },
+  { level: 'warning' as const, message: '✅ Minecraft not running' },
+  { level: 'info' as const, message: '✅ Minecraft restarted' },
+  { level: 'info' as const, message: '' },
+  { level: 'info' as const, message: 'Install completed!' },
+];
+
+// Options to exclude from launcher list
+const EXCLUDED_OPTIONS = ['about', 'cake'];
+
 function radioDot(): string {
   return `<span class="radio-dot"><span class="radio-dot__inner"></span></span>`;
 }
@@ -20,6 +59,9 @@ function radioDot(): string {
 export function renderInstaller(store: Store): HTMLElement {
   const container = document.createElement('section');
   container.className = 'screen screen--installer';
+
+  // Track selection locally to avoid triggering re-renders (which reset scroll)
+  let localSelected: OptionDescriptor | undefined = store.getState().selectedInstaller;
 
   const header = document.createElement('div');
   header.className = 'stage__header';
@@ -63,7 +105,7 @@ export function renderInstaller(store: Store): HTMLElement {
   runButton.type = 'button';
   runButton.className = 'btn btn--primary';
   runButton.textContent = 'Install';
-  runButton.disabled = !store.getState().selectedInstaller;
+  runButton.disabled = !localSelected;
 
   actions.append(backButton, runButton);
   footer.append(social, actions);
@@ -85,42 +127,48 @@ export function renderInstaller(store: Store): HTMLElement {
     errorBox.textContent = message;
   };
 
+  // Local-only selection update — does NOT touch the store, so no re-render
   const selectOption = (option: OptionDescriptor | undefined) => {
-    store.setInstaller(option);
+    localSelected = option;
     setError(null);
+
     optionButtons.forEach((button) => button.classList.remove('is-active'));
     if (option) {
       const button = optionButtons.get(option.id);
-      if (button) {
-        button.classList.add('is-active');
-      }
+      if (button) button.classList.add('is-active');
     }
+
     if (option && option.requiresPath) {
       pathField.hidden = false;
       pathLabel.textContent = option.pathLabel ?? 'Installation path';
       const existing = store.getState().selectedPath ?? '';
-      if (existing) {
-        pathInput.value = existing;
-      }
+      if (existing) pathInput.value = existing;
       runButton.disabled = pathInput.value.trim() === '';
     } else {
       pathField.hidden = true;
       pathInput.value = '';
-      store.setPath(undefined);
       runButton.disabled = !option;
     }
   };
 
-  store.getState().options.forEach((option) => {
+  // Filter out excluded options and add real backend options
+  const filteredOptions = store.getState().options.filter(
+    (opt) => !EXCLUDED_OPTIONS.includes(opt.id.toLowerCase()),
+  );
+
+  // Build combined list: backend options + test dummy
+  const allOptions: OptionDescriptor[] = [...filteredOptions, TEST_DUMMY];
+
+  allOptions.forEach((option) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'radio-item';
+    button.className = 'radio-item radio-item--has-bg';
     button.dataset.optionId = option.id;
     button.innerHTML = `
       ${radioDot()}
       <span class="radio-item__label">${option.title}</span>
     `;
-    if (store.getState().selectedInstaller?.id === option.id) {
+    if (localSelected?.id === option.id) {
       button.classList.add('is-active');
     }
     button.addEventListener('click', () => {
@@ -137,8 +185,7 @@ export function renderInstaller(store: Store): HTMLElement {
   });
 
   browseButton.addEventListener('click', async () => {
-    const selected = store.getState().selectedInstaller;
-    const chosen = await browseForDirectory(selected?.pathLabel ?? 'Select folder');
+    const chosen = await browseForDirectory(localSelected?.pathLabel ?? 'Select folder');
     if (chosen) {
       pathInput.value = chosen;
       store.setPath(chosen);
@@ -147,15 +194,30 @@ export function renderInstaller(store: Store): HTMLElement {
   });
 
   backButton.addEventListener('click', () => {
+    // Commit selection to store before leaving
+    store.setInstaller(localSelected);
     store.setStep(Step.Modpack);
   });
 
   runButton.addEventListener('click', async () => {
-    const option = store.getState().selectedInstaller;
+    const option = localSelected;
     if (!option) {
       setError('Select an installer option to continue.');
       return;
     }
+
+    // Commit selection to store
+    store.setInstaller(option);
+
+    // Handle test dummy launcher
+    if (option.id === TEST_DUMMY.id) {
+      store.clearLogs();
+      store.appendLogs(DUMMY_LOG_MESSAGES);
+      store.setResult({ success: true, messages: DUMMY_LOG_MESSAGES });
+      store.setStep(Step.Status);
+      return;
+    }
+
     if (option.requiresPath) {
       const path = pathInput.value.trim();
       if (!path) {
@@ -186,10 +248,10 @@ export function renderInstaller(store: Store): HTMLElement {
     }
   });
 
-  const current = store.getState().selectedInstaller;
-  if (current) {
-    selectOption(current);
-    if (current.requiresPath && store.getState().selectedPath) {
+  // Restore selection state (local only, no store emit)
+  if (localSelected) {
+    selectOption(localSelected);
+    if (localSelected.requiresPath && store.getState().selectedPath) {
       pathInput.value = store.getState().selectedPath ?? '';
       runButton.disabled = false;
     }

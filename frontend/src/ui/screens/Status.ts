@@ -1,3 +1,4 @@
+import { Quit } from '@wailsapp/runtime';
 import type { Store } from '../../app/state';
 import { Step } from '../../app/types';
 import { createSocialLinks } from '../components/social';
@@ -81,14 +82,23 @@ export function renderStatus(store: Store): HTMLElement {
     </div>
   `;
 
+  // Scrollable log panel with sticky copy button (like license agreement)
   const logPanel = document.createElement('div');
-  logPanel.className = 'log-panel log-panel--formatted';
-  logPanel.innerHTML = buildLogHTML(store);
+  logPanel.className = 'scroll-panel log-panel--formatted';
 
+  const logContent = document.createElement('div');
+  logContent.className = 'log-panel__content';
+  logContent.innerHTML = buildLogHTML(store);
+
+  const copyWrap = document.createElement('div');
+  copyWrap.className = 'scroll-panel__copy';
   const copyButton = document.createElement('button');
   copyButton.type = 'button';
-  copyButton.className = 'copy-button log-panel__copy';
+  copyButton.className = 'copy-button';
   copyButton.textContent = 'Copy';
+  copyWrap.appendChild(copyButton);
+
+  logPanel.append(logContent, copyWrap);
 
   const footer = document.createElement('footer');
   footer.className = 'screen-footer';
@@ -110,7 +120,6 @@ export function renderStatus(store: Store): HTMLElement {
   footer.append(social, actions);
 
   container.append(header, logPanel, footer);
-  logPanel.appendChild(copyButton);
 
   // Auto-scroll log panel to bottom
   requestAnimationFrame(() => {
@@ -136,8 +145,13 @@ export function renderStatus(store: Store): HTMLElement {
     store.setStep(Step.Installer);
   });
 
+  // Close button quits the app (same as header X button)
   closeButton.addEventListener('click', () => {
-    store.setStep(Step.Mode);
+    try {
+      Quit();
+    } catch (error) {
+      console.error('Failed to quit application', error);
+    }
   });
 
   return container;

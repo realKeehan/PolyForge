@@ -19,7 +19,7 @@ const MODPACKS = [
   { id: 'event-pack', name: 'Event Pack' },
 ];
 
-let cleanInstallPreference = true;
+let cleanInstallPreference = false;
 
 function radioDot(): string {
   return `<span class="radio-dot"><span class="radio-dot__inner"></span></span>`;
@@ -107,7 +107,7 @@ export function renderModpack(store: Store): HTMLElement {
   MODPACKS.forEach((pack) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'radio-item radio-item--card';
+    button.className = 'radio-item radio-item--card radio-item--has-bg';
     button.dataset.modpack = pack.id;
     button.innerHTML = `
       ${radioDot()}
