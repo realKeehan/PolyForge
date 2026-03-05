@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Security — PolyForge</title>
+  <meta name="description" content="PolyForge security scans, analysis results, and transparency information." />
+  <link rel="icon" href="./favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true"><canvas class="dot-canvas" id="dotCanvas"></canvas></div>
+
+  <header class="site-header" id="header">
+    <div class="container header-row">
+      <a class="brand" href="./" aria-label="PolyForge home">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span class="brand-name">PolyForge</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="./">Home</a>
+        <a href="./supported.html">Launchers</a>
+        <a href="./downloads.html">Downloads</a>
+        <a href="./security.html">Security</a>
+        <a href="./faq.html">FAQ</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
+          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+        </button>
+        <a class="btn btn-primary btn-sm" href="./downloads.html">Download</a>
+        <button class="iconbtn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+      </div>
+    </div>
+    <div class="container mobile-menu" id="mobileMenu">
+      <a href="./">Home</a>
+      <a href="./supported.html">Launchers</a>
+      <a href="./downloads.html">Downloads</a>
+      <a href="./security.html">Security</a>
+      <a href="./faq.html">FAQ</a>
+      <div class="mobile-row">
+        <button class="icon-toggle" id="themeToggleSm" type="button" aria-label="Toggle theme">
+          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+        </button>
+        <a class="btn btn-primary" href="./downloads.html">Download</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container page-hero">
+      <h1>Security & transparency</h1>
+      <p>PolyForge is scanned across multiple trusted malware analysis platforms. We believe in full transparency about our security posture.</p>
+    </div>
+
+    <!-- Security overview -->
+    <section class="container section" style="padding-top:0">
+      <div class="grid grid-3">
+        <article class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Multi-scanner verified</h3>
+          <p>Every release is submitted to multiple independent security analysis platforms before distribution.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Open source</h3>
+          <p>The full source code is available on GitHub for anyone to audit, review, and build from source.</p>
+        </article>
+        <article class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <h3>About false positives</h3>
+          <p>Go-compiled binaries are sometimes flagged by heuristic engines. This is a known false-positive pattern across the Go ecosystem, not a sign of malware.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Scan providers -->
+    <section class="container section">
+      <header class="section-head section-head--center">
+        <h2>Analysis platforms</h2>
+        <p>PolyForge is submitted to these security analysis providers. Click to visit each platform and verify results yourself.</p>
+      </header>
+
+      <div class="provider-grid">
+
+        <a class="provider-card" href="https://www.virustotal.com/gui/home/upload" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">🛡️</div>
+          <h3>VirusTotal</h3>
+          <p>Aggregates 70+ antivirus engines and URL/domain scanning services for comprehensive malware detection.</p>
+          <span class="provider-link">View on VirusTotal →</span>
+        </a>
+
+        <a class="provider-card" href="https://hybrid-analysis.com/" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">🔬</div>
+          <h3>Hybrid Analysis</h3>
+          <p>CrowdStrike's free malware analysis service providing deep behavioral analysis in virtual environments.</p>
+          <span class="provider-link">View on Hybrid Analysis →</span>
+        </a>
+
+        <a class="provider-card" href="https://any.run/" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">▶️</div>
+          <h3>ANY.RUN</h3>
+          <p>Interactive online sandbox for dynamic malware analysis with real-time process monitoring.</p>
+          <span class="provider-link">View on ANY.RUN →</span>
+        </a>
+
+        <a class="provider-card" href="https://metadefender.opswat.com/" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">🔒</div>
+          <h3>OPSWAT MetaDefender</h3>
+          <p>Multi-scanning platform that checks files against 30+ anti-malware engines simultaneously.</p>
+          <span class="provider-link">View on MetaDefender →</span>
+        </a>
+
+        <a class="provider-card" href="https://analyze.intezer.com/" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">🧬</div>
+          <h3>Intezer Analyze</h3>
+          <p>Code-level malware analysis using genetic code technology to detect threats by analyzing code DNA.</p>
+          <span class="provider-link">View on Intezer →</span>
+        </a>
+
+        <a class="provider-card" href="https://virusscan.jotti.org/" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">🔍</div>
+          <h3>Jotti's Malware Scan</h3>
+          <p>Free online service that lets you scan files with multiple antivirus programs simultaneously.</p>
+          <span class="provider-link">View on Jotti →</span>
+        </a>
+
+        <a class="provider-card" href="https://capesandbox.com/analysis/" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">🏖️</div>
+          <h3>CAPE Sandbox</h3>
+          <p>Open-source automated malware analysis system with advanced behavioral and config extraction.</p>
+          <span class="provider-link">View on CAPE →</span>
+        </a>
+
+        <a class="provider-card" href="https://www.abuseipdb.com/" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">🌐</div>
+          <h3>AbuseIPDB</h3>
+          <p>IP address reputation database to verify that PolyForge's network activity connects to trusted endpoints.</p>
+          <span class="provider-link">View on AbuseIPDB →</span>
+        </a>
+
+        <a class="provider-card" href="https://bazaar.abuse.ch/" target="_blank" rel="noopener noreferrer">
+          <div class="provider-icon">📦</div>
+          <h3>MalwareBazaar</h3>
+          <p>A project by abuse.ch for sharing malware samples — verify PolyForge has no known malware signatures.</p>
+          <span class="provider-link">View on MalwareBazaar →</span>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- Transparency statement -->
+    <section class="container section">
+      <div class="divider"></div>
+      <header class="section-head" style="margin-top:24px">
+        <h2>Our commitment</h2>
+      </header>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3>Transparency</h3>
+          <p>PolyForge is fully open-source. Every line of code, every build artifact, and every release is available for public inspection. We don't hide behind closed binaries.</p>
+        </article>
+        <article class="card">
+          <h3>No data collection</h3>
+          <p>PolyForge does not collect telemetry, personal data, or usage analytics. Your installs, your modpacks, and your launcher data stay entirely on your machine.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="container section">
+      <div class="cta-block">
+        <div>
+          <h2>Questions about security?</h2>
+          <p>Check the FAQ or reach out on GitHub if you have concerns about PolyForge's security.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="btn btn-ghost btn-sm" href="./faq.html">Read FAQ</a>
+          <a class="btn btn-ghost btn-sm" href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="container footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <a class="brand" href="./"><span class="brand-dot" aria-hidden="true"></span><span class="brand-name">PolyForge</span></a>
+          <p>Universal modpack installer for Minecraft launchers.</p>
+        </div>
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="./downloads.html">Downloads</a>
+            <a href="./supported.html">Launchers</a>
+            <a href="./security.html">Security</a>
+            <a href="./faq.html">FAQ</a>
+          </div>
+          <div class="footer-col">
+            <h4>Project</h4>
+            <a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">GitHub</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="./privacy.html">Privacy</a>
+            <a href="./terms.html">Terms</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="mono muted">&copy; <span id="year"></span> PolyForge</div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="./main.js"></script>
+</body>
+</html>
