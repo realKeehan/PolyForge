@@ -64,6 +64,14 @@ func (s *Service) Options() []OptionDescriptor {
 		{ID: "feather", Title: "Feather Install", Description: "Install into Feather client.", RequiresPath: true, PathLabel: "Feather Root"},
 		{ID: "technic", Title: "Technic Install", Description: "Install into Technic.", RequiresPath: true, PathLabel: "Technic Root"},
 		{ID: "polymc", Title: "PolyMC Install", Description: "Install into PolyMC.", RequiresPath: true, PathLabel: "PolyMC Root"},
+		{ID: "sklauncher", Title: "SK Launcher Install", Description: "Install into SK Launcher.", RequiresPath: true, PathLabel: "SK Launcher Root"},
+		{ID: "freesm", Title: "Freesm Launcher Install", Description: "Install into Freesm Launcher.", RequiresPath: true, PathLabel: "Freesm Root"},
+		{ID: "elyprism", Title: "ElyPrism Install", Description: "Install into ElyPrism.", RequiresPath: true, PathLabel: "ElyPrism Root"},
+		{ID: "shatteredprism", Title: "ShatteredPrism Install", Description: "Install into ShatteredPrism.", RequiresPath: true, PathLabel: "ShatteredPrism Root"},
+		{ID: "qwertz", Title: "QWERTZ Install", Description: "Install into QWERTZ Launcher.", RequiresPath: true, PathLabel: "QWERTZ Root"},
+		{ID: "fjord", Title: "Fjord Launcher Install", Description: "Install into Fjord Launcher.", RequiresPath: true, PathLabel: "Fjord Root"},
+		{ID: "hmcl", Title: "HMCL Install", Description: "Install into HMCL.", RequiresPath: true, PathLabel: "HMCL Root"},
+		{ID: "ultimmc", Title: "UltimMC Install", Description: "Install into UltimMC.", RequiresPath: true, PathLabel: "UltimMC Root"},
 		{ID: "custom", Title: "Custom Install", Description: "Install mods into a custom mods folder.", RequiresPath: true, PathLabel: "Mods Folder"},
 		{ID: "manual", Title: "Manual Install", Description: "Download the manual installation zip to the chosen location.", RequiresPath: true, PathLabel: "Target Folder"},
 		{ID: "about", Title: "About", Description: "View information about PolyForge."},
@@ -95,6 +103,22 @@ func (s *Service) Execute(optionID string, payload ExecutionPayload) (*ActionRes
 		return s.installTechnic(payload.Path)
 	case "polymc":
 		return s.installPolyMC(payload.Path)
+	case "sklauncher":
+		return s.installSKLauncher(payload.Path)
+	case "freesm":
+		return s.installFreesm(payload.Path)
+	case "elyprism":
+		return s.installElyPrism(payload.Path)
+	case "shatteredprism":
+		return s.installShatteredPrism(payload.Path)
+	case "qwertz":
+		return s.installQWERTZ(payload.Path)
+	case "fjord":
+		return s.installFjord(payload.Path)
+	case "hmcl":
+		return s.installHMCL(payload.Path)
+	case "ultimmc":
+		return s.installUltimMC(payload.Path)
 	case "custom":
 		return s.installCustomMods(payload.Path)
 	case "manual":

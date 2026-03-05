@@ -54,3 +54,43 @@ func (s *Service) installTechnic(explicitRoot string) (*ActionResult, error) {
 func (s *Service) installPolyMC(explicitRoot string) (*ActionResult, error) {
 	return install.PolyMC(s.installDependencies(), polyMCCandidates(explicitRoot), "", emptyZipWarning)
 }
+
+func (s *Service) installSKLauncher(explicitRoot string) (*ActionResult, error) {
+	return install.SKLauncher(s.installDependencies(), skLauncherCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installFreesm(explicitRoot string) (*ActionResult, error) {
+	return install.Freesm(s.installDependencies(), freesmCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installElyPrism(explicitRoot string) (*ActionResult, error) {
+	return install.ElyPrism(s.installDependencies(), elyPrismCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installShatteredPrism(explicitRoot string) (*ActionResult, error) {
+	return install.ShatteredPrism(s.installDependencies(), shatteredPrismCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installQWERTZ(explicitRoot string) (*ActionResult, error) {
+	return install.QWERTZ(s.installDependencies(), qwertzCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installFjord(explicitRoot string) (*ActionResult, error) {
+	return install.Fjord(s.installDependencies(), fjordCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installHMCL(explicitRoot string) (*ActionResult, error) {
+	return install.HMCL(s.installDependencies(), hmclCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installUltimMC(explicitRoot string) (*ActionResult, error) {
+	return install.UltimMC(s.installDependencies(), ultimMCCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installPolymerium(explicitRoot string) (*ActionResult, error) {
+	return install.Polymerium(s.installDependencies(), polymeriumCandidates(explicitRoot), "", emptyZipWarning)
+}
+
+func (s *Service) installXMCL(explicitRoot string) (*ActionResult, error) {
+	return install.XMCL(s.installDependencies(), xmclCandidates(explicitRoot), "", emptyZipWarning)
+}
