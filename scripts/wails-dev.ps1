@@ -1,6 +1,7 @@
 param(
   [string]$Platform,
-  [switch]$Verbose
+  [switch]$Verbose,
+  [switch]$SkipFrontend
 )
 
 $ErrorActionPreference = 'Stop'
@@ -8,6 +9,13 @@ $ErrorActionPreference = 'Stop'
 $previousEnv = @{
   GOOS = $env:GOOS
   GOARCH = $env:GOARCH
+}
+
+function Ensure-Command {
+  param([string]$CommandName)
+  if (-not (Get-Command $CommandName -ErrorAction SilentlyContinue)) {
+    throw "Required command '$CommandName' was not found in PATH."
+  }
 }
 
 function Clear-GoEnv {
@@ -79,6 +87,30 @@ function Set-GoEnv {
   Set-Item env:GOARCH $Goarch
 }
 
+# ── Ensure required tools ─────────────────────────
+Ensure-Command -CommandName 'go'
+Ensure-Command -CommandName 'wails'
+Ensure-Command -CommandName 'node'
+Ensure-Command -CommandName 'npm'
+
+# ── Frontend dependencies ─────────────────────────
+# Wails dev mode handles the frontend dev server itself, but we need
+# node_modules present so vite can resolve imports.
+if (-not $SkipFrontend) {
+  Write-Host "Installing frontend dependencies..." -ForegroundColor Cyan
+  Push-Location (Join-Path $PSScriptRoot '..' 'frontend')
+  try {
+    & npm ci
+    if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
+  }
+  finally {
+    Pop-Location
+  }
+} else {
+  Write-Host "Skipping frontend install (-SkipFrontend)" -ForegroundColor DarkGray
+}
+
+# ── Go environment ────────────────────────────────
 Clear-GoEnv
 $resolved = Resolve-GoPlatform -Specified $Platform
 Set-GoEnv -Goos $resolved.Goos -Goarch $resolved.Goarch

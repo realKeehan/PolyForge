@@ -85,3 +85,81 @@ func polyMCCandidates(explicit string) []string {
 		filepath.Join(os.Getenv("APPDATA"), "polymc"),
 	}
 }
+
+func skLauncherCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "SKLauncher"),
+		filepath.Join(os.Getenv("APPDATA"), ".sklauncher"),
+	}
+}
+
+func freesmCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "FreesmLauncher"),
+		filepath.Join(os.Getenv("APPDATA"), "freesmlauncher"),
+	}
+}
+
+func elyPrismCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "ElyPrism"),
+		filepath.Join(os.Getenv("APPDATA"), "ElyPrismLauncher"),
+	}
+}
+
+func shatteredPrismCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "ShatteredPrism"),
+	}
+}
+
+func qwertzCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "QWERTZ"),
+		filepath.Join(os.Getenv("APPDATA"), "qwertz"),
+	}
+}
+
+func fjordCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "FjordLauncher"),
+	}
+}
+
+func hmclCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), ".hmcl"),
+		filepath.Join(os.Getenv("USERPROFILE"), ".hmcl"),
+	}
+}
+
+func ultimMCCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "UltimMC"),
+	}
+}
+
+func polymeriumCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "Polymerium"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Polymerium"),
+	}
+}
+
+func xmclCandidates(explicit string) []string {
+	return []string{
+		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "xmcl"),
+		filepath.Join(os.Getenv("APPDATA"), "X Minecraft Launcher"),
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "xmcl"),
+	}
+}

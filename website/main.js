@@ -1,104 +1,69 @@
-// main.js
+// ══════════════════════════════════════════════════
+// PolyForge - Shared JS (all pages)
+// ══════════════════════════════════════════════════
 (() => {
-  // Launchers: descriptions are ABOUT the launchers (not how PolyForge installs)
-  const launchers = [
-    {
-      name: "Vanilla Launcher",
-      status: "supported",
-      note: "The official Mojang/Microsoft launcher — the baseline for standard Minecraft installs."
-    },
-    {
-      name: "MultiMC",
-      status: "supported",
-      note: "A lightweight multi-instance launcher focused on custom modded setups and clean instance management."
-    },
-    {
-      name: "CurseForge",
-      status: "supported",
-      note: "A popular ecosystem for modpacks with built-in browsing, installs, and updates through the CurseForge platform."
-    },
-    {
-      name: "Modrinth (Theseus)",
-      status: "supported",
-      note: "Modrinth’s launcher/profile system — modern pack distribution with a fast-growing mod ecosystem."
-    },
-    {
-      name: "Custom Path",
-      status: "supported",
-      note: "For nonstandard installs, portable environments, or advanced setups where you want full control of location."
-    },
-    {
-      name: "Manual Install",
-      status: "supported",
-      note: "For users who prefer to manage placement themselves or need a pack output for custom workflows."
-    },
+  "use strict";
 
-    {
-      name: "Prism Launcher",
-      status: "working",
-      note: "A modern MultiMC fork with broader platform support, active development, and power-user features."
-    },
-    {
-      name: "ATLauncher",
-      status: "working",
-      note: "A long-running launcher built around curated packs and easy modded profiles."
-    },
-    {
-      name: "GDLauncher",
-      status: "working",
-      note: "A sleek launcher that emphasizes a friendly UI and integrated pack browsing/management."
-    },
-    {
-      name: "Technic",
-      status: "working",
-      note: "One of the classic launcher platforms — known for legacy packs and older modpack history."
-    },
-    {
-      name: "PolyMC",
-      status: "working",
-      note: "A Prism/MultiMC-family launcher — similar instance philosophy with community-driven tooling."
-    },
-    {
-      name: "Feather",
-      status: "working",
-      note: "A performance-focused launcher often used for competitive play and client-side enhancements."
-    },
-    {
-      name: "BakaXL",
-      status: "working",
-      note: "A launcher favored by some modded communities, especially in regions where it’s widely adopted."
-    },
-
-    // Planned: keep a slot for “future ecosystems”
-    {
-      name: "Additional ecosystems",
-      status: "planned",
-      note: "More launcher adapters as the ecosystem evolves — prioritized by demand and stability."
-    }
-  ];
-
-  const meta = {
-    supported: { label: "Supported", badge: "badge-supported" },
-    working: { label: "In progress", badge: "badge-working" },
-    planned: { label: "Planned", badge: "badge-planned" }
-  };
-
+  // ── Helpers ────────────────────────────────────
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-  function escapeHTML(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  function esc(s) {
+    const d = document.createElement("div");
+    d.appendChild(document.createTextNode(s));
+    return d.innerHTML;
   }
 
+  // ── Launchers (shared data) ────────────────────
+  const launchers = [
+    // Supported
+    { name:"Vanilla Launcher", status:"supported", note:"The official Mojang/Microsoft launcher - the baseline for standard Minecraft installs.", url:"https://www.minecraft.net/en-us/download" },
+    { name:"MultiMC", status:"supported", note:"A lightweight multi-instance launcher focused on custom modded setups and clean instance management.", url:"https://multimc.org/" },
+    { name:"CurseForge", status:"supported", note:"A popular ecosystem for modpacks with built-in browsing, installs, and updates through the CurseForge platform.", url:"https://www.curseforge.com/" },
+    { name:"Modrinth (Theseus)", status:"supported", note:"Modrinth's launcher/profile system - modern pack distribution with a fast-growing mod ecosystem.", url:"https://modrinth.com/" },
+    { name:"Custom Path", status:"supported", note:"For nonstandard installs, portable environments, or advanced setups where you want full control of location.", url:null },
+    { name:"Manual Install", status:"supported", note:"For users who prefer to manage placement themselves or need a pack output for custom workflows.", url:null },
+
+    // In progress
+    { name:"Prism Launcher", status:"working", note:"A modern MultiMC fork with broader platform support, active development, and power-user features.", url:"https://prismlauncher.org/" },
+    { name:"ATLauncher", status:"working", note:"A long-running launcher built around curated packs and easy modded profiles.", url:"https://atlauncher.com/" },
+    { name:"GDLauncher", status:"working", note:"A sleek launcher that emphasizes a friendly UI and integrated pack browsing/management.", url:"https://gdlauncher.com/" },
+    { name:"Technic", status:"working", note:"One of the classic launcher platforms - known for legacy packs and older modpack history.", url:"https://www.technicpack.net/" },
+    { name:"PolyMC", status:"working", note:"A Prism/MultiMC-family launcher - similar instance philosophy with community-driven tooling.", url:"https://polymc.org/" },
+    { name:"Feather", status:"working", note:"A performance-focused launcher often used for competitive play and client-side enhancements.", url:"https://feathermc.com/" },
+    { name:"BakaXL", status:"working", note:"A launcher favored by some modded communities, especially in regions where it's widely adopted.", url:"https://www.bakaxl.com/" },
+
+    // Planned
+    { name:"Polymerium", status:"planned", note:"A modern Minecraft launcher for Windows with a clean UI and modpack management capabilities.", url:"https://github.com/d3ara1n/Polymerium" },
+    { name:"X Minecraft Launcher", status:"planned", note:"An open-source Minecraft launcher supporting multiple accounts, modpacks, and resource management.", url:"https://github.com/Voxelum/x-minecraft-launcher" },
+    { name:"SK Launcher", status:"planned", note:"An all-in-one Minecraft hub with built-in modloaders, modpack support, and skin management.", url:"https://skmedix.pl/" },
+    { name:"Freesm Launcher", status:"planned", note:"A Prism-based launcher that removes offline account restrictions and adds custom auth server support.", url:"https://freesmlauncher.org/" },
+    { name:"ElyPrism", status:"planned", note:"A Prism Launcher fork with Ely.by authentication integration for alternative account systems.", url:"https://elyprismlauncher.github.io/" },
+    { name:"ShatteredPrism", status:"planned", note:"A community-maintained Prism Launcher fork focused on extended features and flexibility.", url:"https://github.com/Noctilune/ShatteredPrism" },
+    { name:"QWERTZ Launcher", status:"planned", note:"A launcher from the QWERTZ project ecosystem with streamlined Minecraft instance management.", url:"https://qwertz.app/projects/" },
+    { name:"Fjord Launcher", status:"planned", note:"An Unmojang project - a Prism-family launcher with its own community-driven direction.", url:"https://github.com/unmojang/FjordLauncher" },
+    { name:"HMCL", status:"planned", note:"A cross-platform Minecraft launcher popular in the Chinese community, supporting multiple auth and mod sources.", url:"https://hmcl.huangyuhui.net/" },
+    { name:"UltimMC", status:"planned", note:"A MultiMC fork focused on offline play support and community-driven development.", url:"https://github.com/UltimMC/Launcher" },
+
+    // Unsupported
+    { name:"TLauncher", status:"unsupported", note:"Not supported due to documented privacy and security concerns raised by the Minecraft community.", url:null },
+
+    // Catch-all
+    { name:"Additional ecosystems", status:"planned", note:"More launcher adapters as the ecosystem evolves - prioritized by demand and stability.", url:null },
+  ];
+
+  const meta = {
+    supported:   { label:"Supported",    badge:"badge-supported" },
+    working:     { label:"In progress",  badge:"badge-working" },
+    planned:     { label:"Planned",      badge:"badge-planned" },
+    unsupported: { label:"Unsupported",  badge:"badge-unsupported" },
+  };
+
+  // ── Theme ──────────────────────────────────────
   function getPreferredTheme() {
     const saved = localStorage.getItem("pf-theme");
     if (saved === "light" || saved === "dark") return saved;
-    return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
   }
 
   function applyTheme(theme) {
@@ -107,71 +72,241 @@
   }
 
   function toggleTheme() {
-    const now = document.documentElement.dataset.theme === "light" ? "dark" : "light";
-    applyTheme(now);
+    applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
   }
 
+  // ── Scroll ─────────────────────────────────────
   function getHeaderOffset() {
     const header = $("#header");
-    if (!header) return 0;
-    const h = header.getBoundingClientRect().height;
-    return Math.ceil(h + 10);
+    return header ? Math.ceil(header.getBoundingClientRect().height + 10) : 0;
   }
 
   function scrollToHash(hash) {
     const el = document.querySelector(hash);
     if (!el) return;
-    const y = window.scrollY + el.getBoundingClientRect().top - getHeaderOffset();
-    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+    window.scrollTo({ top: Math.max(0, window.scrollY + el.getBoundingClientRect().top - getHeaderOffset()), behavior:"smooth" });
   }
 
-  function renderLaunchers() {
-    const grid = $("#launcherGrid");
+  // ── Active nav highlighting ────────────────────
+  function highlightActiveNav() {
+    const current = location.pathname.split("/").pop() || "index.html";
+    $$(".nav a, .mobile-menu a").forEach(a => {
+      const href = a.getAttribute("href") || "";
+      if (href === current || (current === "index.html" && href === "./")) {
+        a.classList.add("is-active");
+      }
+    });
+  }
+
+  // ── Mobile menu ────────────────────────────────
+  function initMobileMenu() {
+    const btn = $("#menuBtn");
+    const menu = $("#mobileMenu");
+    if (!btn || !menu) return;
+    btn.addEventListener("click", () => {
+      const open = !menu.classList.contains("is-open");
+      menu.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    menu.addEventListener("click", e => { if (e.target.closest("a")) { menu.classList.remove("is-open"); btn.setAttribute("aria-expanded","false"); }});
+  }
+
+  // ── Anchor jump handling ───────────────────────
+  function initAnchorHandling() {
+    $$("[data-jump]").forEach(el => {
+      el.addEventListener("click", e => {
+        const hash = el.getAttribute("data-jump") || "";
+        if (!hash.startsWith("#")) return;
+        e.preventDefault();
+        scrollToHash(hash);
+      });
+    });
+  }
+
+  // ── Download/user counters ─────────────────────
+  async function fetchStats() {
+    // Primary: site-hosted stats.json
+    try {
+      const res = await fetch("./stats.json?" + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        return { downloads: data.downloads || 0, users: data.users || 0 };
+      }
+    } catch {}
+
+    // Fallback: GitHub API release download counts
+    try {
+      const res = await fetch("https://api.github.com/repos/realKeehan/PolyForge/releases");
+      if (res.ok) {
+        const releases = await res.json();
+        let total = 0;
+        releases.forEach(r => {
+          (r.assets || []).forEach(a => { total += a.download_count || 0; });
+        });
+        return { downloads: total, users: 0 };
+      }
+    } catch {}
+
+    return { downloads: 0, users: 0 };
+  }
+
+  function renderStats() {
+    fetchStats().then(stats => {
+      const dlEl = $("#statDownloads");
+      const usEl = $("#statUsers");
+      if (dlEl) dlEl.textContent = stats.downloads.toLocaleString();
+      if (usEl) usEl.textContent = stats.users.toLocaleString();
+    });
+  }
+
+  // ── Render launchers (used by supported.html & index.html) ──
+  function renderLaunchers(gridId, opts = {}) {
+    const grid = $(gridId || "#launcherGrid");
     if (!grid) return;
 
-    grid.innerHTML = launchers.map((l) => {
+    let list = opts.subset ? launchers.filter(l => opts.subset.includes(l.status)) : launchers;
+
+    // Search filter
+    const searchInput = $("#launcherSearch");
+    if (searchInput) {
+      const query = searchInput.value.trim().toLowerCase();
+      if (query) {
+        list = list.filter(l => l.name.toLowerCase().includes(query) || l.note.toLowerCase().includes(query));
+      }
+    }
+
+    // Detection scaffolding: detected launchers first
+    // TODO: When detection is wired, sort detected launchers to top
+    // For now, we keep the natural order (supported > working > planned > unsupported)
+
+    grid.innerHTML = list.map(l => {
       const m = meta[l.status];
+      if (!m) return "";
+      const tag = l.url ? "a" : "article";
+      const hrefAttr = l.url ? ` href="${esc(l.url)}" target="_blank" rel="noopener noreferrer"` : "";
+
+      // Detection scaffolding: path display + browse button
+      // detectedPath will be populated when detection is wired
+      const detectedPath = null; // TODO: wire to detection cache
+      const pathLine = detectedPath
+        ? `<span class="launcher-path">${esc(detectedPath)}</span>`
+        : `<span class="launcher-path launcher-path--notfound">Not Found</span>`;
+
+      const browseBtn = !detectedPath
+        ? `<button class="launcher-browse" title="Browse for launcher location" aria-label="Browse for ${esc(l.name)}">
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+           </button>`
+        : "";
+
       return `
-        <article class="launcher" data-status="${l.status}">
+        <${tag} class="launcher" data-status="${l.status}"${hrefAttr}>
           <div class="launcher-top">
-            <div class="launcher-name">${escapeHTML(l.name)}</div>
-            <span class="badge ${m.badge} mono">${escapeHTML(m.label)}</span>
+            <div class="launcher-info">
+              <div class="launcher-name">${esc(l.name)}</div>
+              ${pathLine}
+            </div>
+            <div class="launcher-actions">
+              <span class="badge ${m.badge} mono">${esc(m.label)}</span>
+              ${browseBtn}
+            </div>
           </div>
-          <p class="launcher-note">${escapeHTML(l.note)}</p>
-        </article>
+          <p class="launcher-note">${esc(l.note)}</p>
+          ${l.url ? `<span class="launcher-link">Visit site &rarr;</span>` : ""}
+        </${tag}>
       `;
     }).join("");
 
-    const counts = {
-      supported: launchers.filter(x => x.status === "supported").length,
-      working: launchers.filter(x => x.status === "working").length,
-      planned: launchers.filter(x => x.status === "planned").length
-    };
+    // Update counts
+    const allLaunchers = opts.subset ? launchers.filter(l => opts.subset.includes(l.status)) : launchers;
+    const counts = { supported:0, working:0, planned:0, unsupported:0 };
+    allLaunchers.forEach(l => { if (counts[l.status] !== undefined) counts[l.status]++; });
 
-    $("#countSupported").textContent = String(counts.supported);
-    $("#countWorking").textContent = String(counts.working);
-    $("#countPlanned").textContent = String(counts.planned);
-
-    $("#btnSupported").textContent = String(counts.supported);
-    $("#btnWorking").textContent = String(counts.working);
-    $("#btnPlanned").textContent = String(counts.planned);
-    $("#btnAll").textContent = String(counts.supported + counts.working + counts.planned);
+    const set = (id, val) => { const el = $(id); if (el) el.textContent = String(val); };
+    set("#countSupported", counts.supported);
+    set("#countWorking", counts.working);
+    set("#countPlanned", counts.planned);
+    set("#btnSupported", counts.supported);
+    set("#btnWorking", counts.working);
+    set("#btnPlanned", counts.planned);
+    set("#btnUnsupported", counts.unsupported);
+    set("#btnAll", counts.supported + counts.working + counts.planned + counts.unsupported);
   }
 
+  // ── Filter dropdown ────────────────────────────
+  function initFilterDropdown() {
+    const wrapper = $("#filterDropdownWrapper");
+    const toggle = $("#filterDropdownToggle");
+    const menu = $("#filterDropdownMenu");
+    const searchInput = $("#launcherSearch");
+    if (!wrapper || !toggle || !menu) return;
+
+    let currentFilter = "all";
+
+    function setFilter(key) {
+      currentFilter = key;
+      // Update toggle pill
+      const m = key === "all" ? { label:"All", badge:"" } : (meta[key] || { label:key, badge:"" });
+      const pill = toggle.querySelector(".filter-pill");
+      if (pill) {
+        pill.className = "filter-pill" + (key !== "all" ? " filter-pill--" + key : "");
+        pill.textContent = m.label;
+      }
+
+      // Apply filter
+      $$("#launcherGrid .launcher").forEach(card => {
+        const status = card.getAttribute("data-status");
+        card.classList.toggle("is-hidden", key !== "all" && status !== key);
+      });
+
+      menu.classList.remove("is-open");
+    }
+
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menu.classList.toggle("is-open");
+    });
+
+    menu.querySelectorAll("[data-filter]").forEach(btn => {
+      btn.addEventListener("click", () => setFilter(btn.dataset.filter));
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!wrapper.contains(e.target)) menu.classList.remove("is-open");
+    });
+
+    // Search functionality
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        renderLaunchers("#launcherGrid");
+        // Re-apply current filter after re-render
+        if (currentFilter !== "all") {
+          $$("#launcherGrid .launcher").forEach(card => {
+            const status = card.getAttribute("data-status");
+            card.classList.toggle("is-hidden", status !== currentFilter);
+          });
+        }
+      });
+    }
+
+    setFilter("all");
+  }
+
+  // ── Legacy filters (fallback for pages without dropdown) ──
   function initFilters() {
     const buttons = $$("[data-filter]");
+    if (!buttons.length) return;
+    // Skip if dropdown is present
+    if ($("#filterDropdownWrapper")) return;
 
-    const setActive = (key) => {
+    const setActive = key => {
       buttons.forEach(b => {
         const active = b.dataset.filter === key;
         b.classList.toggle("is-active", active);
-        b.setAttribute("aria-selected", active ? "true" : "false");
+        b.setAttribute("aria-selected", String(active));
       });
-
       $$("#launcherGrid .launcher").forEach(card => {
         const status = card.getAttribute("data-status");
-        const show = key === "all" || status === key;
-        card.classList.toggle("is-hidden", !show);
+        card.classList.toggle("is-hidden", key !== "all" && status !== key);
       });
     };
 
@@ -179,69 +314,148 @@
     setActive("all");
   }
 
-  function initMobileMenu() {
-    const btn = $("#menuBtn");
-    const menu = $("#mobileMenu");
-    if (!btn || !menu) return;
+  // ── Carousel (Coming Soon) ─────────────────────
+  function initCarousel() {
+    const carousel = $("#comingSoonCarousel");
+    if (!carousel) return;
 
-    const close = () => {
-      menu.classList.remove("is-open");
-      btn.setAttribute("aria-expanded", "false");
-    };
+    const slides = $$(".carousel-slide", carousel);
+    const dots = $$(".carousel-dot", carousel);
+    const timerBar = $(".carousel-timer-bar", carousel);
+    if (slides.length === 0) return;
 
-    btn.addEventListener("click", () => {
-      const open = !menu.classList.contains("is-open");
-      menu.classList.toggle("is-open", open);
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    let current = 0;
+    let interval = null;
+    let paused = false;
+    const DURATION = 5000;
+
+    function showSlide(index) {
+      slides.forEach((s, i) => {
+        s.classList.toggle("is-active", i === index);
+      });
+      dots.forEach((d, i) => {
+        d.classList.toggle("is-active", i === index);
+      });
+      current = index;
+      resetTimer();
+    }
+
+    function nextSlide() {
+      showSlide((current + 1) % slides.length);
+    }
+
+    function resetTimer() {
+      if (timerBar) {
+        timerBar.style.transition = "none";
+        timerBar.style.width = "0%";
+        // Force reflow
+        void timerBar.offsetWidth;
+        timerBar.style.transition = `width ${DURATION}ms linear`;
+        timerBar.style.width = "100%";
+      }
+      clearInterval(interval);
+      if (!paused) {
+        interval = setInterval(nextSlide, DURATION);
+      }
+    }
+
+    dots.forEach((dot, i) => {
+      dot.addEventListener("click", () => showSlide(i));
     });
 
-    menu.addEventListener("click", (e) => {
-      const a = e.target.closest("a");
-      if (a) close();
+    carousel.addEventListener("mouseenter", () => {
+      paused = true;
+      clearInterval(interval);
+      if (timerBar) {
+        const w = timerBar.getBoundingClientRect().width;
+        const pw = timerBar.parentElement.getBoundingClientRect().width;
+        timerBar.style.transition = "none";
+        timerBar.style.width = (pw > 0 ? (w / pw * 100) : 0) + "%";
+      }
     });
+
+    carousel.addEventListener("mouseleave", () => {
+      paused = false;
+      resetTimer();
+    });
+
+    showSlide(0);
   }
 
-  function initAnchorHandling() {
-    $$(".nav a, .mobile-menu a, [data-jump]").forEach(el => {
-      el.addEventListener("click", (e) => {
-        const href = el.getAttribute("href") || el.getAttribute("data-jump") || "";
-        if (!href.startsWith("#")) return;
-        e.preventDefault();
-        scrollToHash(href);
+  // ── FAQ accordion ──────────────────────────────
+  function initFaqAccordion() {
+    $$(".faq-question").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const item = btn.closest(".faq-item");
+        const answer = item.querySelector(".faq-answer");
+        const isOpen = item.classList.contains("is-open");
+
+        $$(".faq-item.is-open").forEach(open => {
+          open.classList.remove("is-open");
+          open.querySelector(".faq-answer").style.maxHeight = "0";
+        });
+
+        if (!isOpen) {
+          item.classList.add("is-open");
+          answer.style.maxHeight = answer.scrollHeight + "px";
+        }
       });
     });
   }
 
-  // ===== Dot grid like your CodePen, but with perlin-ish waves + mouse ripple waves =====
+  // ── Security provider dropdown accordion ───────
+  function initSecurityAccordion() {
+    $$(".provider-accordion-toggle").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const item = btn.closest(".provider-accordion");
+        const body = item.querySelector(".provider-accordion-body");
+        const isOpen = item.classList.contains("is-open");
+
+        // Close all
+        $$(".provider-accordion.is-open").forEach(open => {
+          open.classList.remove("is-open");
+          open.querySelector(".provider-accordion-body").style.maxHeight = "0";
+        });
+
+        if (!isOpen) {
+          item.classList.add("is-open");
+          body.style.maxHeight = body.scrollHeight + "px";
+        }
+      });
+    });
+  }
+
+  // ── Download page: file type dropdowns ─────────
+  function initDownloadDropdowns() {
+    $$(".dl-more-toggle").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const extra = btn.closest(".platform-card").querySelector(".dl-extra");
+        if (!extra) return;
+        const open = !extra.classList.contains("is-open");
+        extra.classList.toggle("is-open", open);
+        btn.textContent = open ? "Show fewer options" : "Show all formats";
+      });
+    });
+  }
+
+  // ── Dot field canvas (performance-optimized) ───
   function initDotField() {
     const canvas = document.getElementById("dotCanvas");
     if (!(canvas instanceof HTMLCanvasElement)) return;
-
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
-    const prefersReduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduce) return;
-
-    let dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
     let w = 0, h = 0;
+    const dpr = Math.min(1.5, window.devicePixelRatio || 1); // Cap DPR for performance
 
-    // Grid config (tweak to taste)
-    let spacing = 18;           // px (CSS pixels)
-    let baseR = 1.15;           // base dot radius
-    let waveAmp = 0.85;         // noise-driven radius amplitude
-    let waveSpeed = 0.32;       // time speed
-    let noiseScale = 0.012;     // spatial scale for noise
-    let noiseOctaves = 3;
-
-    // Mouse ripple waves
+    let spacing = 22, baseR = 1.0;
+    const waveAmp = 0.6, waveSpeed = 0.25, noiseScale = 0.01, noiseOctaves = 2;
     const ripples = [];
-    const maxRipples = 10;
+    const maxRipples = 6; // Reduced for performance
 
-    // Pointer state
-    let pointerX = 0.5;
-    let pointerY = 0.5;
-
+    // Throttle resize
+    let resizeTimer = null;
     function resize() {
       const rect = canvas.getBoundingClientRect();
       w = Math.floor(rect.width);
@@ -249,338 +463,177 @@
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // adapt spacing slightly to viewport
-      spacing = Math.max(14, Math.min(22, Math.round(Math.min(w, h) / 55)));
-      baseR = spacing <= 16 ? 1.0 : 1.2;
+      spacing = Math.max(18, Math.min(28, Math.round(Math.min(w, h) / 40)));
+      baseR = 0.9;
     }
 
-    // Deterministic hash noise
     function hash2(x, y) {
-      // integer-ish hash
-      let n = x * 374761393 + y * 668265263; // large primes
+      let n = x * 374761393 + y * 668265263;
       n = (n ^ (n >> 13)) * 1274126177;
       return ((n ^ (n >> 16)) >>> 0) / 4294967295;
     }
 
-    function smoothstep(t) {
-      return t * t * (3 - 2 * t);
-    }
+    function smoothstep(t) { return t * t * (3 - 2 * t); }
 
-    // Value noise (2D) with bilinear interpolation
     function valueNoise(x, y) {
-      const xi = Math.floor(x);
-      const yi = Math.floor(y);
-      const xf = x - xi;
-      const yf = y - yi;
-
-      const r00 = hash2(xi, yi);
-      const r10 = hash2(xi + 1, yi);
-      const r01 = hash2(xi, yi + 1);
-      const r11 = hash2(xi + 1, yi + 1);
-
-      const u = smoothstep(xf);
-      const v = smoothstep(yf);
-
-      const a = r00 + (r10 - r00) * u;
-      const b = r01 + (r11 - r01) * u;
-      return a + (b - a) * v; // 0..1
+      const xi = Math.floor(x), yi = Math.floor(y);
+      const xf = x - xi, yf = y - yi;
+      const u = smoothstep(xf), v = smoothstep(yf);
+      const a = hash2(xi, yi) + (hash2(xi+1, yi) - hash2(xi, yi)) * u;
+      const b = hash2(xi, yi+1) + (hash2(xi+1, yi+1) - hash2(xi, yi+1)) * u;
+      return a + (b - a) * v;
     }
 
-    // Fractal noise (fbm)
     function fbm(x, y, octaves) {
-      let amp = 0.5;
-      let freq = 1.0;
-      let sum = 0.0;
-      let norm = 0.0;
+      let amp = 0.5, freq = 1, sum = 0, norm = 0;
       for (let i = 0; i < octaves; i++) {
         sum += amp * valueNoise(x * freq, y * freq);
-        norm += amp;
-        amp *= 0.5;
-        freq *= 2.0;
+        norm += amp; amp *= 0.5; freq *= 2;
       }
-      return sum / Math.max(1e-6, norm); // 0..1
+      return sum / Math.max(1e-6, norm);
     }
 
     function themeDotColor() {
-      const theme = document.documentElement.dataset.theme || "dark";
-      if (theme === "light") {
-        // subtle gray dots for light
-        return { r: 0, g: 0, b: 0, a: 0.25 };
-      }
-      // subtle white dots for dark
-      return { r: 255, g: 255, b: 255, a: 0.25 };
+      return (document.documentElement.dataset.theme || "dark") === "light"
+        ? { r:60, g:40, b:80, a:0.14 }
+        : { r:200, g:180, b:255, a:0.16 };
     }
 
     function themeAccentColor() {
-      // purple-tinted response (still subtle)
-      const theme = document.documentElement.dataset.theme || "dark";
-      if (theme === "light") return { r: 143, g: 0, b: 255, a: 0.12 };
-      return { r: 143, g: 0, b: 255, a: 0.16 };
+      return (document.documentElement.dataset.theme || "dark") === "light"
+        ? { r:143, g:0, b:255, a:0.08 }
+        : { r:143, g:0, b:255, a:0.12 };
     }
 
     function addRipple(x, y) {
-      // store in normalized space (0..1)
-      ripples.unshift({
-        x,
-        y,
-        t: 0,
-        // tuned so it looks like a “wave field”
-        amp: 1.35,
-        freq: 10.5,
-        speed: 0.85,
-        decay: 1.9
-      });
+      ripples.unshift({ x, y, t:0, amp:1.0, freq:8, speed:0.7, decay:2.0 });
       if (ripples.length > maxRipples) ripples.pop();
     }
 
-    function onPointerMove(e) {
-      pointerX = e.clientX / window.innerWidth;
-      pointerY = e.clientY / window.innerHeight;
+    // Throttle pointer events
+    let lastPointer = 0;
+    window.addEventListener("pointermove", e => {
+      const now = performance.now();
+      if (now - lastPointer < 100) return;
+      lastPointer = now;
+      if (Math.random() < 0.2) addRipple(e.clientX / window.innerWidth, e.clientY / window.innerHeight);
+    }, { passive: true });
 
-      // create ripples occasionally so it feels alive, not spammy
-      // also add a ripple on click/touch separately below for stronger impact
-      if (Math.random() < 0.14) addRipple(pointerX, pointerY);
-    }
-
-    function onPointerDown(e) {
-      const x = e.clientX / window.innerWidth;
-      const y = e.clientY / window.innerHeight;
+    window.addEventListener("pointerdown", e => {
+      const x = e.clientX / window.innerWidth, y = e.clientY / window.innerHeight;
       addRipple(x, y);
-      addRipple(x, y); // double for a crisp “pulse”
-    }
+    }, { passive: true });
 
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    window.addEventListener("pointerdown", onPointerDown, { passive: true });
-
-    // Render loop
-    let start = performance.now();
+    const start = performance.now();
+    let lastFrame = 0;
 
     function draw(now) {
+      // Frame rate limiter: target ~30fps for performance
+      if (now - lastFrame < 32) {
+        requestAnimationFrame(draw);
+        return;
+      }
+      lastFrame = now;
+
       const t = (now - start) / 1000;
-
       ctx.clearRect(0, 0, w, h);
-
       const base = themeDotColor();
       const accent = themeAccentColor();
+      for (const r of ripples) r.t += 0.032;
 
-      // Fade ripples over time
-      for (const r of ripples) r.t += 0.016; // approx frame step
+      const cols = Math.ceil(w / spacing), rows = Math.ceil(h / spacing);
+      const tx = t * waveSpeed, ty = t * waveSpeed * 0.86;
 
-      // grid bounds
-      const cols = Math.ceil(w / spacing);
-      const rows = Math.ceil(h / spacing);
-
-      // small time offsets for moving waves
-      const tx = t * waveSpeed;
-      const ty = t * waveSpeed * 0.86;
-
-      // draw dots
       for (let iy = 0; iy <= rows; iy++) {
-        const y = iy * spacing + (spacing * 0.5);
+        const y = iy * spacing + spacing * 0.5;
         for (let ix = 0; ix <= cols; ix++) {
-          const x = ix * spacing + (spacing * 0.5);
-
-          const nx = x * noiseScale + tx;
-          const ny = y * noiseScale + ty;
-
-          // 0..1
-          const n = fbm(nx, ny, noiseOctaves);
-
-          // center around 0
-          const wave = (n - 0.5) * 2.0;
-
-          // ripple field contribution
-          let rippleSum = 0;
-          let rippleGlow = 0;
-
-          // convert dot position to normalized
-          const px = x / Math.max(1, w);
-          const py = y / Math.max(1, h);
+          const x = ix * spacing + spacing * 0.5;
+          const n = fbm(x * noiseScale + tx, y * noiseScale + ty, noiseOctaves);
+          const wave = (n - 0.5) * 2;
+          let rippleSum = 0, rippleGlow = 0;
+          const px = x / Math.max(1, w), py = y / Math.max(1, h);
 
           for (const r of ripples) {
-            const dx = px - r.x;
-            const dy = py - r.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            // traveling sine ring: sin(dist*freq - t*speed)
-            const phase = dist * r.freq - (t * r.speed) - (r.t * 1.2);
-            const ring = Math.sin(phase);
-
-            // exponential falloff with distance and age
-            const atten = Math.exp(-dist * r.decay * 6.0) * Math.exp(-r.t * 0.9);
-
+            const dx = px - r.x, dy = py - r.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const ring = Math.sin(dist * r.freq - t * r.speed - r.t * 1.2);
+            const atten = Math.exp(-dist * r.decay * 6) * Math.exp(-r.t * 0.9);
             rippleSum += ring * atten * r.amp;
-            rippleGlow += Math.max(0, ring) * atten; // for subtle accent
+            rippleGlow += Math.max(0, ring) * atten;
           }
 
-          // final radius modulation
-          const r = Math.max(
-            0.35,
-            baseR + wave * waveAmp + rippleSum * 1.15
-          );
+          const rad = Math.max(0.3, baseR + wave * waveAmp + rippleSum * 0.8);
+          const a = base.a * (0.8 + 0.3 * n);
 
-          // base dot alpha slightly wave-modulated
-          const a = base.a * (0.8 + 0.4 * (n));
-
-          // subtle accent when ripple is strong
-          const glow = Math.min(0.35, rippleGlow * 0.55);
-
-          // Draw base dot
           ctx.beginPath();
-          ctx.fillStyle = `rgba(${base.r},${base.g},${base.b},${a.toFixed(4)})`;
-          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${base.r},${base.g},${base.b},${a.toFixed(3)})`;
+          ctx.arc(x, y, rad, 0, Math.PI * 2);
           ctx.fill();
 
-          // Draw accent overlay (only if ripple nearby)
-          if (glow > 0.01) {
+          if (rippleGlow > 0.02) {
+            const glow = Math.min(0.25, rippleGlow * 0.4);
             ctx.beginPath();
-            ctx.fillStyle = `rgba(${accent.r},${accent.g},${accent.b},${(accent.a + glow).toFixed(4)})`;
-            ctx.arc(x, y, r * 1.05, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${accent.r},${accent.g},${accent.b},${(accent.a + glow).toFixed(3)})`;
+            ctx.arc(x, y, rad * 1.05, 0, Math.PI * 2);
             ctx.fill();
           }
         }
       }
 
-      // prune dead ripples
       for (let i = ripples.length - 1; i >= 0; i--) {
         if (ripples[i].t > 3.5) ripples.splice(i, 1);
       }
-
       requestAnimationFrame(draw);
     }
 
-    // Handle resize
-    const ro = new ResizeObserver(() => {
-      resize();
-    });
-    ro.observe(canvas);
-
+    let roTimer = null;
+    new ResizeObserver(() => {
+      clearTimeout(roTimer);
+      roTimer = setTimeout(resize, 150);
+    }).observe(canvas);
     resize();
     requestAnimationFrame(draw);
   }
 
+  // ── Init ───────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
     applyTheme(getPreferredTheme());
-    $("#themeToggle")?.addEventListener("click", toggleTheme);
-    $("#themeToggleSm")?.addEventListener("click", toggleTheme);
 
-    $("#year").textContent = String(new Date().getFullYear());
+    // Theme toggles
+    ["#themeToggle","#themeToggleSm"].forEach(id => {
+      $(id)?.addEventListener("click", toggleTheme);
+    });
 
-    renderLaunchers();
+    // Year
+    const yearEl = $("#year");
+    if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+    // Launchers
+    renderLaunchers("#launcherGrid");
+    initFilterDropdown();
     initFilters();
 
+    // Navigation
+    highlightActiveNav();
     initMobileMenu();
     initAnchorHandling();
 
+    // FAQ
+    initFaqAccordion();
+
+    // Security
+    initSecurityAccordion();
+
+    // Download dropdowns
+    initDownloadDropdowns();
+
+    // Carousel
+    initCarousel();
+
+    // Stats
+    renderStats();
+
+    // Dot field
     initDotField();
   });
-
-  // Mobile/menu helpers
-  function initFilters() {
-    const buttons = $$("[data-filter]");
-
-    const setActive = (key) => {
-      buttons.forEach(b => {
-        const active = b.dataset.filter === key;
-        b.classList.toggle("is-active", active);
-        b.setAttribute("aria-selected", active ? "true" : "false");
-      });
-
-      $$("#launcherGrid .launcher").forEach(card => {
-        const status = card.getAttribute("data-status");
-        const show = key === "all" || status === key;
-        card.classList.toggle("is-hidden", !show);
-      });
-    };
-
-    buttons.forEach(btn => btn.addEventListener("click", () => setActive(btn.dataset.filter)));
-    setActive("all");
-  }
-
-  function initMobileMenu() {
-    const btn = $("#menuBtn");
-    const menu = $("#mobileMenu");
-    if (!btn || !menu) return;
-
-    const close = () => {
-      menu.classList.remove("is-open");
-      btn.setAttribute("aria-expanded", "false");
-    };
-
-    btn.addEventListener("click", () => {
-      const open = !menu.classList.contains("is-open");
-      menu.classList.toggle("is-open", open);
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-
-    menu.addEventListener("click", (e) => {
-      const a = e.target.closest("a");
-      if (a) close();
-    });
-  }
-
-  function initAnchorHandling() {
-    $$(".nav a, .mobile-menu a, [data-jump]").forEach(el => {
-      el.addEventListener("click", (e) => {
-        const href = el.getAttribute("href") || el.getAttribute("data-jump") || "";
-        if (!href.startsWith("#")) return;
-        e.preventDefault();
-        scrollToHash(href);
-      });
-    });
-  }
-
-  function getHeaderOffset() {
-    const header = $("#header");
-    if (!header) return 0;
-    const h = header.getBoundingClientRect().height;
-    return Math.ceil(h + 10);
-  }
-
-  function scrollToHash(hash) {
-    const el = document.querySelector(hash);
-    if (!el) return;
-    const y = window.scrollY + el.getBoundingClientRect().top - getHeaderOffset();
-    window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-  }
-
-  function renderLaunchers() {
-    const grid = $("#launcherGrid");
-    if (!grid) return;
-
-    const meta = {
-      supported: { label: "Supported", badge: "badge-supported" },
-      working: { label: "In progress", badge: "badge-working" },
-      planned: { label: "Planned", badge: "badge-planned" }
-    };
-
-    grid.innerHTML = launchers.map((l) => {
-      const m = meta[l.status];
-      return `
-        <article class="launcher" data-status="${l.status}">
-          <div class="launcher-top">
-            <div class="launcher-name">${escapeHTML(l.name)}</div>
-            <span class="badge ${m.badge} mono">${escapeHTML(m.label)}</span>
-          </div>
-          <p class="launcher-note">${escapeHTML(l.note)}</p>
-        </article>
-      `;
-    }).join("");
-
-    const counts = {
-      supported: launchers.filter(x => x.status === "supported").length,
-      working: launchers.filter(x => x.status === "working").length,
-      planned: launchers.filter(x => x.status === "planned").length
-    };
-
-    $("#countSupported").textContent = String(counts.supported);
-    $("#countWorking").textContent = String(counts.working);
-    $("#countPlanned").textContent = String(counts.planned);
-
-    $("#btnSupported").textContent = String(counts.supported);
-    $("#btnWorking").textContent = String(counts.working);
-    $("#btnPlanned").textContent = String(counts.planned);
-    $("#btnAll").textContent = String(counts.supported + counts.working + counts.planned);
-  }
 })();

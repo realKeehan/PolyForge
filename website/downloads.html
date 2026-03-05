@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Downloads - PolyForge</title>
+  <meta name="description" content="Download PolyForge for Windows, Linux, and macOS." />
+  <meta property="og:title" content="Downloads - PolyForge" />
+  <meta property="og:description" content="Download PolyForge for Windows, Linux, and macOS." />
+  <meta property="og:url" content="https://polyforge.dev/downloads.html" />
+  <link rel="icon" href="./favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true"><canvas class="dot-canvas" id="dotCanvas"></canvas></div>
+
+  <header class="site-header" id="header">
+    <div class="container header-row">
+      <a class="brand" href="./" aria-label="PolyForge home"><span class="brand-dot" aria-hidden="true"></span><span class="brand-name">PolyForge</span></a>
+      <nav class="nav" aria-label="Primary">
+        <a href="./">Home</a><a href="./supported.html">Launchers</a><a href="./downloads.html">Downloads</a><a href="./security.html">Security</a><a href="./faq.html">FAQ</a>
+      </nav>
+      <div class="header-actions">
+        <!-- Theme toggle stays; download button hidden on this page -->
+        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
+          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+        </button>
+        <button class="iconbtn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+      </div>
+    </div>
+    <div class="container mobile-menu" id="mobileMenu">
+      <a href="./">Home</a><a href="./supported.html">Launchers</a><a href="./downloads.html">Downloads</a><a href="./security.html">Security</a><a href="./faq.html">FAQ</a>
+      <div class="mobile-row">
+        <button class="icon-toggle" id="themeToggleSm" type="button" aria-label="Toggle theme">
+          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container page-hero">
+      <h1>Downloads</h1>
+      <p>Download PolyForge and start installing modpacks across launchers.</p>
+    </div>
+
+    <section class="container section" style="padding-top:0">
+      <div class="platform-grid">
+
+        <!-- Windows -->
+        <div class="platform-card">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 12.5h8.5V21H3v-8.5zm0-9.5h8.5v8.5H3V3zm9.5 9.5H21V21h-8.5v-8.5zm0-9.5H21v8.5h-8.5V3z"/></svg>
+            Windows
+          </h3>
+          <p>Recommended for most users. No installation or setup required - just download and run.</p>
+          <div class="dl-options">
+            <a class="dl-btn" href="#" title="Download coming soon">
+              <span class="dl-label">NSIS Installer (.exe)</span>
+              <span class="dl-meta">Recommended</span>
+            </a>
+            <a class="dl-btn" href="#" title="Download coming soon">
+              <span class="dl-label">Portable (.exe)</span>
+              <span class="dl-meta">amd64</span>
+            </a>
+            <a class="dl-btn" href="#" title="Download coming soon">
+              <span class="dl-label">Portable (.exe)</span>
+              <span class="dl-meta">arm64</span>
+            </a>
+          </div>
+          <button class="dl-more-toggle" type="button">Show all formats</button>
+          <div class="dl-extra">
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">UPX Compressed (.exe)</span><span class="dl-meta">amd64</span>
+            </a>
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">Console Build (.exe)</span><span class="dl-meta">Debug</span>
+            </a>
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">Portable Archive (.zip)</span><span class="dl-meta">amd64</span>
+            </a>
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">MSI Installer</span><span class="dl-meta">Enterprise</span>
+            </a>
+          </div>
+          <div class="dl-hash">
+            <span class="dl-hash-label">SHA256 Digest</span>
+            <span>Hashes will be published with each release.</span>
+          </div>
+          <div class="hint-box">
+            <div class="hint-box-title">Good to know</div>
+            <p>If you get a warning that the app cannot be opened, click "Run anyways". You may need to click "More info" to see this option. This warning is entirely harmless and only shows because the app is not signed. Signing it would cost upwards of 359&euro;/year.</p>
+          </div>
+        </div>
+
+        <!-- Linux -->
+        <div class="platform-card">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 2C10 2 8.2 3.8 8 6.1c-.3 2.7.3 4.3.8 5.7.3.8.6 1.6.6 2.7 0 .6-.2 1.2-.6 1.8-.5.8-1.3 1.5-2.1 2-.8.5-1.7.9-2.3 1.3-.7.5-1 .9-1 1.4 0 .8.8 1.3 1.8 1.5 1 .3 2.3.3 3.3.5 1 .2 1.8.5 2.2 1.4.3.6.5 1 .9 1.3.4.3.9.3 1.4.3s1-.1 1.4-.3c.4-.3.6-.7.9-1.3.4-.9 1.2-1.2 2.2-1.4 1-.2 2.3-.2 3.3-.5 1-.2 1.8-.7 1.8-1.5 0-.5-.4-.9-1-1.4-.7-.4-1.5-.8-2.3-1.3-.8-.5-1.6-1.2-2.1-2-.4-.6-.6-1.2-.6-1.8 0-1.1.3-1.9.6-2.7.5-1.4 1.1-3 .8-5.7C16.8 3.8 15 2 12.5 2z"/></svg>
+            Linux
+          </h3>
+          <p>Broader OS discovery presets are planned. Check back for expanded Linux support.</p>
+          <div class="dl-options">
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">AppImage</span><span class="dl-meta">amd64</span>
+            </a>
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">.deb (Debian/Ubuntu)</span><span class="dl-meta">amd64</span>
+            </a>
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">.tar.gz (Portable)</span><span class="dl-meta">amd64</span>
+            </a>
+          </div>
+          <button class="dl-more-toggle" type="button">Show all formats</button>
+          <div class="dl-extra">
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.rpm (Fedora/RHEL)</span><span class="dl-meta">amd64</span></a>
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">AppImage</span><span class="dl-meta">arm64</span></a>
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">Flatpak</span><span class="dl-meta">Planned</span></a>
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">Snap</span><span class="dl-meta">Planned</span></a>
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR / PKGBUILD</span><span class="dl-meta">Arch</span></a>
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">Nix Flake</span><span class="dl-meta">NixOS</span></a>
+          </div>
+          <div class="dl-hash">
+            <span class="dl-hash-label">SHA256 Digest</span>
+            <span>Hashes will be published with each release.</span>
+          </div>
+          <div class="hint-box">
+            <div class="hint-box-title">Linux permissions</div>
+            <p>After downloading an AppImage or .tar.gz binary, you may need to mark it as executable: <code>chmod +x PolyForge-*.AppImage</code>. Some desktop environments handle this automatically.</p>
+          </div>
+        </div>
+
+        <!-- macOS -->
+        <div class="platform-card">
+          <h3>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.7 19.4c-.7 1-1.4 2-2.6 2s-1.7-.7-3.2-.7c-1.5 0-1.9.7-3.1.7s-1.8-.9-2.6-2C5.8 17.2 4.7 13.8 6.2 11.5c.7-1.2 2-1.9 3.3-1.9 1.3 0 2.2.8 3.2.8s1.7-.8 3.3-.8c1.1 0 2.2.5 3 1.5-2.6 1.4-2.2 5.2.4 6.2-.5 1.1-.7 1.6-1.4 2.6l-.3.5zM15.2 3c.5.7.9 1.7.7 2.7-1.3.1-2.7-.9-3.1-2-.5-.7-.8-1.7-.7-2.7 1.3-.1 2.6.9 3.1 2z"/></svg>
+            macOS
+          </h3>
+          <p>macOS support is on the roadmap. Path heuristics for macOS installs are in progress.</p>
+          <div class="dl-options">
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">.dmg (Disk Image)</span><span class="dl-meta">Universal</span>
+            </a>
+            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">.app Bundle (.zip)</span><span class="dl-meta">Universal</span>
+            </a>
+          </div>
+          <button class="dl-more-toggle" type="button">Show all formats</button>
+          <div class="dl-extra">
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.dmg (Intel only)</span><span class="dl-meta">amd64</span></a>
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.dmg (Apple Silicon)</span><span class="dl-meta">arm64</span></a>
+            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.pkg Installer</span><span class="dl-meta">Universal</span></a>
+          </div>
+          <div class="dl-hash">
+            <span class="dl-hash-label">SHA256 Digest</span>
+            <span>Hashes will be published with each release.</span>
+          </div>
+          <div class="hint-box">
+            <div class="hint-box-title">macOS Gatekeeper</div>
+            <p>macOS may block unsigned apps. Right-click the app and select "Open" to bypass Gatekeeper on first launch. Alternatively, run <code>xattr -cr /path/to/PolyForge.app</code> in Terminal.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Requirements -->
+    <section class="container section">
+      <header class="section-head"><h2>Requirements</h2><p>What you need to run PolyForge.</p></header>
+      <div class="grid grid-3">
+        <article class="card"><h3>Operating System</h3><p>Windows 10 or later (64-bit). Linux and macOS support is planned.</p></article>
+        <article class="card"><h3>Storage</h3><p>Minimal disk space - PolyForge itself is lightweight. Modpacks vary in size.</p></article>
+        <article class="card"><h3>Internet</h3><p>An active internet connection for downloading modpack files during installation.</p></article>
+      </div>
+    </section>
+
+    <!-- Safety note -->
+    <section class="container section">
+      <div class="cta-block">
+        <div><h2>Is it safe?</h2><p>PolyForge is scanned across multiple security analysis platforms including VirusTotal, Hybrid Analysis, ANY.RUN, and more. Some antivirus software may flag new or unsigned executables - this is a common false positive for Go-compiled binaries.</p></div>
+        <div class="cta-actions"><a class="btn btn-primary btn-sm" href="./security.html">View security details</a></div>
+      </div>
+    </section>
+
+    <!-- Source -->
+    <section class="container section">
+      <div class="cta-block">
+        <div><h2>Build from source</h2><p>PolyForge is open-source. Clone the repository and build it yourself if you prefer.</p></div>
+        <div class="cta-actions"><a class="btn btn-ghost btn-sm" href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">View on GitHub</a></div>
+      </div>
+    </section>
+
+    <footer class="container footer">
+      <div class="footer-inner">
+        <div class="footer-brand"><a class="brand" href="./"><span class="brand-dot" aria-hidden="true"></span><span class="brand-name">PolyForge</span></a><p>Keehan's Universal Modpack Installer for Minecraft launchers.</p></div>
+        <div class="footer-cols">
+          <div class="footer-col"><h4>Product</h4><a href="./downloads.html">Downloads</a><a href="./supported.html">Launchers</a><a href="./security.html">Security</a><a href="./faq.html">FAQ</a></div>
+          <div class="footer-col"><h4>Resources</h4><a href="./support.html">Support</a><a href="./team.html">Team</a><a href="https://docs.polyforge.dev" target="_blank" rel="noopener noreferrer">Docs</a><a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+          <div class="footer-col"><h4>Legal</h4><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
+          <div class="footer-col"><h4>Contact</h4><a href="mailto:contact@polyforge.dev">contact@polyforge.dev</a></div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="mono muted">&copy; <span id="year"></span> PolyForge</div>
+        <span class="footer-creator">Created by <a href="https://keehan.co" target="_blank" rel="noopener noreferrer">Keehan</a></span>
+        <a class="footer-status" href="https://status.polyforge.dev" target="_blank" rel="noopener noreferrer"><span class="footer-status-dot"></span>All systems operational</a>
+      </div>
+    </footer>
+  </main>
+
+  <script src="./main.js"></script>
+</body>
+</html>

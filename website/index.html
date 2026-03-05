@@ -1,313 +1,317 @@
-<!-- index.html -->
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PolyForge — Universal Modpack Installer</title>
-  <meta name="description" content="PolyForge is a universal modpack installer for Minecraft launchers. One workflow. Many ecosystems." />
+  <title>PolyForge - Keehan's Universal Modpack Installer</title>
+  <meta name="description" content="PolyForge is Keehan's Universal Modpack Installer for Minecraft launchers. One workflow. Many ecosystems. Supported on Windows, Linux, and macOS." />
 
+  <!-- Open Graph / Social Link Preview -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="PolyForge - Keehan's Universal Modpack Installer" />
+  <meta property="og:description" content="Install modpacks across any Minecraft launcher with one tool. Clean installs, multi-launcher targeting, and structured logging." />
+  <meta property="og:url" content="https://polyforge.dev/" />
+  <meta property="og:image" content="https://polyforge.dev/images/CHOOSE MODPACK.png" />
+  <meta property="og:site_name" content="PolyForge" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PolyForge - Keehan's Universal Modpack Installer" />
+  <meta name="twitter:description" content="Install modpacks across any Minecraft launcher with one tool." />
+  <meta name="twitter:image" content="https://polyforge.dev/images/CHOOSE MODPACK.png" />
+
+  <link rel="icon" href="./favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-
-  <!-- Your external stack (kept) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tweakpane@4.0.5/dist/tweakpane.min.css" />
-
   <link rel="stylesheet" href="./styles.css" />
 </head>
-
 <body>
-  <!-- Background container: Canvas dotfield + perlin overlay -->
+  <!-- Animated dot background -->
   <div class="bg" aria-hidden="true">
     <canvas class="dot-canvas" id="dotCanvas"></canvas>
   </div>
 
+  <!-- ─── Header ──────────────────────────────── -->
   <header class="site-header" id="header">
     <div class="container header-row">
-      <a class="brand" href="#top" aria-label="Back to top" data-jump="#top">
+      <a class="brand" href="./" aria-label="PolyForge home">
         <span class="brand-dot" aria-hidden="true"></span>
         <span class="brand-name">PolyForge</span>
       </a>
 
       <nav class="nav" aria-label="Primary">
-        <a href="#features">Features</a>
-        <a href="#abilities">Abilities</a>
-        <a href="#gallery">Images</a>
-        <a href="#launchers">Launchers</a>
-        <a href="#tech">Tech</a>
-        <a href="#get">Get</a>
+        <a href="./">Home</a>
+        <a href="./supported.html">Launchers</a>
+        <a href="./downloads.html">Downloads</a>
+        <a href="./security.html">Security</a>
+        <a href="./faq.html">FAQ</a>
       </nav>
 
       <div class="header-actions">
+        <a class="btn btn-primary btn-sm" href="./downloads.html">Download</a>
         <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
           <span class="icon-toggle__sun" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </span>
           <span class="icon-toggle__moon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
           </span>
         </button>
-
-        <a class="btn btn-primary" href="#get" data-jump="#get">Get the installer</a>
-
         <button class="iconbtn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false">
           <span></span><span></span>
         </button>
       </div>
     </div>
 
+    <!-- Mobile menu -->
     <div class="container mobile-menu" id="mobileMenu">
-      <a href="#features">Features</a>
-      <a href="#abilities">Abilities</a>
-      <a href="#gallery">Images</a>
-      <a href="#launchers">Launchers</a>
-      <a href="#tech">Tech</a>
-      <a href="#get">Get</a>
+      <a href="./">Home</a>
+      <a href="./supported.html">Launchers</a>
+      <a href="./downloads.html">Downloads</a>
+      <a href="./security.html">Security</a>
+      <a href="./faq.html">FAQ</a>
       <div class="mobile-row">
         <button class="icon-toggle" id="themeToggleSm" type="button" aria-label="Toggle theme">
           <span class="icon-toggle__sun" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </span>
           <span class="icon-toggle__moon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
           </span>
         </button>
-
-        <a class="btn btn-primary" href="#get" data-jump="#get">Get the installer</a>
+        <a class="btn btn-primary" href="./downloads.html">Download</a>
       </div>
     </div>
   </header>
 
+  <!-- ─── Main ────────────────────────────────── -->
   <main id="top">
+
+    <!-- Hero -->
     <section class="container hero">
-      <div class="hero-copy">
-        <p class="eyebrow mono">Keehan’s universal modpack installer</p>
-        <h1 class="h1">Install once. Target any launcher.</h1>
-        <p class="lead">
-          PolyForge streamlines modpack installs across Minecraft launchers with clean placement,
-          predictable results, and a workflow designed for repeatable installs and updates.
-        </p>
-
-        <div class="cta-row">
-          <a class="btn btn-primary" href="#launchers" data-jump="#launchers">Launcher support</a>
-          <a class="btn btn-ghost" href="#gallery" data-jump="#gallery">See screenshots</a>
+      <p class="eyebrow mono">Keehan's Universal Modpack Installer</p>
+      <h1 class="h1">Install once.<br>Target any launcher.</h1>
+      <p class="lead">
+        PolyForge streamlines modpack installs across Minecraft launchers with clean placement,
+        predictable results, and a workflow designed for repeatable installs and updates.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="./downloads.html">Download installer</a>
+        <a class="btn btn-ghost" href="./supported.html">See all launchers</a>
+      </div>
+      <div class="os-support-line">
+        <span>Supported on</span>
+        <!-- Windows icon -->
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 12.5h8.5V21H3v-8.5zm0-9.5h8.5v8.5H3V3zm9.5 9.5H21V21h-8.5v-8.5zm0-9.5H21v8.5h-8.5V3z"/></svg>
+        <span>Windows,</span>
+        <!-- Linux icon -->
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 2C10 2 8.2 3.8 8 6.1c-.3 2.7.3 4.3.8 5.7.3.8.6 1.6.6 2.7 0 .6-.2 1.2-.6 1.8-.5.8-1.3 1.5-2.1 2-.8.5-1.7.9-2.3 1.3-.7.5-1 .9-1 1.4 0 .8.8 1.3 1.8 1.5 1 .3 2.3.3 3.3.5 1 .2 1.8.5 2.2 1.4.3.6.5 1 .9 1.3.4.3.9.3 1.4.3s1-.1 1.4-.3c.4-.3.6-.7.9-1.3.4-.9 1.2-1.2 2.2-1.4 1-.2 2.3-.2 3.3-.5 1-.2 1.8-.7 1.8-1.5 0-.5-.4-.9-1-1.4-.7-.4-1.5-.8-2.3-1.3-.8-.5-1.6-1.2-2.1-2-.4-.6-.6-1.2-.6-1.8 0-1.1.3-1.9.6-2.7.5-1.4 1.1-3 .8-5.7C16.8 3.8 15 2 12.5 2z"/></svg>
+        <span>Linux, and</span>
+        <!-- macOS icon -->
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.7 19.4c-.7 1-1.4 2-2.6 2s-1.7-.7-3.2-.7c-1.5 0-1.9.7-3.1.7s-1.8-.9-2.6-2C5.8 17.2 4.7 13.8 6.2 11.5c.7-1.2 2-1.9 3.3-1.9 1.3 0 2.2.8 3.2.8s1.7-.8 3.3-.8c1.1 0 2.2.5 3 1.5-2.6 1.4-2.2 5.2.4 6.2-.5 1.1-.7 1.6-1.4 2.6l-.3.5zM15.2 3c.5.7.9 1.7.7 2.7-1.3.1-2.7-.9-3.1-2-.5-.7-.8-1.7-.7-2.7 1.3-.1 2.6.9 3.1 2z"/></svg>
+        <span>macOS</span>
+      </div>
+      <div class="metrics" role="list" aria-label="Launcher counts">
+        <div class="metric" role="listitem">
+          <div class="metric-label mono">Supported</div>
+          <div class="metric-value mono" id="countSupported">-</div>
         </div>
-
-        <div class="metrics" role="list" aria-label="Counts">
-          <div class="metric" role="listitem">
-            <div class="metric-label mono">Supported</div>
-            <div class="metric-value mono" id="countSupported">—</div>
-          </div>
-          <div class="metric" role="listitem">
-            <div class="metric-label mono">In progress</div>
-            <div class="metric-value mono" id="countWorking">—</div>
-          </div>
-          <div class="metric" role="listitem">
-            <div class="metric-label mono">Planned</div>
-            <div class="metric-value mono" id="countPlanned">—</div>
-          </div>
+        <div class="metric" role="listitem">
+          <div class="metric-label mono">In progress</div>
+          <div class="metric-value mono" id="countWorking">-</div>
+        </div>
+        <div class="metric" role="listitem">
+          <div class="metric-label mono">Planned</div>
+          <div class="metric-value mono" id="countPlanned">-</div>
+        </div>
+        <div class="metric" role="listitem">
+          <div class="metric-label mono">Downloads</div>
+          <div class="metric-value mono" id="statDownloads">-</div>
         </div>
       </div>
-
-      <aside class="hero-aside">
-        <div class="aside-card">
-          <div class="aside-top">Selected capabilities</div>
-          <div class="cap-grid">
-            <div class="cap">
-              <div class="cap-title">Clean installs</div>
-              <div class="cap-text">Predictable folders, profiles, and outcomes.</div>
-            </div>
-            <div class="cap">
-              <div class="cap-title">Launcher adapters</div>
-              <div class="cap-text">One workflow across many ecosystems.</div>
-            </div>
-            <div class="cap">
-              <div class="cap-title">Structured logging</div>
-              <div class="cap-text">Readable progress and diagnostics.</div>
-            </div>
-            <div class="cap">
-              <div class="cap-title">Safe update paths</div>
-              <div class="cap-text">Designed for installs you can repeat.</div>
-            </div>
-          </div>
-        </div>
-      </aside>
     </section>
 
-    <section class="container section" id="features">
-      <header class="section-head">
-        <h2>Features</h2>
-        <p>What PolyForge does today, plus what’s coming next.</p>
-      </header>
+    <!-- Trust strip -->
+    <div class="container trust-strip">
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <span>Scanned & verified</span>
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Open-source on GitHub</span>
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 9h16M9 4v16" stroke="currentColor" stroke-width="1.8"/></svg>
+        <span>Multi-launcher targeting</span>
+      </div>
+      <div class="trust-item">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Repeatable installs</span>
+      </div>
+    </div>
 
-      <div class="grid grid-3">
-        <article class="card">
+    <!-- Showcase: screenshots with copy -->
+    <section class="container section" id="showcase">
+      <div class="showcase">
+        <div class="showcase-copy">
           <h3>Guided install workflow</h3>
-          <p>A consistent flow that adapts per launcher and target.</p>
-        </article>
-        <article class="card">
-          <h3>Structured logging</h3>
-          <p>Readable progress events for installs, errors, and diagnostics.</p>
-        </article>
-        <article class="card">
-          <h3>Multi-launcher targeting</h3>
-          <p>One installer surface across multiple launcher ecosystems.</p>
-        </article>
+          <p>
+            Choose your modpack, select a launcher, and let PolyForge handle placement.
+            A consistent flow that adapts per launcher and target - no guesswork required.
+          </p>
+          <a class="btn btn-ghost btn-sm" href="./downloads.html">Get started</a>
+        </div>
+        <div class="showcase-visual">
+          <img src="./images/CHOOSE MODPACK.png" alt="PolyForge choose modpack screen" loading="lazy" decoding="async" />
+        </div>
       </div>
 
-      <div class="divider"></div>
+      <div class="showcase showcase--reverse">
+        <div class="showcase-copy">
+          <h3>Multi-launcher targeting</h3>
+          <p>
+            One installer surface across multiple launcher ecosystems. Pick from supported,
+            in-progress, or custom path options and PolyForge maps the install correctly.
+          </p>
+          <a class="btn btn-ghost btn-sm" href="./supported.html">View launchers</a>
+        </div>
+        <div class="showcase-visual">
+          <img src="./images/CHOOSE LAUNCHER.png" alt="PolyForge choose launcher screen" loading="lazy" decoding="async" />
+        </div>
+      </div>
 
-      <header class="section-head" style="margin-top:14px">
-        <h2>Planned</h2>
-        <p>High-impact features that push PolyForge past “just an installer.”</p>
+      <div class="showcase">
+        <div class="showcase-copy">
+          <h3>Structured logging & status</h3>
+          <p>
+            Every install step produces readable progress events - downloads, verifications,
+            placements, and errors are all surfaced clearly in the status log.
+          </p>
+        </div>
+        <div class="showcase-visual">
+          <img src="./images/STATUS LOG.png" alt="PolyForge status log screen" loading="lazy" decoding="async" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Features grid -->
+    <section class="container section" id="features">
+      <header class="section-head section-head--center">
+        <h2>What PolyForge does</h2>
+        <p>Current capabilities of the installer.</p>
       </header>
 
       <div class="grid grid-3">
         <article class="card">
-          <h3>Telemetry + diagnostics report</h3>
-          <p>Optional post-install report for troubleshooting: what changed and what failed.</p>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Clean installs</h3>
+          <p>Predictable folders, profiles, and outcomes - every time.</p>
         </article>
         <article class="card">
-          <h3>Broader OS discovery presets</h3>
-          <p>Expanded path heuristics for Linux/macOS and portable installs.</p>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+          <h3>Launcher adapters</h3>
+          <p>One workflow across many ecosystems, per-launcher profile rules.</p>
         </article>
         <article class="card">
-          <h3>User/key system</h3>
-          <p>Keys for access control, analytics, and gated distribution (optional).</p>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Structured logging</h3>
+          <p>Readable progress and diagnostics for every install step.</p>
         </article>
         <article class="card">
-          <h3>Custom modpack builder</h3>
-          <p>Let users assemble packs from supported sources and export/share them.</p>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Safe update paths</h3>
+          <p>Designed for installs you can repeat with safe overwrite rules.</p>
         </article>
         <article class="card">
-          <h3>Password-protected packs</h3>
-          <p>Private packs for teams, events, or communities with controlled access.</p>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </div>
+          <h3>Security verified</h3>
+          <p>Scanned across multiple malware analysis platforms for your safety.</p>
         </article>
         <article class="card">
-          <h3>Self-updater</h3>
-          <p>Optional updater for PolyForge itself with safe rollback support.</p>
-        </article>
-        <article class="card">
-          <h3>Integrity + signature verification</h3>
-          <p>Hash verification and optional signed manifests to prevent tampering.</p>
-        </article>
-        <article class="card">
-          <h3>Profile backup & restore</h3>
-          <p>One-click backups of configs, saves, and profiles before updates.</p>
-        </article>
-        <article class="card">
-          <h3>Delta updates</h3>
-          <p>Update packs without re-downloading everything when only a few files change.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="container section" id="abilities">
-      <header class="section-head">
-        <h2>Abilities</h2>
-        <p>The internal tools that make installs reliable.</p>
-      </header>
-
-      <div class="grid grid-2">
-        <article class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.8"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
           <h3>Executable discovery</h3>
-          <ul class="list">
-            <li>Launcher path scanning & heuristics</li>
-            <li>Instance directory validation</li>
-            <li>User override support</li>
-          </ul>
-        </article>
-        <article class="card">
-          <h3>Package pipeline</h3>
-          <ul class="list">
-            <li>Download → verify → extract → place</li>
-            <li>Progress reporting</li>
-            <li>Safe overwrite rules</li>
-          </ul>
+          <p>Automatic launcher path scanning, validation, and user override support.</p>
         </article>
       </div>
     </section>
 
-    <section class="container section" id="gallery">
-      <header class="section-head">
-        <h2>In action</h2>
-        <p>UI snapshots from the installer flow.</p>
+    <!-- Coming Soon - Carousel -->
+    <section class="container section">
+      <div class="divider"></div>
+      <header class="section-head section-head--center" style="margin-top:24px">
+        <h2>Coming soon</h2>
+        <p>High-impact features that push PolyForge past "just an installer."</p>
       </header>
 
-      <div class="gallery">
-        <figure class="shot">
-          <img src="./images/CHOOSE MODPACK.png" alt="Choose Modpack screen" loading="lazy" />
-          <figcaption>Choose Modpack</figcaption>
-        </figure>
+      <div class="carousel" id="comingSoonCarousel">
+        <!-- Slide 1 -->
+        <div class="carousel-slide is-active">
+          <div class="carousel-slide-inner">
+            <div class="carousel-copy">
+              <h3>Custom modpack builder</h3>
+              <p>Assemble packs from supported sources and export or share them. Combine delta updates with integrity verification for efficient, tamper-proof pack distribution.</p>
+            </div>
+            <div class="carousel-image">
+              <!-- Placeholder: replace with actual image -->
+              <span>Image placeholder</span>
+            </div>
+          </div>
+        </div>
+        <!-- Slide 2 -->
+        <div class="carousel-slide">
+          <div class="carousel-slide-inner">
+            <div class="carousel-copy">
+              <h3>Self-updater & content sync</h3>
+              <p>PolyForge will update itself with safe rollback support. Modpack manifests sync independently so new packs appear without reinstalling the app.</p>
+            </div>
+            <div class="carousel-image">
+              <span>Image placeholder</span>
+            </div>
+          </div>
+        </div>
+        <!-- Slide 3 -->
+        <div class="carousel-slide">
+          <div class="carousel-slide-inner">
+            <div class="carousel-copy">
+              <h3>Profile backup & password-protected packs</h3>
+              <p>One-click backups of configs, saves, and profiles before updates. Plus private packs for teams, events, or communities with password-controlled access.</p>
+            </div>
+            <div class="carousel-image">
+              <span>Image placeholder</span>
+            </div>
+          </div>
+        </div>
 
-        <figure class="shot">
-          <img src="./images/LISCENCE AGREEMENT.png" alt="License Agreement screen" loading="lazy" />
-          <figcaption>License Agreement</figcaption>
-        </figure>
-
-        <figure class="shot">
-          <img src="./images/STATUS LOG.png" alt="Status Log screen" loading="lazy" />
-          <figcaption>Status Log</figcaption>
-        </figure>
-
-        <figure class="shot">
-          <img src="./images/CHOOSE LAUNCHER.png" alt="Choose Launcher screen" loading="lazy" />
-          <figcaption>Choose Launcher</figcaption>
-        </figure>
-
-        <figure class="shot">
-          <img src="./images/BOOTING.png" alt="Booting screen" loading="lazy" />
-          <figcaption>Booting</figcaption>
-        </figure>
-
-        <figure class="shot">
-          <img src="./images/UNINSTALL.png" alt="Uninstall screen" loading="lazy" />
-          <figcaption>Actions</figcaption>
-        </figure>
+        <div class="carousel-controls">
+          <button class="carousel-dot is-active" aria-label="Slide 1"></button>
+          <button class="carousel-dot" aria-label="Slide 2"></button>
+          <button class="carousel-dot" aria-label="Slide 3"></button>
+        </div>
+        <div class="carousel-timer-track">
+          <div class="carousel-timer-bar"></div>
+        </div>
       </div>
     </section>
 
-    <section class="container section" id="launchers">
-      <header class="section-head row">
-        <div>
-          <h2>Launcher status</h2>
-          <p>Filter by support level to see what’s ready vs. what’s next.</p>
-        </div>
-
-        <div class="filters" role="tablist" aria-label="Launcher filters">
-          <button class="chip chip-all is-active" type="button" data-filter="all" role="tab" aria-selected="true">
-            All <span class="chip-count mono" id="btnAll">—</span>
-          </button>
-          <button class="chip chip-supported" type="button" data-filter="supported" role="tab">
-            Supported <span class="chip-count mono" id="btnSupported">—</span>
-          </button>
-          <button class="chip chip-working" type="button" data-filter="working" role="tab">
-            In progress <span class="chip-count mono" id="btnWorking">—</span>
-          </button>
-          <button class="chip chip-planned" type="button" data-filter="planned" role="tab">
-            Planned <span class="chip-count mono" id="btnPlanned">—</span>
-          </button>
-        </div>
-      </header>
-
-      <div class="launcher-grid" id="launcherGrid" aria-live="polite"></div>
-    </section>
-
+    <!-- Tech -->
     <section class="container section" id="tech">
-      <header class="section-head">
-        <h2>Technologies utilized</h2>
-        <p>A clean overview of what’s powering PolyForge.</p>
+      <header class="section-head section-head--center">
+        <h2>Built with</h2>
+        <p>The stack powering PolyForge.</p>
       </header>
 
       <div class="grid grid-2">
@@ -321,64 +325,117 @@
             <li>Structured logs + install pipeline</li>
           </ul>
         </article>
-
         <article class="card">
           <h3>Integration surface</h3>
           <ul class="list">
             <li>Launcher adapters (per-ecosystem profile rules)</li>
             <li>Path discovery & instance targeting</li>
             <li>Manifest-driven packs (planned: signed + verified)</li>
-            <li>Optional “builder” workflow for pack creation (planned)</li>
+            <li>Optional "builder" workflow for pack creation (planned)</li>
           </ul>
         </article>
       </div>
     </section>
 
-    <section class="container section" id="get">
-      <div class="cta">
-        <div>
-          <h2>Get PolyForge</h2>
-          <p>Download the installer and you’re done — no setup required.</p>
+    <!-- Team / Maintainers -->
+    <section class="container section" id="team">
+      <header class="section-head section-head--center">
+        <h2>The team</h2>
+        <p>The people behind PolyForge.</p>
+      </header>
+
+      <div class="team-grid">
+        <div class="team-card">
+          <img class="team-avatar" src="https://avatars.githubusercontent.com/u/41766284?v=4" alt="Keehan" loading="lazy" />
+          <h3>Keehan</h3>
+          <div class="team-role">Creator & Maintainer</div>
+          <p>Building PolyForge from the ground up. Responsible for architecture, installer logic, and the ecosystem vision.</p>
+          <div class="team-links">
+            <a href="https://keehan.co" target="_blank" rel="noopener noreferrer">keehan.co</a>
+            <a href="https://github.com/realKeehan" target="_blank" rel="noopener noreferrer">GitHub</a>
+          </div>
         </div>
-        <div class="cta-actions">
-          <a class="btn btn-primary" href="#" aria-disabled="true" title="Link your installer here">Download installer (EXE)</a>
+        <div class="team-card">
+          <div class="team-avatar" style="background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:.9rem;">You?</div>
+          <h3>Contributors welcome</h3>
+          <div class="team-role">Contributor / Sponsor</div>
+          <p>Interested in contributing code, testing launchers, or sponsoring development? Get involved on GitHub.</p>
+          <div class="team-links">
+            <a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">Contribute</a>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="team-avatar" style="background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:.9rem;">&hearts;</div>
+          <h3>Special thanks</h3>
+          <div class="team-role">Sponsors & Community</div>
+          <p>Thank you to everyone who has tested, reported bugs, or supported the project. Your feedback shapes PolyForge.</p>
+          <div class="team-links">
+            <a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">Support</a>
+          </div>
         </div>
       </div>
     </section>
 
+    <!-- Bottom CTA -->
+    <section class="container section">
+      <div class="cta-block">
+        <div>
+          <h2>Ready to get started?</h2>
+          <p>Download the installer and you're done - no setup required.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="btn btn-primary" href="./downloads.html">Download installer</a>
+          <a class="btn btn-ghost" href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
     <footer class="container footer">
-      <div class="mono muted">© <span id="year"></span> PolyForge</div>
-      <div class="footer-links">
-        <a href="#top" data-jump="#top">Top</a>
-        <a href="#gallery" data-jump="#gallery">Images</a>
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <a class="brand" href="./">
+            <span class="brand-dot" aria-hidden="true"></span>
+            <span class="brand-name">PolyForge</span>
+          </a>
+          <p>Keehan's Universal Modpack Installer for Minecraft launchers. One workflow, many ecosystems.</p>
+        </div>
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="./downloads.html">Downloads</a>
+            <a href="./supported.html">Launchers</a>
+            <a href="./security.html">Security</a>
+            <a href="./faq.html">FAQ</a>
+          </div>
+          <div class="footer-col">
+            <h4>Resources</h4>
+            <a href="./support.html">Support</a>
+            <a href="./team.html">Team</a>
+            <a href="https://docs.polyforge.dev" target="_blank" rel="noopener noreferrer">Docs</a>
+            <a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">GitHub</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="./privacy.html">Privacy</a>
+            <a href="./terms.html">Terms</a>
+          </div>
+          <div class="footer-col">
+            <h4>Contact</h4>
+            <a href="mailto:contact@polyforge.dev">contact@polyforge.dev</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="mono muted">&copy; <span id="year"></span> PolyForge</div>
+        <span class="footer-creator">Created by <a href="https://keehan.co" target="_blank" rel="noopener noreferrer">Keehan</a></span>
+        <a class="footer-status" href="https://status.polyforge.dev" target="_blank" rel="noopener noreferrer">
+          <span class="footer-status-dot"></span>
+          All systems operational
+        </a>
       </div>
     </footer>
   </main>
-
-  <!-- Your external scripts (kept) -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js" defer></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" defer></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" defer></script>
-  <script src="https://unpkg.com/three@0.152.0/build/three.min.js" defer></script>
-
-  <script type="module">
-    import CameraControls from "https://esm.sh/camera-controls";
-    window.CameraControls = CameraControls;
-  </script>
-
-  <script src="https://cdn.jsdelivr.net/npm/tweakpane@4.0.5/dist/tweakpane.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-  <script src="https://cdn.amcharts.com/lib/5/index.js" defer></script>
-  <script src="https://cdn.amcharts.com/lib/5/xy.js" defer></script>
-  <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-  <script src="https://assets.codepen.io/16327/MorphSVGPlugin3.min.js" defer></script>
-  <script src="https://esm.sh/gpu.js" defer></script>
-  <script src="https://esm.sh/radashi" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/stats.js@0.17.0/build/stats.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@4.1.3/lib/anime.iife.min.js" defer></script>
 
   <script src="./main.js"></script>
 </body>

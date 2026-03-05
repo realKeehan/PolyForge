@@ -1,0 +1,7 @@
+{
+  "downloads": 0,
+  "users": 0,
+  "version": "5.5.1",
+  "updated": "2026-03-05T00:00:00Z",
+  "_comment": "This file is the local source of truth for download/user counters. Update manually or via CI. The website fetches this first, falling back to GitHub API for release download counts."
+}
