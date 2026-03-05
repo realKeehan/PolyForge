@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Supported Launchers — PolyForge</title>
+  <meta name="description" content="See which Minecraft launchers PolyForge supports, which are in progress, and what's planned." />
+  <link rel="icon" href="./favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true"><canvas class="dot-canvas" id="dotCanvas"></canvas></div>
+
+  <header class="site-header" id="header">
+    <div class="container header-row">
+      <a class="brand" href="./" aria-label="PolyForge home">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span class="brand-name">PolyForge</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="./">Home</a>
+        <a href="./supported.html">Launchers</a>
+        <a href="./downloads.html">Downloads</a>
+        <a href="./security.html">Security</a>
+        <a href="./faq.html">FAQ</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
+          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+        </button>
+        <a class="btn btn-primary btn-sm" href="./downloads.html">Download</a>
+        <button class="iconbtn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+      </div>
+    </div>
+    <div class="container mobile-menu" id="mobileMenu">
+      <a href="./">Home</a>
+      <a href="./supported.html">Launchers</a>
+      <a href="./downloads.html">Downloads</a>
+      <a href="./security.html">Security</a>
+      <a href="./faq.html">FAQ</a>
+      <div class="mobile-row">
+        <button class="icon-toggle" id="themeToggleSm" type="button" aria-label="Toggle theme">
+          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+        </button>
+        <a class="btn btn-primary" href="./downloads.html">Download</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container page-hero">
+      <h1>Launcher support</h1>
+      <p>Filter by support level to see what's ready, what's in progress, and what's coming next.</p>
+    </div>
+
+    <section class="container section" style="padding-top:0">
+      <!-- Filters -->
+      <div class="section-head row">
+        <div>
+          <h2>All launchers</h2>
+          <p>Click any launcher card to visit its official site.</p>
+        </div>
+        <div class="filters" role="tablist" aria-label="Launcher filters">
+          <button class="chip chip-all is-active" type="button" data-filter="all" role="tab" aria-selected="true">
+            All <span class="chip-count mono" id="btnAll">—</span>
+          </button>
+          <button class="chip chip-supported" type="button" data-filter="supported" role="tab">
+            Supported <span class="chip-count mono" id="btnSupported">—</span>
+          </button>
+          <button class="chip chip-working" type="button" data-filter="working" role="tab">
+            In progress <span class="chip-count mono" id="btnWorking">—</span>
+          </button>
+          <button class="chip chip-planned" type="button" data-filter="planned" role="tab">
+            Planned <span class="chip-count mono" id="btnPlanned">—</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid (populated by JS) -->
+      <div class="launcher-grid" id="launcherGrid" aria-live="polite"></div>
+    </section>
+
+    <!-- How it works -->
+    <section class="container section">
+      <div class="divider"></div>
+      <header class="section-head" style="margin-top:24px">
+        <h2>How launcher support works</h2>
+        <p>What each status level means for your experience.</p>
+      </header>
+      <div class="grid grid-3">
+        <article class="card">
+          <h3 style="color:var(--pf-success)">Supported</h3>
+          <p>Fully tested and working. PolyForge can discover, target, and install modpacks to these launchers reliably.</p>
+        </article>
+        <article class="card">
+          <h3 style="color:var(--pf-purple)">In progress</h3>
+          <p>Adapter exists but is still being refined. Basic installs may work, but edge cases are being resolved.</p>
+        </article>
+        <article class="card">
+          <h3 style="color:var(--pf-danger)">Planned</h3>
+          <p>On the roadmap. These launchers will get adapters based on demand, stability, and ecosystem fit.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="container section">
+      <div class="cta-block">
+        <div>
+          <h2>Don't see your launcher?</h2>
+          <p>PolyForge supports Custom Path and Manual Install modes for any launcher not listed here. You can also request support via GitHub.</p>
+        </div>
+        <div class="cta-actions">
+          <a class="btn btn-primary btn-sm" href="./downloads.html">Download now</a>
+          <a class="btn btn-ghost btn-sm" href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">Request on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="container footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <a class="brand" href="./"><span class="brand-dot" aria-hidden="true"></span><span class="brand-name">PolyForge</span></a>
+          <p>Universal modpack installer for Minecraft launchers.</p>
+        </div>
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h4>Product</h4>
+            <a href="./downloads.html">Downloads</a>
+            <a href="./supported.html">Launchers</a>
+            <a href="./security.html">Security</a>
+            <a href="./faq.html">FAQ</a>
+          </div>
+          <div class="footer-col">
+            <h4>Project</h4>
+            <a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">GitHub</a>
+          </div>
+          <div class="footer-col">
+            <h4>Legal</h4>
+            <a href="./privacy.html">Privacy</a>
+            <a href="./terms.html">Terms</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="mono muted">&copy; <span id="year"></span> PolyForge</div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="./main.js"></script>
+</body>
+</html>
