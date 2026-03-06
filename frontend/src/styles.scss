@@ -7,7 +7,7 @@
   --kumi-purple-dark: #280047;
   --kumi-purple-bg: #3b0963;
   --kumi-dark: #111111;
-  --kumi-dark-secondary: #18141b;
+  --kumi-dark-secondary: #140f18;
   --kumi-dark-tertiary: #212121;
   --kumi-gray: #777777;
   --kumi-gray-light: #959595;
@@ -17,7 +17,7 @@
   --success: #37d29c;
   --danger: #ff5c8f;
   --danger-soft: rgba(255, 92, 143, 0.22);
-  --topography: url('./assets/bg-topo.png');
+  --topo-color: #140A1C;
 }
 
 html,
@@ -205,13 +205,14 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: var(--topography);
-  background-size: cover;
-  background-position: center;
-  opacity: 0.35;
+  background-image: url('./assets/topography.svg');
+  background-size: 300px 300px;
+  background-repeat: repeat;
+  opacity: 0.12;
   pointer-events: none;
   z-index: 0;
   border-radius: inherit;
+  filter: invert(30%) sepia(60%) saturate(800%) hue-rotate(250deg) brightness(0.7);
 }
 
 .app-content > * {
@@ -530,8 +531,8 @@ body {
 }
 
 .social-links__button svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .social-links__button:hover {
@@ -563,7 +564,7 @@ body {
 
 .scroll-panel {
   position: relative;
-  background: var(--kumi-dark-secondary);
+  background: rgba(17, 17, 17, 0.9);
   border-radius: 6px;
   padding: 1rem;
   flex: 1;
@@ -693,7 +694,7 @@ body {
   flex: 1;
   min-height: 220px;
   border-radius: 6px;
-  background: var(--kumi-dark-secondary);
+  background: rgba(17, 17, 17, 0.9);
   padding: 1.1rem 1.2rem 2.4rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.9rem;
@@ -786,7 +787,7 @@ body {
 
 .terminal-log {
   flex: 1;
-  background: var(--kumi-dark-secondary);
+  background: rgba(17, 17, 17, 0.9);
   border-radius: 6px;
   padding: 1.1rem 1.2rem;
   font-family: 'JetBrains Mono', monospace;
@@ -1058,24 +1059,30 @@ body {
 }
 
 .about-dialog__cake {
-  width: 36px;
-  height: 36px;
+  width: 20px;
+  height: 20px;
   padding: 0;
-  font-size: 1.1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(17, 17, 17, 0.9);
+  border-radius: 4px;
+  border: none;
+  background: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  color: var(--kumi-purple);
+  vertical-align: middle;
+  margin-left: 0.35rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.about-dialog__cake svg {
+  width: 14px;
+  height: 14px;
 }
 
 .about-dialog__cake:hover {
-  background: rgba(40, 32, 56, 0.9);
-  border-color: rgba(143, 0, 255, 0.4);
-  transform: scale(1.1);
+  color: #c77dff;
+  transform: scale(1.15);
 }
 
 .about-dialog__close {
@@ -1100,4 +1107,48 @@ body {
   max-height: 90%;
   border-radius: 8px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Custom Slim Scrollbar ─────────────────────────── */
+
+.scroll-panel,
+.log-panel,
+.terminal-log,
+.field__input,
+textarea {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(143, 0, 255, 0.35) transparent;
+}
+
+.scroll-panel::-webkit-scrollbar,
+.log-panel::-webkit-scrollbar,
+.terminal-log::-webkit-scrollbar,
+.field__input::-webkit-scrollbar,
+textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scroll-panel::-webkit-scrollbar-track,
+.log-panel::-webkit-scrollbar-track,
+.terminal-log::-webkit-scrollbar-track,
+.field__input::-webkit-scrollbar-track,
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-panel::-webkit-scrollbar-thumb,
+.log-panel::-webkit-scrollbar-thumb,
+.terminal-log::-webkit-scrollbar-thumb,
+.field__input::-webkit-scrollbar-thumb,
+textarea::-webkit-scrollbar-thumb {
+  background: rgba(143, 0, 255, 0.35);
+  border-radius: 999px;
+}
+
+.scroll-panel::-webkit-scrollbar-thumb:hover,
+.log-panel::-webkit-scrollbar-thumb:hover,
+.terminal-log::-webkit-scrollbar-thumb:hover,
+.field__input::-webkit-scrollbar-thumb:hover,
+textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(143, 0, 255, 0.55);
 }
