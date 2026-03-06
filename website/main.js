@@ -311,6 +311,8 @@
     const slides = $$(".carousel-slide", carousel);
     const dots = $$(".carousel-dot", carousel);
     const timerBar = $(".carousel-timer-bar", carousel);
+    const prevBtn = $(".carousel-arrow--prev", carousel);
+    const nextBtn = $(".carousel-arrow--next", carousel);
     if (slides.length === 0) return;
 
     let current = 0;
@@ -318,40 +320,49 @@
     let paused = false;
     const DURATION = 5000;
 
-    function showSlide(index) {
-      slides.forEach((s, i) => {
-        s.classList.toggle("is-active", i === index);
-      });
-      dots.forEach((d, i) => {
-        d.classList.toggle("is-active", i === index);
-      });
+    function updateSlide(index) {
+      slides.forEach((s, i) => s.classList.toggle("is-active", i === index));
+      dots.forEach((d, i) => d.classList.toggle("is-active", i === index));
       current = index;
-      resetTimer();
     }
 
-    function nextSlide() {
-      showSlide((current + 1) % slides.length);
-    }
-
-    function resetTimer() {
+    function startTimer() {
+      clearInterval(interval);
       if (timerBar) {
         timerBar.style.transition = "none";
         timerBar.style.width = "0%";
-        // Force reflow
         void timerBar.offsetWidth;
         timerBar.style.transition = `width ${DURATION}ms linear`;
         timerBar.style.width = "100%";
       }
-      clearInterval(interval);
       if (!paused) {
-        interval = setInterval(nextSlide, DURATION);
+        interval = setInterval(() => goToSlide((current + 1) % slides.length), DURATION);
       }
     }
 
+    function goToSlide(index) {
+      updateSlide(index);
+      startTimer();
+    }
+
+    // Dot clicks
     dots.forEach((dot, i) => {
-      dot.addEventListener("click", () => showSlide(i));
+      dot.addEventListener("click", () => goToSlide(i));
     });
 
+    // Arrow clicks
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        goToSlide((current - 1 + slides.length) % slides.length);
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        goToSlide((current + 1) % slides.length);
+      });
+    }
+
+    // Pause on hover
     carousel.addEventListener("mouseenter", () => {
       paused = true;
       clearInterval(interval);
@@ -365,10 +376,10 @@
 
     carousel.addEventListener("mouseleave", () => {
       paused = false;
-      resetTimer();
+      startTimer();
     });
 
-    showSlide(0);
+    goToSlide(0);
   }
 
   // ── FAQ accordion ──────────────────────────────
@@ -446,9 +457,8 @@
     // Throttle resize
     let resizeTimer = null;
     function resize() {
-      const rect = canvas.getBoundingClientRect();
-      w = Math.floor(rect.width);
-      h = Math.floor(rect.height);
+      w = window.innerWidth;
+      h = window.innerHeight;
       canvas.width = Math.floor(w * dpr);
       canvas.height = Math.floor(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -616,23 +626,6 @@
     });
   }
 
-  // ── Page transition (morph) ────────────────────
-  function initPageTransition() {
-    // Morph-in on load
-    document.body.classList.add("page-loaded");
-
-    // Intercept internal navigation for smooth morph-out
-    $$("a[href]").forEach(a => {
-      const href = a.getAttribute("href") || "";
-      // Only internal links (same-origin, not anchors, not external)
-      if (href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:") || a.target === "_blank") return;
-      a.addEventListener("click", (e) => {
-        e.preventDefault();
-        document.body.classList.add("page-leaving");
-        setTimeout(() => { window.location.href = href; }, 220);
-      });
-    });
-  }
 
   // ── Init ───────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
@@ -676,9 +669,6 @@
 
     // Stats
     renderStats();
-
-    // Page transition
-    initPageTransition();
 
     // Dot field
     initDotField();
