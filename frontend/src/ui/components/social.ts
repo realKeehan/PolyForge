@@ -83,7 +83,10 @@ function showAboutDialog() {
         Built with care for the community. Select your preferred launcher,
         choose a modpack, and PolyForge handles the rest.
       </p>
-      <button type="button" class="btn btn--primary about-dialog__close">Close</button>
+      <div class="about-dialog__actions">
+        <button type="button" class="btn btn--ghost about-dialog__cake" aria-label="Cake easter egg" title="Cake?">🍰</button>
+        <button type="button" class="btn btn--primary about-dialog__close">Close</button>
+      </div>
     </div>
   `;
 
@@ -96,6 +99,33 @@ function showAboutDialog() {
   const closeBtn = overlay.querySelector('.about-dialog__close') as HTMLButtonElement;
   closeBtn.addEventListener('click', () => {
     overlay.remove();
+  });
+
+  const cakeBtn = overlay.querySelector('.about-dialog__cake') as HTMLButtonElement;
+  cakeBtn.addEventListener('click', () => {
+    overlay.remove();
+    const shell = document.querySelector('.app-window') as HTMLElement;
+    if (shell) {
+      // Trigger the easter egg video (same as Konami code)
+      const EASTER_EGG_VIDEO = 'https://keehan.co/KUMI_Files/NiceComputer.mp4';
+      const eeOverlay = document.createElement('div');
+      eeOverlay.className = 'easter-egg-overlay';
+      eeOverlay.innerHTML = `
+        <video class="easter-egg-video" autoplay controls>
+          <source src="${EASTER_EGG_VIDEO}" type="video/mp4" />
+        </video>
+      `;
+      eeOverlay.addEventListener('click', (e) => {
+        if (e.target === eeOverlay) {
+          const video = eeOverlay.querySelector('video');
+          if (video) { video.pause(); video.src = ''; }
+          eeOverlay.remove();
+        }
+      });
+      const video = eeOverlay.querySelector('video') as HTMLVideoElement;
+      video.addEventListener('ended', () => { eeOverlay.remove(); });
+      shell.appendChild(eeOverlay);
+    }
   });
 
   document.querySelector('.app-window')?.appendChild(overlay);

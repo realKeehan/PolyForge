@@ -107,6 +107,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   user-select: none;
+  pointer-events: none;
   -webkit-app-region: drag;
   --wails-draggable: drag;
   min-width: 80px;
@@ -148,7 +149,10 @@ body {
   font-weight: 700;
   color: var(--kumi-gray);
   -webkit-app-region: drag;
+  --wails-draggable: drag;
   letter-spacing: 0.02em;
+  user-select: none;
+  pointer-events: none;
 }
 
 .app-header__controls {
@@ -1046,8 +1050,36 @@ body {
   line-height: 1.6;
 }
 
-.about-dialog__close {
+.about-dialog__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   margin-top: 0.5rem;
+}
+
+.about-dialog__cake {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(17, 17, 17, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.about-dialog__cake:hover {
+  background: rgba(40, 32, 56, 0.9);
+  border-color: rgba(143, 0, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.about-dialog__close {
+  margin-top: 0;
 }
 
 /* ── Easter Egg Overlay (Konami Code) ──────────────── */

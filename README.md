@@ -129,6 +129,14 @@ The GitHub Actions workflow (`.github/workflows/go.yml`) includes Node setup and
 
 If Wails reports `This version of %1 is not compatible with the version of Windows you're running` when generating bindings, the cached helper at `%TEMP%\wailsbindings.exe` is usually a stale helper compiled for the wrong architecture. The PowerShell scripts delete the cache automatically before each build. If you still encounter the error, remove the file manually and retry.
 
+## Supported launchers
+
+| Status | Launchers |
+|--------|-----------|
+| **Supported** | Vanilla Launcher, MultiMC, CurseForge, Modrinth (Theseus), Custom Path, Manual Install |
+| **In progress** | Prism Launcher, ATLauncher, GDLauncher, Technic, PolyMC, Feather, BakaXL |
+| **Planned** | Polymerium, X Minecraft Launcher, SK Launcher, Freesm Launcher, ElyPrism, ShatteredPrism, QWERTZ, Fjord Launcher, HMCL, UltimMC |
+
 ## Architecture
 
 The wizard guides users through accepting the licence, selecting an action, choosing the modpack and launcher, and finally streams structured logs as the backend performs the installation. Utilities for Modrinth profile cloning, executable search, and launcher profile generation are exposed through the Go service for future UI integration.

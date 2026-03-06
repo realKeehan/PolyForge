@@ -89,10 +89,11 @@
 
   // ── Active nav highlighting ────────────────────
   function highlightActiveNav() {
-    const current = location.pathname.split("/").pop() || "index.html";
+    const raw = location.pathname.split("/").pop() || "";
+    const current = raw.replace(/\.html$/, "") || "index";
     $$(".nav a, .mobile-menu a").forEach(a => {
-      const href = a.getAttribute("href") || "";
-      if (href === current || (current === "index.html" && href === "./")) {
+      const href = (a.getAttribute("href") || "").replace(/^\.\//, "").replace(/\.html$/, "") || "index";
+      if (href === current || (current === "index" && (href === "" || href === "index"))) {
         a.classList.add("is-active");
       }
     });
@@ -159,6 +160,26 @@
     });
   }
 
+  // ── Compute launcher counts (always available) ──
+  function computeLauncherCounts() {
+    const counts = { supported:0, working:0, planned:0, unsupported:0 };
+    launchers.forEach(l => { if (counts[l.status] !== undefined) counts[l.status]++; });
+    return counts;
+  }
+
+  function renderLauncherCounts() {
+    const counts = computeLauncherCounts();
+    const set = (id, val) => { const el = $(id); if (el) el.textContent = String(val); };
+    set("#countSupported", counts.supported);
+    set("#countWorking", counts.working);
+    set("#countPlanned", counts.planned);
+    set("#btnSupported", counts.supported);
+    set("#btnWorking", counts.working);
+    set("#btnPlanned", counts.planned);
+    set("#btnUnsupported", counts.unsupported);
+    set("#btnAll", counts.supported + counts.working + counts.planned + counts.unsupported);
+  }
+
   // ── Render launchers (used by supported.html & index.html) ──
   function renderLaunchers(gridId, opts = {}) {
     const grid = $(gridId || "#launcherGrid");
@@ -175,39 +196,20 @@
       }
     }
 
-    // Detection scaffolding: detected launchers first
-    // TODO: When detection is wired, sort detected launchers to top
-    // For now, we keep the natural order (supported > working > planned > unsupported)
-
     grid.innerHTML = list.map(l => {
       const m = meta[l.status];
       if (!m) return "";
       const tag = l.url ? "a" : "article";
       const hrefAttr = l.url ? ` href="${esc(l.url)}" target="_blank" rel="noopener noreferrer"` : "";
 
-      // Detection scaffolding: path display + browse button
-      // detectedPath will be populated when detection is wired
-      const detectedPath = null; // TODO: wire to detection cache
-      const pathLine = detectedPath
-        ? `<span class="launcher-path">${esc(detectedPath)}</span>`
-        : `<span class="launcher-path launcher-path--notfound">Not Found</span>`;
-
-      const browseBtn = !detectedPath
-        ? `<button class="launcher-browse" title="Browse for launcher location" aria-label="Browse for ${esc(l.name)}">
-            <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-           </button>`
-        : "";
-
       return `
         <${tag} class="launcher" data-status="${l.status}"${hrefAttr}>
           <div class="launcher-top">
             <div class="launcher-info">
               <div class="launcher-name">${esc(l.name)}</div>
-              ${pathLine}
             </div>
             <div class="launcher-actions">
               <span class="badge ${m.badge} mono">${esc(m.label)}</span>
-              ${browseBtn}
             </div>
           </div>
           <p class="launcher-note">${esc(l.note)}</p>
@@ -216,20 +218,7 @@
       `;
     }).join("");
 
-    // Update counts
-    const allLaunchers = opts.subset ? launchers.filter(l => opts.subset.includes(l.status)) : launchers;
-    const counts = { supported:0, working:0, planned:0, unsupported:0 };
-    allLaunchers.forEach(l => { if (counts[l.status] !== undefined) counts[l.status]++; });
-
-    const set = (id, val) => { const el = $(id); if (el) el.textContent = String(val); };
-    set("#countSupported", counts.supported);
-    set("#countWorking", counts.working);
-    set("#countPlanned", counts.planned);
-    set("#btnSupported", counts.supported);
-    set("#btnWorking", counts.working);
-    set("#btnPlanned", counts.planned);
-    set("#btnUnsupported", counts.unsupported);
-    set("#btnAll", counts.supported + counts.working + counts.planned + counts.unsupported);
+    renderLauncherCounts();
   }
 
   // ── Filter dropdown ────────────────────────────
@@ -495,14 +484,14 @@
 
     function themeDotColor() {
       return (document.documentElement.dataset.theme || "dark") === "light"
-        ? { r:60, g:40, b:80, a:0.14 }
-        : { r:200, g:180, b:255, a:0.16 };
+        ? { r:80, g:50, b:120, a:0.22 }
+        : { r:210, g:190, b:255, a:0.28 };
     }
 
     function themeAccentColor() {
       return (document.documentElement.dataset.theme || "dark") === "light"
-        ? { r:143, g:0, b:255, a:0.08 }
-        : { r:143, g:0, b:255, a:0.12 };
+        ? { r:143, g:0, b:255, a:0.12 }
+        : { r:143, g:0, b:255, a:0.18 };
     }
 
     function addRipple(x, y) {
@@ -595,6 +584,56 @@
     requestAnimationFrame(draw);
   }
 
+  // ── Info bubble toggles (download hints) ───────
+  function initInfoBubbles() {
+    $$(".info-bubble-toggle").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const bubble = btn.closest(".info-bubble-wrapper").querySelector(".info-bubble-content");
+        if (!bubble) return;
+        const isOpen = bubble.classList.contains("is-open");
+        // Close all open bubbles first
+        $$(".info-bubble-content.is-open").forEach(b => b.classList.remove("is-open"));
+        if (!isOpen) bubble.classList.add("is-open");
+      });
+    });
+    document.addEventListener("click", () => {
+      $$(".info-bubble-content.is-open").forEach(b => b.classList.remove("is-open"));
+    });
+  }
+
+  // ── Eye-toggle for hash sections ───────────────
+  function initEyeToggles() {
+    $$(".hash-eye-toggle").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const hashBlock = btn.closest(".dl-hash-wrapper").querySelector(".dl-hash");
+        if (!hashBlock) return;
+        const isOpen = hashBlock.classList.contains("is-visible");
+        hashBlock.classList.toggle("is-visible", !isOpen);
+        btn.classList.toggle("is-active", !isOpen);
+        btn.setAttribute("aria-expanded", String(!isOpen));
+      });
+    });
+  }
+
+  // ── Page transition (morph) ────────────────────
+  function initPageTransition() {
+    // Morph-in on load
+    document.body.classList.add("page-loaded");
+
+    // Intercept internal navigation for smooth morph-out
+    $$("a[href]").forEach(a => {
+      const href = a.getAttribute("href") || "";
+      // Only internal links (same-origin, not anchors, not external)
+      if (href.startsWith("http") || href.startsWith("#") || href.startsWith("mailto:") || a.target === "_blank") return;
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        document.body.classList.add("page-leaving");
+        setTimeout(() => { window.location.href = href; }, 220);
+      });
+    });
+  }
+
   // ── Init ───────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
     applyTheme(getPreferredTheme());
@@ -607,6 +646,9 @@
     // Year
     const yearEl = $("#year");
     if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+    // Launcher counts (always, even without grid)
+    renderLauncherCounts();
 
     // Launchers
     renderLaunchers("#launcherGrid");
@@ -624,14 +666,19 @@
     // Security
     initSecurityAccordion();
 
-    // Download dropdowns
+    // Download dropdowns + info bubbles + eye toggles
     initDownloadDropdowns();
+    initInfoBubbles();
+    initEyeToggles();
 
     // Carousel
     initCarousel();
 
     // Stats
     renderStats();
+
+    // Page transition
+    initPageTransition();
 
     // Dot field
     initDotField();
