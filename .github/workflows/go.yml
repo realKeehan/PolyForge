@@ -34,6 +34,15 @@ jobs:
       working-directory: frontend
       run: npm run build
 
+    # Ensure frontend/dist exists for Go embed even if vite build
+    # produces no output (e.g. missing wailsjs runtime bindings in CI)
+    - name: Ensure frontend dist exists
+      run: |
+        mkdir -p frontend/dist
+        if [ ! -f frontend/dist/index.html ]; then
+          echo '<!doctype html><html><body>ci-placeholder</body></html>' > frontend/dist/index.html
+        fi
+
     - name: Tidy Go modules
       run: go mod tidy
 

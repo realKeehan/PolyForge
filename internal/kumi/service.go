@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	version           = "5.5.1"
-	userAgent         = "KUMI-Installer/5.5.1 (+https://keehan.co)"
+	version           = "5.5.2"
+	userAgent         = "KUMI-Installer/5.5.2 (+https://keehan.co)"
 	quiltLoaderZipURL = "https://cdn.discordapp.com/attachments/1174802415531327599/1174934629644509245/quilt-loader-0.22.0-beta.1-1.20.1.zip"
 	vanillaZipURL     = "https://cdn.discordapp.com/attachments/1174802415531327599/1175988618469310556/TurtelVanilla.zip"
 	curseforgeZipURL  = "https://cdn.discordapp.com/attachments/1174802415531327599/1175988721158455316/TurtelCurse.zip"
@@ -72,6 +72,8 @@ func (s *Service) Options() []OptionDescriptor {
 		{ID: "fjord", Title: "Fjord Launcher Install", Description: "Install into Fjord Launcher.", RequiresPath: true, PathLabel: "Fjord Root"},
 		{ID: "hmcl", Title: "HMCL Install", Description: "Install into HMCL.", RequiresPath: true, PathLabel: "HMCL Root"},
 		{ID: "ultimmc", Title: "UltimMC Install", Description: "Install into UltimMC.", RequiresPath: true, PathLabel: "UltimMC Root"},
+		{ID: "polymerium", Title: "Polymerium Install", Description: "Install into Polymerium.", RequiresPath: true, PathLabel: "Polymerium Root"},
+		{ID: "xmcl", Title: "X Minecraft Launcher Install", Description: "Install into X Minecraft Launcher (XMCL).", RequiresPath: true, PathLabel: "XMCL Root"},
 		{ID: "custom", Title: "Custom Install", Description: "Install mods into a custom mods folder.", RequiresPath: true, PathLabel: "Mods Folder"},
 		{ID: "manual", Title: "Manual Install", Description: "Download the manual installation zip to the chosen location.", RequiresPath: true, PathLabel: "Target Folder"},
 		{ID: "about", Title: "About", Description: "View information about PolyForge."},
@@ -119,6 +121,10 @@ func (s *Service) Execute(optionID string, payload ExecutionPayload) (*ActionRes
 		return s.installHMCL(payload.Path)
 	case "ultimmc":
 		return s.installUltimMC(payload.Path)
+	case "polymerium":
+		return s.installPolymerium(payload.Path)
+	case "xmcl":
+		return s.installXMCL(payload.Path)
 	case "custom":
 		return s.installCustomMods(payload.Path)
 	case "manual":
