@@ -37,7 +37,7 @@ Supported on Windows, Linux, and macOS.
 │       ├── ui/                # Wizard shell and individual screens
 │       ├── templates/         # Pug partials
 │       └── styles.scss        # Global styling
-├── website/                   # Static marketing/docs site (polyforge.dev)
+├── website/                   # PHP marketing site (polyforge.dev) - shared partials in website/partials/
 ├── scripts/                   # Build and dev helper scripts
 │   ├── wails-build.ps1        # Production build (npm + Go + UPX + obfuscation)
 │   ├── wails-dev.ps1          # Dev mode launcher (npm + Go)
@@ -135,7 +135,7 @@ If Wails reports `This version of %1 is not compatible with the version of Windo
 |--------|-----------|
 | **Supported** | Vanilla Launcher, MultiMC, CurseForge, Modrinth (Theseus), Custom Path, Manual Install |
 | **In progress** | Prism Launcher, ATLauncher, GDLauncher, Technic, PolyMC, Feather, BakaXL |
-| **Planned** | Polymerium, X Minecraft Launcher, SK Launcher, Freesm Launcher, ElyPrism, ShatteredPrism, QWERTZ, Fjord Launcher, HMCL, UltimMC |
+| **Planned** | Polymerium, X Minecraft Launcher, SK Launcher, Freesm Launcher, PineconeMC (formerly ElyPrism), ShatteredPrism, QWERTZ, Fjord Launcher, HMCL, UltimMC |
 
 ## Architecture
 
