@@ -1,49 +1,12 @@
-<!doctype html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Downloads - PolyForge</title>
-  <meta name="description" content="Download PolyForge for Windows, Linux, and macOS." />
-  <meta property="og:title" content="Downloads - PolyForge" />
-  <meta property="og:description" content="Download PolyForge for Windows, Linux, and macOS." />
-  <meta property="og:url" content="https://polyforge.dev/downloads.html" />
-  <link rel="icon" href="./favicon.ico" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body>
-  <div class="bg" aria-hidden="true"><canvas class="dot-canvas" id="dotCanvas"></canvas></div>
+<?php
+$pageTitle       = 'Downloads - PolyForge';
+$pageDescription = 'Download PolyForge for Windows, Linux, and macOS.';
+$pageSlug        = 'downloads';
+$hideDownloadBtn = true; // this page is the download destination
+require __DIR__ . '/partials/header.php';
+?>
 
-  <header class="site-header" id="header">
-    <div class="container header-row">
-      <a class="brand" href="./" aria-label="PolyForge home"><span class="brand-dot" aria-hidden="true"></span><span class="brand-name">PolyForge</span></a>
-      <nav class="nav" aria-label="Primary">
-        <a href="./">Home</a><a href="./supported.html">Launchers</a><a href="./downloads.html">Downloads</a><a href="./security.html">Security</a><a href="./faq.html">FAQ</a>
-      </nav>
-      <div class="header-actions">
-        <!-- Theme toggle stays; download button hidden on this page -->
-        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
-          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
-        </button>
-        <button class="iconbtn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
-      </div>
-    </div>
-    <div class="container mobile-menu" id="mobileMenu">
-      <a href="./">Home</a><a href="./supported.html">Launchers</a><a href="./downloads.html">Downloads</a><a href="./security.html">Security</a><a href="./faq.html">FAQ</a>
-      <div class="mobile-row">
-        <button class="icon-toggle" id="themeToggleSm" type="button" aria-label="Toggle theme">
-          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main>
+  <main id="main">
     <div class="container page-hero">
       <h1>Downloads</h1>
       <p>Download PolyForge and start installing modpacks across launchers.</p>
@@ -60,15 +23,15 @@
           </h3>
           <p>Recommended for most users. No installation or setup required - just download and run.</p>
           <div class="dl-options">
-            <a class="dl-btn" href="#" title="Download coming soon">
+            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true">
               <span class="dl-label">.exe</span>
               <span class="dl-meta">windows/amd64 - Recommended</span>
             </a>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" title="Download coming soon"><span class="dl-label">.exe</span><span class="dl-meta">windows/arm64</span></a>
-            <a class="dl-btn" href="#" title="Download coming soon" style="opacity:.7"><span class="dl-label">.jar</span><span class="dl-meta">Experimental</span></a>
+            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true"><span class="dl-label">.exe</span><span class="dl-meta">windows/arm64</span></a>
+            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true" style="opacity:.7"><span class="dl-label">.jar</span><span class="dl-meta">Experimental</span></a>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -102,19 +65,19 @@
           </h3>
           <p>macOS support is on the roadmap. Path heuristics for macOS installs are in progress.</p>
           <div class="dl-options">
-            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
               <span class="dl-label">.app Bundle</span><span class="dl-meta">darwin/universal</span>
             </a>
-            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
               <span class="dl-label">.dmg (Disk Image)</span><span class="dl-meta">darwin/universal</span>
             </a>
-            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.7;pointer-events:none">
+            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.7;pointer-events:none">
               <span class="dl-label">.jar</span><span class="dl-meta">Experimental</span>
             </a>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.pkg Installer</span><span class="dl-meta">darwin/universal</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.pkg Installer</span><span class="dl-meta">darwin/universal</span></a>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -148,30 +111,30 @@
           </h3>
           <p>Broader OS discovery presets are planned. Check back for expanded Linux support.</p>
           <div class="dl-options">
-            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
               <span class="dl-label">ELF Binary</span><span class="dl-meta">linux/amd64</span>
             </a>
-            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.6;pointer-events:none">
+            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
               <span class="dl-label">.deb (Debian/Ubuntu)</span><span class="dl-meta">linux/amd64</span>
             </a>
-            <a class="dl-btn" href="#" title="Coming soon" style="opacity:.7;pointer-events:none">
+            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.7;pointer-events:none">
               <span class="dl-label">.jar</span><span class="dl-meta">Experimental</span>
             </a>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">ELF Binary</span><span class="dl-meta">linux/arm64</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.rpm (Fedora/RHEL)</span><span class="dl-meta">linux/amd64</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.AppImage</span><span class="dl-meta">linux/amd64</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.AppImage</span><span class="dl-meta">linux/arm64</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">Flatpak</span><span class="dl-meta">Planned</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">Snap</span><span class="dl-meta">Planned</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">Nix / Flake</span><span class="dl-meta">NixOS</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR</span><span class="dl-meta">Arch</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR (bin)</span><span class="dl-meta">Arch</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">EBuild</span><span class="dl-meta">Gentoo</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.deb</span><span class="dl-meta">linux/arm64</span></a>
-            <a class="dl-btn" href="#" style="opacity:.4;pointer-events:none"><span class="dl-label">.rpm</span><span class="dl-meta">linux/arm64</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">ELF Binary</span><span class="dl-meta">linux/arm64</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.rpm (Fedora/RHEL)</span><span class="dl-meta">linux/amd64</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.AppImage</span><span class="dl-meta">linux/amd64</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.AppImage</span><span class="dl-meta">linux/arm64</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Flatpak</span><span class="dl-meta">Planned</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Snap</span><span class="dl-meta">Planned</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Nix / Flake</span><span class="dl-meta">NixOS</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR</span><span class="dl-meta">Arch</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR (bin)</span><span class="dl-meta">Arch</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">EBuild</span><span class="dl-meta">Gentoo</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.deb</span><span class="dl-meta">linux/arm64</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.rpm</span><span class="dl-meta">linux/arm64</span></a>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -214,7 +177,7 @@
     <section class="container section">
       <div class="cta-block">
         <div><h2>Is it safe?</h2><p>PolyForge is scanned across multiple security analysis platforms including VirusTotal, Hybrid Analysis, ANY.RUN, and more. Some antivirus software may flag new or unsigned executables - this is a common false positive for Go-compiled binaries.</p></div>
-        <div class="cta-actions"><a class="btn btn-primary btn-sm" href="./security.html">View security details</a></div>
+        <div class="cta-actions"><a class="btn btn-primary btn-sm" href="./security">View security details</a></div>
       </div>
     </section>
 
@@ -225,25 +188,6 @@
         <div class="cta-actions"><a class="btn btn-ghost btn-sm" href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">View on GitHub</a></div>
       </div>
     </section>
-
-    <footer class="container footer">
-      <div class="footer-inner">
-        <div class="footer-brand"><a class="brand" href="./"><span class="brand-dot" aria-hidden="true"></span><span class="brand-name">PolyForge</span></a><p>Keehan's Universal Modpack Installer for Minecraft launchers.</p></div>
-        <div class="footer-cols">
-          <div class="footer-col"><h4>Product</h4><a href="./downloads.html">Downloads</a><a href="./supported.html">Launchers</a><a href="./security.html">Security</a><a href="./faq.html">FAQ</a></div>
-          <div class="footer-col"><h4>Resources</h4><a href="./support.html">Support</a><a href="./team.html">Team</a><a href="https://docs.polyforge.dev" target="_blank" rel="noopener noreferrer">Docs</a><a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">GitHub</a></div>
-          <div class="footer-col"><h4>Legal</h4><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div>
-          <div class="footer-col"><h4>Contact</h4><a href="mailto:contact@polyforge.dev">contact@polyforge.dev</a></div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <div class="mono muted">&copy; <span id="year"></span> PolyForge</div>
-        <span class="footer-creator">Created by <a href="https://keehan.co" target="_blank" rel="noopener noreferrer">Keehan</a></span>
-        <a class="footer-status" href="https://status.polyforge.dev" target="_blank" rel="noopener noreferrer"><span class="footer-status-dot"></span>All systems operational</a>
-      </div>
-    </footer>
   </main>
 
-  <script src="./main.js"></script>
-</body>
-</html>
+<?php require __DIR__ . '/partials/footer.php'; ?>

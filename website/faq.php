@@ -1,58 +1,11 @@
-<!doctype html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FAQ — PolyForge</title>
-  <meta name="description" content="Frequently asked questions about PolyForge, the universal modpack installer." />
-  <link rel="icon" href="./favicon.ico" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body>
-  <div class="bg" aria-hidden="true"><canvas class="dot-canvas" id="dotCanvas"></canvas></div>
+<?php
+$pageTitle       = 'FAQ - PolyForge';
+$pageDescription = 'Frequently asked questions about PolyForge, the universal modpack installer.';
+$pageSlug        = 'faq';
+require __DIR__ . '/partials/header.php';
+?>
 
-  <header class="site-header" id="header">
-    <div class="container header-row">
-      <a class="brand" href="./" aria-label="PolyForge home">
-        <span class="brand-dot" aria-hidden="true"></span>
-        <span class="brand-name">PolyForge</span>
-      </a>
-      <nav class="nav" aria-label="Primary">
-        <a href="./">Home</a>
-        <a href="./supported.html">Launchers</a>
-        <a href="./downloads.html">Downloads</a>
-        <a href="./security.html">Security</a>
-        <a href="./faq.html">FAQ</a>
-      </nav>
-      <div class="header-actions">
-        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
-          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
-        </button>
-        <a class="btn btn-primary btn-sm" href="./downloads.html">Download</a>
-        <button class="iconbtn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
-      </div>
-    </div>
-    <div class="container mobile-menu" id="mobileMenu">
-      <a href="./">Home</a>
-      <a href="./supported.html">Launchers</a>
-      <a href="./downloads.html">Downloads</a>
-      <a href="./security.html">Security</a>
-      <a href="./faq.html">FAQ</a>
-      <div class="mobile-row">
-        <button class="icon-toggle" id="themeToggleSm" type="button" aria-label="Toggle theme">
-          <span class="icon-toggle__sun" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <span class="icon-toggle__moon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
-        </button>
-        <a class="btn btn-primary" href="./downloads.html">Download</a>
-      </div>
-    </div>
-  </header>
-
-  <main>
+  <main id="main">
     <div class="container page-hero">
       <h1>Frequently asked questions</h1>
       <p>Quick answers to common questions about PolyForge.</p>
@@ -86,7 +39,7 @@
           <button class="faq-question" type="button">What platforms does PolyForge support?</button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              Currently Windows 10+ (64-bit). Linux and macOS support is planned and on the roadmap. You can track progress on the <a href="./downloads.html">downloads page</a>.
+              Currently Windows 10+ (64-bit). Linux and macOS support is planned and on the roadmap. You can track progress on the <a href="./downloads">downloads page</a>.
             </div>
           </div>
         </div>
@@ -109,7 +62,7 @@
           <button class="faq-question" type="button">Which launchers are supported?</button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              PolyForge currently supports the Vanilla Launcher, MultiMC, CurseForge, and Modrinth. Several more are in progress including Prism Launcher, ATLauncher, GDLauncher, and others. See the full list on the <a href="./supported.html">launchers page</a>.
+              PolyForge currently supports the Vanilla Launcher, MultiMC, CurseForge, and Modrinth. Several more are in progress including Prism Launcher, ATLauncher, GDLauncher, and others. See the full list on the <a href="./supported">launchers page</a>.
             </div>
           </div>
         </div>
@@ -150,7 +103,7 @@
           <button class="faq-question" type="button">Is PolyForge safe to use?</button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              Yes. PolyForge is open-source and every release is submitted to multiple security analysis platforms including VirusTotal, Hybrid Analysis, ANY.RUN, and more. See the full list on the <a href="./security.html">security page</a>.
+              Yes. PolyForge is open-source and every release is submitted to multiple security analysis platforms including VirusTotal, Hybrid Analysis, ANY.RUN, and more. See the full list on the <a href="./security">security page</a>.
             </div>
           </div>
         </div>
@@ -159,7 +112,7 @@
           <button class="faq-question" type="button">My antivirus flagged PolyForge. Is it a virus?</button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              No. PolyForge is compiled with Go, which produces executables that some heuristic-based antivirus engines flag as suspicious. This is a well-known false positive pattern across the Go ecosystem. You can verify results yourself on any of the platforms listed on our <a href="./security.html">security page</a>, or build from source.
+              No. PolyForge is compiled with Go, which produces executables that some heuristic-based antivirus engines flag as suspicious. This is a well-known false positive pattern across the Go ecosystem. You can verify results yourself on any of the platforms listed on our <a href="./security">security page</a>, or build from source.
             </div>
           </div>
         </div>
@@ -168,7 +121,7 @@
           <button class="faq-question" type="button">Does PolyForge collect any data?</button>
           <div class="faq-answer">
             <div class="faq-answer-inner">
-              No. PolyForge does not collect telemetry, personal data, or usage analytics. Everything stays on your machine. See our <a href="./privacy.html">privacy policy</a> for details.
+              No. PolyForge does not collect telemetry, personal data, or usage analytics. Everything stays on your machine. See our <a href="./privacy">privacy policy</a> for details.
             </div>
           </div>
         </div>
@@ -248,42 +201,10 @@
           <p>Download the installer and get started in seconds.</p>
         </div>
         <div class="cta-actions">
-          <a class="btn btn-primary btn-sm" href="./downloads.html">Download now</a>
+          <a class="btn btn-primary btn-sm" href="./downloads">Download now</a>
         </div>
       </div>
     </section>
-
-    <footer class="container footer">
-      <div class="footer-inner">
-        <div class="footer-brand">
-          <a class="brand" href="./"><span class="brand-dot" aria-hidden="true"></span><span class="brand-name">PolyForge</span></a>
-          <p>Universal modpack installer for Minecraft launchers.</p>
-        </div>
-        <div class="footer-cols">
-          <div class="footer-col">
-            <h4>Product</h4>
-            <a href="./downloads.html">Downloads</a>
-            <a href="./supported.html">Launchers</a>
-            <a href="./security.html">Security</a>
-            <a href="./faq.html">FAQ</a>
-          </div>
-          <div class="footer-col">
-            <h4>Project</h4>
-            <a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">GitHub</a>
-          </div>
-          <div class="footer-col">
-            <h4>Legal</h4>
-            <a href="./privacy.html">Privacy</a>
-            <a href="./terms.html">Terms</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <div class="mono muted">&copy; <span id="year"></span> PolyForge</div>
-      </div>
-    </footer>
   </main>
 
-  <script src="./main.js"></script>
-</body>
-</html>
+<?php require __DIR__ . '/partials/footer.php'; ?>

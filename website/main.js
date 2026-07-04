@@ -38,7 +38,7 @@
     { name:"X Minecraft Launcher", status:"planned", note:"An open-source Minecraft launcher supporting multiple accounts, modpacks, and resource management.", url:"https://github.com/Voxelum/x-minecraft-launcher" },
     { name:"SK Launcher", status:"planned", note:"An all-in-one Minecraft hub with built-in modloaders, modpack support, and skin management.", url:"https://skmedix.pl/" },
     { name:"Freesm Launcher", status:"planned", note:"A Prism-based launcher that removes offline account restrictions and adds custom auth server support.", url:"https://freesmlauncher.org/" },
-    { name:"ElyPrism", status:"planned", note:"A Prism Launcher fork with Ely.by authentication integration for alternative account systems.", url:"https://elyprismlauncher.github.io/" },
+    { name:"PineconeMC", status:"planned", note:"Formerly ElyPrism - a Prism Launcher fork with Ely.by authentication integration for alternative account systems.", url:"https://elyprismlauncher.github.io/" },
     { name:"ShatteredPrism", status:"planned", note:"A community-maintained Prism Launcher fork focused on extended features and flexibility.", url:"https://github.com/Noctilune/ShatteredPrism" },
     { name:"QWERTZ Launcher", status:"planned", note:"A launcher from the QWERTZ project ecosystem with streamlined Minecraft instance management.", url:"https://qwertz.app/projects/" },
     { name:"Fjord Launcher", status:"planned", note:"An Unmojang project - a Prism-family launcher with its own community-driven direction.", url:"https://github.com/unmojang/FjordLauncher" },
@@ -66,13 +66,16 @@
     return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
   }
 
-  function applyTheme(theme) {
+  function applyTheme(theme, persist = false) {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem("pf-theme", theme);
+    // Only persist explicit user choices so OS preference changes keep working
+    if (persist) {
+      try { localStorage.setItem("pf-theme", theme); } catch {}
+    }
   }
 
   function toggleTheme() {
-    applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
+    applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light", true);
   }
 
   // ── Scroll ─────────────────────────────────────

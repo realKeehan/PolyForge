@@ -1,92 +1,12 @@
-<!doctype html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PolyForge - Keehan's Universal Modpack Installer</title>
-  <meta name="description" content="PolyForge is Keehan's Universal Modpack Installer for Minecraft launchers. One workflow. Many ecosystems. Supported on Windows, Linux, and macOS." />
-
-  <!-- Open Graph / Social Link Preview -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="PolyForge - Keehan's Universal Modpack Installer" />
-  <meta property="og:description" content="Install modpacks across any Minecraft launcher with one tool. Clean installs, multi-launcher targeting, and structured logging." />
-  <meta property="og:url" content="https://polyforge.dev/" />
-  <meta property="og:image" content="https://polyforge.dev/images/CHOOSE MODPACK.png" />
-  <meta property="og:site_name" content="PolyForge" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="PolyForge - Keehan's Universal Modpack Installer" />
-  <meta name="twitter:description" content="Install modpacks across any Minecraft launcher with one tool." />
-  <meta name="twitter:image" content="https://polyforge.dev/images/CHOOSE MODPACK.png" />
-
-  <link rel="icon" href="./favicon.ico" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body>
-  <!-- Animated dot background -->
-  <div class="bg" aria-hidden="true">
-    <canvas class="dot-canvas" id="dotCanvas"></canvas>
-  </div>
-
-  <!-- ─── Header ──────────────────────────────── -->
-  <header class="site-header" id="header">
-    <div class="container header-row">
-      <a class="brand" href="./" aria-label="PolyForge home">
-        <span class="brand-dot" aria-hidden="true"></span>
-        <span class="brand-name">PolyForge</span>
-      </a>
-
-      <nav class="nav" aria-label="Primary">
-        <a href="./">Home</a>
-        <a href="./supported.html">Launchers</a>
-        <a href="./downloads.html">Downloads</a>
-        <a href="./security.html">Security</a>
-        <a href="./faq.html">FAQ</a>
-      </nav>
-
-      <div class="header-actions">
-        <a class="btn btn-primary btn-sm" href="./downloads.html">Download</a>
-        <button class="icon-toggle" id="themeToggle" type="button" aria-label="Toggle theme">
-          <span class="icon-toggle__sun" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </span>
-          <span class="icon-toggle__moon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          </span>
-        </button>
-        <button class="iconbtn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false">
-          <span></span><span></span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Mobile menu -->
-    <div class="container mobile-menu" id="mobileMenu">
-      <a href="./">Home</a>
-      <a href="./supported.html">Launchers</a>
-      <a href="./downloads.html">Downloads</a>
-      <a href="./security.html">Security</a>
-      <a href="./faq.html">FAQ</a>
-      <div class="mobile-row">
-        <button class="icon-toggle" id="themeToggleSm" type="button" aria-label="Toggle theme">
-          <span class="icon-toggle__sun" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5.2 5.2 3.8 3.8M20.2 20.2l-1.4-1.4M18.8 5.2l1.4-1.4M3.8 20.2l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          </span>
-          <span class="icon-toggle__moon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M21 14.2A7.6 7.6 0 0 1 9.8 3a6.9 6.9 0 1 0 11.2 11.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-          </span>
-        </button>
-        <a class="btn btn-primary" href="./downloads.html">Download</a>
-      </div>
-    </div>
-  </header>
+<?php
+$pageTitle       = "PolyForge - Keehan's Universal Modpack Installer";
+$pageDescription = "PolyForge is Keehan's Universal Modpack Installer for Minecraft launchers. One workflow. Many ecosystems. Supported on Windows, Linux, and macOS.";
+$pageSlug        = 'index';
+require __DIR__ . '/partials/header.php';
+?>
 
   <!-- ─── Main ────────────────────────────────── -->
-  <main id="top">
+  <main id="main">
 
     <!-- Hero -->
     <section class="container hero">
@@ -97,8 +17,8 @@
         predictable results, and a workflow designed for repeatable installs and updates.
       </p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="./downloads.html">Download installer</a>
-        <a class="btn btn-ghost" href="./supported.html">See all launchers</a>
+        <a class="btn btn-primary" href="./downloads">Download installer</a>
+        <a class="btn btn-ghost" href="./supported">See all launchers</a>
       </div>
       <div class="os-support-line">
         <span>Supported on</span>
@@ -161,7 +81,7 @@
             Choose your modpack, select a launcher, and let PolyForge handle placement.
             A consistent flow that adapts per launcher and target - no guesswork required.
           </p>
-          <a class="btn btn-ghost btn-sm" href="./downloads.html">Get started</a>
+          <a class="btn btn-ghost btn-sm" href="./downloads">Get started</a>
         </div>
         <div class="showcase-visual">
           <img src="./images/CHOOSE MODPACK.png" alt="PolyForge choose modpack screen" loading="lazy" decoding="async" />
@@ -175,7 +95,7 @@
             One installer surface across multiple launcher ecosystems. Pick from supported,
             in-progress, or custom path options and PolyForge maps the install correctly.
           </p>
-          <a class="btn btn-ghost btn-sm" href="./supported.html">View launchers</a>
+          <a class="btn btn-ghost btn-sm" href="./supported">View launchers</a>
         </div>
         <div class="showcase-visual">
           <img src="./images/CHOOSE LAUNCHER.png" alt="PolyForge choose launcher screen" loading="lazy" decoding="async" />
@@ -427,59 +347,11 @@
           <p>Download the installer and you're done - no setup required.</p>
         </div>
         <div class="cta-actions">
-          <a class="btn btn-primary" href="./downloads.html">Download installer</a>
+          <a class="btn btn-primary" href="./downloads">Download installer</a>
           <a class="btn btn-ghost" href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">View on GitHub</a>
         </div>
       </div>
     </section>
-
-    <!-- Footer -->
-    <footer class="container footer">
-      <div class="footer-inner">
-        <div class="footer-brand">
-          <a class="brand" href="./">
-            <span class="brand-dot" aria-hidden="true"></span>
-            <span class="brand-name">PolyForge</span>
-          </a>
-          <p>Keehan's Universal Modpack Installer for Minecraft launchers. One workflow, many ecosystems.</p>
-        </div>
-        <div class="footer-cols">
-          <div class="footer-col">
-            <h4>Product</h4>
-            <a href="./downloads.html">Downloads</a>
-            <a href="./supported.html">Launchers</a>
-            <a href="./security.html">Security</a>
-            <a href="./faq.html">FAQ</a>
-          </div>
-          <div class="footer-col">
-            <h4>Resources</h4>
-            <a href="./support.html">Support</a>
-            <a href="./team.html">Team</a>
-            <a href="https://docs.polyforge.dev" target="_blank" rel="noopener noreferrer">Docs</a>
-            <a href="https://github.com/realKeehan/PolyForge" target="_blank" rel="noopener noreferrer">GitHub</a>
-          </div>
-          <div class="footer-col">
-            <h4>Legal</h4>
-            <a href="./privacy.html">Privacy</a>
-            <a href="./terms.html">Terms</a>
-          </div>
-          <div class="footer-col">
-            <h4>Contact</h4>
-            <a href="mailto:contact@polyforge.dev">contact@polyforge.dev</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <div class="mono muted">&copy; <span id="year"></span> PolyForge</div>
-        <span class="footer-creator">Created by <a href="https://keehan.co" target="_blank" rel="noopener noreferrer">Keehan</a></span>
-        <a class="footer-status" href="https://status.polyforge.dev" target="_blank" rel="noopener noreferrer">
-          <span class="footer-status-dot"></span>
-          All systems operational
-        </a>
-      </div>
-    </footer>
   </main>
 
-  <script src="./main.js"></script>
-</body>
-</html>
+<?php require __DIR__ . '/partials/footer.php'; ?>
