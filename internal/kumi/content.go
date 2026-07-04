@@ -125,7 +125,7 @@ func fetchRemoteManifest(client *http.Client) (*RemoteManifest, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", userAgent())
 
 	fetcher := *client
 	fetcher.Timeout = 15 * time.Second
@@ -172,7 +172,7 @@ func (s *Service) VerifyPackAccess(packID, password string) PackAccessResult {
 		return PackAccessResult{Error: err.Error()}
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", userAgent())
 
 	client := s.client
 	if client == nil {
