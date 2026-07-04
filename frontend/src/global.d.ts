@@ -1,4 +1,4 @@
-import type { ActionResult, ExecutionPayload, OptionDescriptor } from './app/types';
+import type { ActionResult, ExecutionPayload, OptionDescriptor, RemoteContentResult } from './app/types';
 
 
 export interface ModrinthCloneRequest {
@@ -44,6 +44,7 @@ declare global {
       app: {
         App: {
           GetMenuOptions(): Promise<OptionDescriptor[]>;
+          GetRemoteContent(): Promise<RemoteContentResult>;
           Execute(optionID: string, payload: ExecutionPayload): Promise<ActionResult>;
           SelectDirectory(title: string): Promise<string>;
           CloneModrinthProfile(request: ModrinthCloneRequest): Promise<ActionResult>;

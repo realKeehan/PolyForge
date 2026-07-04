@@ -1,8 +1,8 @@
 import { APP_VERSION } from '../app/constants';
 import { Quit, WindowMinimise } from '@wailsapp/runtime';
 import { createStore } from '../app/state';
-import { Step } from '../app/types';
-import { fetchMenuOptions } from '../app/ipc';
+import { Step, type OptionDescriptor, type RemoteContentResult } from '../app/types';
+import { fetchMenuOptions, fetchRemoteContent } from '../app/ipc';
 import { renderLoading } from './screens/Loading';
 import { renderStartup } from './screens/Startup';
 import { renderLicense } from './screens/License';
@@ -40,7 +40,7 @@ function showEasterEgg(shell: HTMLElement) {
   const overlay = document.createElement('div');
   overlay.className = 'easter-egg-overlay';
   overlay.innerHTML = `
-    <video class="easter-egg-video" autoplay>
+    <video class="easter-egg-video" autoplay disablepictureinpicture disableremoteplayback playsinline>
       <source src="${EASTER_EGG_VIDEO}" type="video/mp4" />
     </video>
   `;
@@ -60,6 +60,79 @@ function showEasterEgg(shell: HTMLElement) {
   video.addEventListener('ended', () => {
     overlay.remove();
   });
+
+  shell.appendChild(overlay);
+}
+
+/** Merge remote option overrides / disabled options into the backend list. */
+function applyRemoteOverrides(
+  options: OptionDescriptor[],
+  remote: RemoteContentResult | null,
+): OptionDescriptor[] {
+  const manifest = remote?.manifest;
+  if (!manifest) return options;
+
+  const disabled = new Set(manifest.disabledOptions ?? []);
+  const overrides = new Map((manifest.optionOverrides ?? []).map((o) => [o.id, o]));
+
+  return options
+    .filter((option) => !disabled.has(option.id))
+    .map((option) => {
+      const override = overrides.get(option.id);
+      if (!override) return option;
+      return {
+        ...option,
+        title: override.title ?? option.title,
+        description: override.description ?? option.description,
+      };
+    });
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Prompt for a binary update. Mandatory updates cannot be dismissed. */
+function showUpdateDialog(shell: HTMLElement, remote: RemoteContentResult) {
+  const app = remote.manifest?.app;
+  if (!app) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'update-dialog-overlay';
+  overlay.innerHTML = `
+    <div class="update-dialog" role="alertdialog" aria-modal="true" aria-labelledby="updateTitle">
+      <h2 class="update-dialog__title" id="updateTitle">
+        ${remote.mandatory ? 'Update required' : 'Update available'}
+      </h2>
+      <p class="update-dialog__text">
+        PolyForge v${escapeHtml(app.latestVersion)} is available - you are on v${escapeHtml(remote.currentVersion)}.
+        ${remote.mandatory ? 'This version is no longer supported; please update to continue.' : ''}
+      </p>
+      ${app.notes ? `<p class="update-dialog__notes">${escapeHtml(app.notes)}</p>` : ''}
+      <div class="update-dialog__actions">
+        <button type="button" class="btn btn--primary" data-action="download">Get update</button>
+        ${remote.mandatory ? '' : '<button type="button" class="btn btn--ghost" data-action="later">Later</button>'}
+      </div>
+    </div>
+  `;
+
+  const downloadBtn = overlay.querySelector('[data-action="download"]') as HTMLButtonElement;
+  downloadBtn.addEventListener('click', () => {
+    const url = app.downloadUrl || 'https://polyforge.dev/downloads';
+    const runtimeApi = (window as unknown as { runtime?: { BrowserOpenURL?: (u: string) => void } }).runtime;
+    if (runtimeApi?.BrowserOpenURL) {
+      runtimeApi.BrowserOpenURL(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  });
+
+  const laterBtn = overlay.querySelector('[data-action="later"]');
+  laterBtn?.addEventListener('click', () => overlay.remove());
 
   shell.appendChild(overlay);
 }
@@ -176,10 +249,25 @@ export async function createApp(root: HTMLElement) {
   const loadingReady = store.waitForLoadingComplete();
 
   try {
-    const options = await fetchMenuOptions();
-    store.setOptions(options);
+    const [options, remote] = await Promise.all([
+      fetchMenuOptions(),
+      fetchRemoteContent().catch((error): RemoteContentResult | null => {
+        console.warn('Remote content unavailable, using built-in defaults', error);
+        return null;
+      }),
+    ]);
+
+    store.setOptions(applyRemoteOverrides(options, remote));
+    if (remote?.manifest?.modpacks?.length) {
+      store.setModpacks(remote.manifest.modpacks);
+    }
+
     await loadingReady;
     store.setStep(Step.Startup);
+
+    if (remote?.updateAvailable || remote?.mandatory) {
+      showUpdateDialog(shell, remote);
+    }
   } catch (error) {
     console.error('Failed to load menu options', error);
     store.setOptions([]);

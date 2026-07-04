@@ -110,7 +110,7 @@ function showAboutDialog() {
       const eeOverlay = document.createElement('div');
       eeOverlay.className = 'easter-egg-overlay';
       eeOverlay.innerHTML = `
-        <video class="easter-egg-video" autoplay>
+        <video class="easter-egg-video" autoplay disablepictureinpicture disableremoteplayback playsinline>
           <source src="${EASTER_EGG_VIDEO}" type="video/mp4" />
         </video>
       `;

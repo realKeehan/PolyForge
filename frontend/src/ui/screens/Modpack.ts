@@ -1,5 +1,5 @@
 import type { Store } from '../../app/state';
-import { Step } from '../../app/types';
+import { Step, type RemotePack } from '../../app/types';
 import { createSocialLinks } from '../components/social';
 
 const MODPACK_ICON = `
@@ -14,15 +14,39 @@ const CHECK_ICON = `
   </svg>
 `;
 
-const MODPACKS = [
+const LOCK_ICON = `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 117 0v2m-8.5 0h10a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1V8a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+type ModpackDef = RemotePack;
+
+// Fallback list used only when the remote content manifest is unavailable
+// (offline first run). The live list comes from polyforge.dev/api/manifest.json
+// so packs can be added or changed without shipping a new binary.
+// NOTE: the password gate is a client-side speed bump, not real protection —
+// the hash ships with the app/manifest and can be extracted.
+const DEFAULT_MODPACKS: ModpackDef[] = [
   { id: 'turtel-smp', name: 'Turtel SMP' },
-  { id: 'event-pack', name: 'Event Pack' },
+  {
+    id: 'event-pack',
+    name: 'Event Pack',
+    requiresPassword: true,
+    // SHA-256 of the pack password
+    passwordHash: '908baa40ef565d0d30fab71f76b9e73d4cf88101984c4f57c6c674804dc4006a',
+  },
 ];
 
 let cleanInstallPreference = false;
 
 function radioDot(): string {
   return `<span class="radio-dot"><span class="radio-dot__inner"></span></span>`;
+}
+
+/** Hash a string with SHA-256 and return hex */
+async function sha256(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 export function renderModpack(store: Store): HTMLElement {
@@ -49,6 +73,24 @@ export function renderModpack(store: Store): HTMLElement {
     <span class="toggle__label">Clean install</span>
   `;
 
+  // Password field (shown only when a locked pack is selected)
+  const passwordField = document.createElement('div');
+  passwordField.className = 'password-field';
+  passwordField.hidden = true;
+  passwordField.innerHTML = `
+    <label class="password-field__label">
+      ${LOCK_ICON}
+      <span>Password required</span>
+    </label>
+    <div class="password-field__row">
+      <input type="password" class="password-field__input" placeholder="Enter pack password" autocomplete="off" />
+    </div>
+    <span class="password-field__error" hidden></span>
+  `;
+
+  const passwordInput = passwordField.querySelector('.password-field__input') as HTMLInputElement;
+  const passwordError = passwordField.querySelector('.password-field__error') as HTMLSpanElement;
+
   const footer = document.createElement('footer');
   footer.className = 'screen-footer';
   const social = createSocialLinks();
@@ -68,7 +110,7 @@ export function renderModpack(store: Store): HTMLElement {
   actions.append(backButton, nextButton);
   footer.append(social, actions);
 
-  container.append(header, list, toggle, footer);
+  container.append(header, list, toggle, passwordField, footer);
 
   const toggleInput = toggle.querySelector('.toggle__input') as HTMLInputElement;
   const toggleControl = toggle.querySelector('.toggle__control') as HTMLSpanElement;
@@ -94,17 +136,44 @@ export function renderModpack(store: Store): HTMLElement {
   toggleInput.addEventListener('change', updateToggle);
   updateToggle();
 
+  // Prefer the remotely managed pack list; fall back to built-ins offline.
+  const remotePacks = store.getState().modpacks;
+  const packs: ModpackDef[] = remotePacks?.length ? remotePacks : DEFAULT_MODPACKS;
+
   const buttons: HTMLButtonElement[] = [];
-  const selected = store.getState().selectedModpack ?? MODPACKS[0]?.id;
+  const selected = store.getState().selectedModpack ?? packs[0]?.id;
+  let currentPack: ModpackDef | undefined;
+  let passwordUnlocked = false;
+
+  const showPasswordField = (pack: ModpackDef) => {
+    if (pack.requiresPassword && !passwordUnlocked) {
+      passwordField.hidden = false;
+      passwordInput.value = '';
+      passwordError.hidden = true;
+      passwordInput.focus();
+    } else {
+      passwordField.hidden = true;
+    }
+  };
 
   const activate = (modpackId: string) => {
+    // Re-clicking the current pack should not wipe a typed password
+    if (currentPack?.id === modpackId) return;
+
     buttons.forEach((button) => {
       button.classList.toggle('is-active', button.dataset.modpack === modpackId);
     });
+    currentPack = packs.find((p) => p.id === modpackId);
     store.setModpack(modpackId);
+
+    // Reset password state when switching packs
+    passwordUnlocked = false;
+    if (currentPack) {
+      showPasswordField(currentPack);
+    }
   };
 
-  MODPACKS.forEach((pack) => {
+  packs.forEach((pack) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'radio-item radio-item--card radio-item--has-bg';
@@ -112,29 +181,60 @@ export function renderModpack(store: Store): HTMLElement {
     button.innerHTML = `
       ${radioDot()}
       <span class="radio-item__body">
-        <span class="radio-item__label">${pack.name}</span>
+        <span class="radio-item__label">${pack.name}${pack.requiresPassword ? `<span class="radio-item__lock" title="Password protected">${LOCK_ICON}</span>` : ''}</span>
       </span>
     `;
     if (pack.id === selected) {
       button.classList.add('is-active');
+      currentPack = pack;
     }
     button.addEventListener('click', () => activate(pack.id));
     buttons.push(button);
     list.appendChild(button);
   });
 
-  if (!store.getState().selectedModpack && MODPACKS[0]) {
-    activate(MODPACKS[0].id);
+  // Show password field if the initially selected pack requires it
+  if (currentPack?.requiresPassword) {
+    showPasswordField(currentPack);
+  }
+
+  if (!store.getState().selectedModpack && packs[0]) {
+    activate(packs[0].id);
   }
 
   backButton.addEventListener('click', () => {
     store.setStep(Step.Mode);
   });
 
-  nextButton.addEventListener('click', () => {
-    if (!store.getState().selectedModpack && MODPACKS[0]) {
-      activate(MODPACKS[0].id);
+  nextButton.addEventListener('click', async () => {
+    if (!store.getState().selectedModpack && packs[0]) {
+      activate(packs[0].id);
     }
+
+    // Validate password if needed
+    if (currentPack?.requiresPassword && !passwordUnlocked) {
+      const value = passwordInput.value.trim();
+      if (!value) {
+        passwordError.textContent = 'Please enter the pack password.';
+        passwordError.hidden = false;
+        passwordInput.focus();
+        return;
+      }
+
+      const hash = await sha256(value);
+      if (hash !== currentPack.passwordHash) {
+        passwordError.textContent = 'Incorrect password.';
+        passwordError.hidden = false;
+        passwordInput.value = '';
+        passwordInput.focus();
+        return;
+      }
+
+      // Password correct
+      passwordUnlocked = true;
+      passwordField.hidden = true;
+    }
+
     store.setStep(Step.Installer);
   });
 
