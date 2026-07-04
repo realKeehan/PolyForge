@@ -18,8 +18,10 @@ import (
 )
 
 const (
-	version           = "5.5.2"
-	userAgent         = "KUMI-Installer/5.5.2 (+https://keehan.co)"
+	// version is a fallback only (unit tests, bare `go run ./internal/...`).
+	// The real version comes from the repo-root VERSION file, embedded and
+	// injected into AppVersion by package main — bump VERSION, not this.
+	version = "5.5.2"
 	quiltLoaderZipURL = "https://cdn.discordapp.com/attachments/1174802415531327599/1174934629644509245/quilt-loader-0.22.0-beta.1-1.20.1.zip"
 	vanillaZipURL     = "https://cdn.discordapp.com/attachments/1174802415531327599/1175988618469310556/TurtelVanilla.zip"
 	curseforgeZipURL  = "https://cdn.discordapp.com/attachments/1174802415531327599/1175988721158455316/TurtelCurse.zip"
@@ -38,6 +40,11 @@ var (
 
 func init() {
 	launcherIconData = "data:image/png;base64," + strings.TrimSpace(launcherIconRaw)
+}
+
+// userAgent identifies the app (and its current version) on HTTP requests.
+func userAgent() string {
+	return "KUMI-Installer/" + currentAppVersion() + " (+https://keehan.co)"
 }
 
 // Service encapsulates installer behaviour and keeps shared dependencies.

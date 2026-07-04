@@ -19,10 +19,10 @@ Public URL: `https://polyforge.dev/releases/<version>/<file>`
 
 ## Publishing a release
 
-1. **Bump the version** in both places, then build:
-   - `internal/kumi/service.go` → `version` const
-   - `frontend/src/app/constants.ts` → `APP_VERSION`
-   - `pwsh scripts/wails-build.ps1` (output in `build/bin/`)
+1. **Bump the version** — edit the repo-root `VERSION` file (or use
+   dev-menu.bat → "Set app version"), then build with
+   `pwsh scripts/wails-build.ps1` (output in `build/bin/`). The Go binary
+   and the frontend both pick the version up automatically.
 2. **Hash it**: `certutil -hashfile PolyForge-5.6.0-windows-amd64.exe SHA256`
 3. **Upload** the exe (and hashes) to `releases/5.6.0/` on the server.
 4. **Edit `api/manifest.json`** and upload it:

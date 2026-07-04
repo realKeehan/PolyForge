@@ -54,7 +54,7 @@ func (s *Service) downloadFile(url string, file *os.File) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", userAgent())
 
 	if s.ctx != nil {
 		req = req.WithContext(s.ctx)
