@@ -79,6 +79,14 @@ export interface RemoteContentResult {
   error?: string;
 }
 
+export interface PackAccessResult {
+  granted: boolean;
+  url?: string;
+  error?: string;
+  /** True when the verification server was unreachable */
+  offline: boolean;
+}
+
 export interface AppState {
   step: Step;
   options: OptionDescriptor[];

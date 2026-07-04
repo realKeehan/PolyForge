@@ -1,6 +1,7 @@
 package kumi
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -25,7 +26,10 @@ import (
 // The manifest is cached on disk so the app keeps working offline.
 // ══════════════════════════════════════════════════
 
-const remoteManifestURL = "https://polyforge.dev/api/manifest.json"
+const (
+	remoteManifestURL = "https://polyforge.dev/api/manifest.json"
+	packAccessURL     = "https://polyforge.dev/api/pack-access"
+)
 
 // RemoteManifest is the combined content + version manifest hosted on the website.
 type RemoteManifest struct {
@@ -141,6 +145,58 @@ func fetchRemoteManifest(client *http.Client) (*RemoteManifest, error) {
 		return nil, fmt.Errorf("invalid manifest: %w", err)
 	}
 	return &m, nil
+}
+
+// ── Pack password verification ───────────────────
+
+// PackAccessResult is the outcome of a server-side pack password check.
+type PackAccessResult struct {
+	Granted bool   `json:"granted"`
+	URL     string `json:"url,omitempty"`
+	Error   string `json:"error,omitempty"`
+	// Offline is true when the server could not be reached at all —
+	// the caller may fall back to a locally cached hash if it has one.
+	Offline bool `json:"offline"`
+}
+
+// VerifyPackAccess checks a pack password against the website endpoint.
+// The password hash never ships with the app; only the server knows it.
+func (s *Service) VerifyPackAccess(packID, password string) PackAccessResult {
+	payload, err := json.Marshal(map[string]string{"packId": packID, "password": password})
+	if err != nil {
+		return PackAccessResult{Error: err.Error()}
+	}
+
+	req, err := http.NewRequest(http.MethodPost, packAccessURL, bytes.NewReader(payload))
+	if err != nil {
+		return PackAccessResult{Error: err.Error()}
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", userAgent)
+
+	client := s.client
+	if client == nil {
+		client = http.DefaultClient
+	}
+	fetcher := *client
+	fetcher.Timeout = 15 * time.Second
+
+	resp, err := fetcher.Do(req)
+	if err != nil {
+		return PackAccessResult{Offline: true, Error: "could not reach the verification server"}
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Granted bool   `json:"granted"`
+		URL     string `json:"url"`
+		Error   string `json:"error"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return PackAccessResult{Error: "invalid response from verification server"}
+	}
+
+	return PackAccessResult{Granted: result.Granted, URL: result.URL, Error: result.Error}
 }
 
 // ── Disk cache ───────────────────────────────────

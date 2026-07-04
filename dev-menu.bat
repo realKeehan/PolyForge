@@ -4,6 +4,10 @@ title PolyForge Dev Menu
 set "ROOT=%~dp0"
 set "WEB_PORT=8080"
 
+rem Prefer PowerShell 7 (pwsh) but fall back to Windows PowerShell
+set "PS=pwsh"
+where pwsh >nul 2>&1 || set "PS=powershell"
+
 :menu
 cls
 echo.
@@ -39,14 +43,14 @@ goto menu
 :appdev
 echo.
 echo   Starting app dev mode in a new window...
-start "PolyForge-AppDev" pwsh -NoExit -ExecutionPolicy Bypass -File "%ROOT%scripts\wails-dev.ps1"
+start "PolyForge-AppDev" %PS% -NoExit -ExecutionPolicy Bypass -File "%ROOT%scripts\wails-dev.ps1"
 timeout /t 2 >nul
 goto menu
 
 :appbuild
 echo.
 echo   Building app release in a new window...
-start "PolyForge-AppBuild" pwsh -NoExit -ExecutionPolicy Bypass -File "%ROOT%scripts\wails-build.ps1"
+start "PolyForge-AppBuild" %PS% -NoExit -ExecutionPolicy Bypass -File "%ROOT%scripts\wails-build.ps1"
 timeout /t 2 >nul
 goto menu
 

@@ -1,4 +1,4 @@
-import type { ActionResult, ExecutionPayload, OptionDescriptor, RemoteContentResult } from './types';
+import type { ActionResult, ExecutionPayload, OptionDescriptor, PackAccessResult, RemoteContentResult } from './types';
 
 export async function fetchMenuOptions(): Promise<OptionDescriptor[]> {
   return window.go.app.App.GetMenuOptions();
@@ -6,6 +6,10 @@ export async function fetchMenuOptions(): Promise<OptionDescriptor[]> {
 
 export async function fetchRemoteContent(): Promise<RemoteContentResult> {
   return window.go.app.App.GetRemoteContent();
+}
+
+export async function verifyPackAccess(packId: string, password: string): Promise<PackAccessResult> {
+  return window.go.app.App.VerifyPackAccess(packId, password);
 }
 
 export async function runInstaller(optionId: string, payload: ExecutionPayload): Promise<ActionResult> {
