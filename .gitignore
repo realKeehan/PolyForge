@@ -11,3 +11,6 @@ frontend/wailsjs/
 *.dll
 *.log
 .DS_Store
+
+# PolyTris leaderboard data (created at runtime)
+website/api/tetris-scores.json
