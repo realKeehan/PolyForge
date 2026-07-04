@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	goruntime "runtime"
 	"strings"
+	"time"
 
 	"crypto/tls"
 
@@ -83,7 +84,9 @@ func (s *Service) Options() []OptionDescriptor {
 		{ID: "cake", Title: "Cake?", Description: "Trigger the playful easter egg."},
 	}
 
-	// Auto-detect launcher paths
+	// Auto-detect launcher paths: cheap data-dir candidates first, then an
+	// exe-based fallback (cache → Start Menu shortcuts → bounded scan) so
+	// detection is not constrained to the well-known folders.
 	for i := range options {
 		detected := s.detectLauncherPath(options[i].ID)
 		if detected != "" {
@@ -91,8 +94,162 @@ func (s *Service) Options() []OptionDescriptor {
 			options[i].Found = true
 		}
 	}
+	s.detectByExecutable(options)
 
 	return options
+}
+
+// launcherExeNames maps option IDs to the executable names used for
+// exe-based detection when the data-dir candidates miss. Matching is
+// case-insensitive.
+var launcherExeNames = map[string][]string{
+	"curseforge":     {"CurseForge.exe"},
+	"modrinth":       {"Modrinth App.exe"},
+	"multimc":        {"MultiMC.exe"},
+	"gdlauncher":     {"GDLauncher.exe", "GDLauncher Carbon.exe"},
+	"atlauncher":     {"ATLauncher.exe"},
+	"prismlauncher":  {"prismlauncher.exe"},
+	"bakaxl":         {"BakaXL.exe"},
+	"feather":        {"Feather Launcher.exe", "Feather.exe"},
+	"technic":        {"TechnicLauncher.exe", "technic-launcher.exe"},
+	"polymc":         {"polymc.exe"},
+	"sklauncher":     {"SKlauncher.exe"},
+	"freesm":         {"freesmlauncher.exe"},
+	"elyprism":       {"PineconeMC.exe", "ElyPrismLauncher.exe", "elyprism.exe"},
+	"shatteredprism": {"shatteredprism.exe"},
+	"qwertz":         {"QWERTZ Launcher.exe", "QWERTZLauncher.exe"},
+	"fjord":          {"fjordlauncher.exe"},
+	"hmcl":           {"HMCL.exe"},
+	"ultimmc":        {"UltimMC.exe"},
+	"polymerium":     {"Polymerium.exe"},
+	"xmcl":           {"xmcl.exe", "X Minecraft Launcher.exe"},
+}
+
+// detectByExecutable fills in launchers the data-dir pass missed by finding
+// their executables: validated cache entries first, then Start Menu /
+// taskbar / Desktop shortcuts (cheap, any drive), then a depth-limited
+// concurrent scan of common install roots. Scan hits are cached so later
+// startups skip the expensive step, and the deep scan itself runs at most
+// once every 12 hours.
+func (s *Service) detectByExecutable(options []OptionDescriptor) {
+	wanted := map[string]string{} // lowercase exe name -> option ID
+	index := map[string]int{}     // option ID -> options slice index
+	for i := range options {
+		if options[i].Found {
+			continue
+		}
+		names := launcherExeNames[options[i].ID]
+		if len(names) == 0 {
+			continue
+		}
+		index[options[i].ID] = i
+		for _, n := range names {
+			wanted[strings.ToLower(n)] = options[i].ID
+		}
+	}
+	if len(wanted) == 0 {
+		return
+	}
+
+	found := map[string]string{} // option ID -> exe path
+	dropFound := func() {
+		for name, id := range wanted {
+			if _, ok := found[id]; ok {
+				delete(wanted, name)
+			}
+		}
+	}
+
+	cache, _ := LoadCache()
+	cacheDirty := false
+	remember := func(id, path string, ev Evidence, confidence string) {
+		UpsertCandidate(cache, &Candidate{
+			Launcher:   LauncherID(id),
+			Path:       path,
+			Kind:       "exe",
+			Evidence:   ev,
+			Confidence: confidence,
+			LastUsed:   time.Now(),
+			LastOK:     time.Now(),
+			HashHint:   PathHint(path),
+		})
+		cacheDirty = true
+	}
+
+	// 1) Previously validated cache entries
+	for id := range index {
+		if cand := BestValidCachedCandidate(cache, LauncherID(id), ValidateExeByName(launcherExeNames[id]...)); cand != nil {
+			found[id] = cand.Path
+		}
+	}
+	dropFound()
+
+	// 2+3) Shortcut resolution and the bounded filesystem scan both read
+	// thousands of files, so they share a 12h throttle. Hits land in the
+	// cache, making later startups instant; the Browse button covers any
+	// launcher installed inside the throttle window.
+	if len(wanted) > 0 && shouldRunDeepScan() {
+		for id, path := range resolveShortcutTargets(wanted) {
+			found[id] = path
+			remember(id, path, EvStartMenuLnk, "high")
+		}
+		dropFound()
+
+		if len(wanted) > 0 {
+			ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+			defer cancel()
+			for id, path := range scanForExes(ctx, commonScanRoots(), wanted, 5, 8) {
+				found[id] = path
+				remember(id, path, EvScan, "low")
+			}
+		}
+		markDeepScanDone()
+	}
+
+	if cacheDirty {
+		_ = SaveCache(cache)
+	}
+
+	for id, path := range found {
+		i := index[id]
+		options[i].DetectedPath = filepath.Dir(path)
+		options[i].Found = true
+	}
+}
+
+// ── Deep-scan throttle ───────────────────────────
+// New installs are still picked up immediately via shortcuts and the cache;
+// the stamp only limits how often the recursive scan can run.
+
+func deepScanStampPath() (string, error) {
+	dir, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "PolyForge", "last-deep-scan"), nil
+}
+
+func shouldRunDeepScan() bool {
+	path, err := deepScanStampPath()
+	if err != nil {
+		return true
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return true
+	}
+	return time.Since(info.ModTime()) > 12*time.Hour
+}
+
+func markDeepScanDone() {
+	path, err := deepScanStampPath()
+	if err != nil {
+		return
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return
+	}
+	_ = os.WriteFile(path, []byte(time.Now().Format(time.RFC3339)), 0o644)
 }
 
 // detectLauncherPath returns the first detected installation path for the given launcher ID.
@@ -125,7 +282,10 @@ func (s *Service) detectLauncherPath(id string) string {
 		}
 		return ""
 	case "multimc":
-		return firstExistingDirectory(multiMCCandidates(""))
+		// MultiMC has no fixed data dir — its candidates are exe-probe roots
+		// (home, Program Files), so a bare directory check would always
+		// "find" it. Detection happens via the exe pipeline instead.
+		return ""
 	case "gdlauncher":
 		return firstExistingDirectory(gdLauncherCandidates(""))
 	case "atlauncher":
