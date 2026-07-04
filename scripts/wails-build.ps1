@@ -80,18 +80,16 @@ if ($UPX) {
     }
 }
 
-# ── Obfuscation (Wails 3 future preset) ──────────
-# NOTE: Obfuscation support requires Wails v3 which is not yet released.
-# When Wails 3 ships with garble/obfuscation integration, this flag will
-# pass the appropriate arguments. For now it warns and continues.
+# ── Obfuscation (garble) ─────────────────────────
+# Supported since Wails v2.x: obfuscates bound method names via garble.
+# Requires garble on PATH (go install mvdan.cc/garble@latest).
 if ($Obfuscated) {
-    Write-Warning "Obfuscation (-Obfuscated) is a future preset for Wails v3."
-    Write-Warning "This flag is currently a no-op. When Wails 3 releases with garble support,"
-    Write-Warning "this script will automatically pass the correct obfuscation flags."
-    Write-Host ""
-    Write-Host "Future command will be: wails3 build -obfuscated $ArgsToForward" -ForegroundColor DarkGray
-    # Uncomment when Wails 3 is available:
-    # $ArgsToForward += '-obfuscated'
+    Write-Host "Obfuscation enabled - bound Wails methods will be garbled." -ForegroundColor Cyan
+    if (-not (Get-Command 'garble' -ErrorAction SilentlyContinue)) {
+        Write-Warning "garble was not found in PATH. Install it first:"
+        Write-Warning "  go install mvdan.cc/garble@latest"
+    }
+    $ArgsToForward += '-obfuscated'
 }
 
 # ── Build ─────────────────────────────────────────
