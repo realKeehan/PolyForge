@@ -42,6 +42,7 @@ require __DIR__ . '/partials/header.php';
             <div><span>SCORE</span><b id="tetrisScore">0</b></div>
             <div><span>LINES</span><b id="tetrisLines">0</b></div>
             <div><span>LEVEL</span><b id="tetrisLevel">1</b></div>
+            <div><span>BEST</span><b id="tetrisBest">-</b></div>
           </div>
         </div>
         <div class="tetris-board-wrap">
@@ -137,14 +138,51 @@ require __DIR__ . '/partials/header.php';
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 12px;
       text-align: center;
-      background: color-mix(in srgb, var(--bg) 70%, transparent);
+      background: color-mix(in srgb, var(--bg) 76%, transparent);
       border-radius: 10px;
-      font-size: .9rem;
-      letter-spacing: .15em;
-      white-space: pre-line;
+      font-size: .85rem;
+      letter-spacing: .12em;
+      padding: 12px;
     }
+    .tetris-msg-title {
+      font-size: .92rem;
+      letter-spacing: .3em;
+      color: var(--pf-purple);
+      font-weight: 600;
+    }
+    .tetris-msg-sub { font-size: .68rem; color: var(--text-muted); letter-spacing: .18em; }
+    .tetris-msg-hint { font-size: .6rem; color: var(--text-muted); letter-spacing: .14em; line-height: 1.7; }
+
+    /* Retro name entry */
+    .tetris-entry-slots { display: flex; gap: 8px; }
+    .tetris-slot {
+      width: 28px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border);
+      border-bottom-width: 3px;
+      border-radius: 6px;
+      background: var(--surface-2);
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    .tetris-slot.is-cursor {
+      border-color: var(--pf-purple);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--pf-purple) 45%, transparent);
+      animation: tetrisBlink 1s steps(2, start) infinite;
+    }
+    @keyframes tetrisBlink {
+      50% { background: color-mix(in srgb, var(--pf-purple) 30%, var(--surface-2)); }
+    }
+
+    /* High-score billboard */
+    .tetris-lb { border-collapse: collapse; font-size: .7rem; letter-spacing: .14em; }
+    .tetris-lb td { padding: 2px 7px; text-align: left; white-space: pre; }
+    .tetris-lb td.num { text-align: right; }
+    .tetris-lb tr.is-you td { color: var(--pf-purple); font-weight: 700; }
+    .tetris-lb tr.is-top td:nth-child(2) { color: var(--pf-warning); }
+
     @media (max-width: 620px) {
       .tetris-layout { flex-direction: column; align-items: center; }
       .tetris-side { flex-direction: row; width: auto; }
@@ -169,9 +207,54 @@ require __DIR__ . '/partials/header.php';
         }
       });
 
+      // ── Leaderboard store (server + local fallback) ──
+      const SCORE_API = "/api/scores";
+      const LS_SCORES = "pf-tetris-scores";
+      const LS_NAME = "pf-tetris-name";
+      const LB_SIZE = 10;
+
+      function localScores() {
+        try { return JSON.parse(localStorage.getItem(LS_SCORES) || "[]"); } catch { return []; }
+      }
+
+      async function fetchScores() {
+        try {
+          const res = await fetch(SCORE_API, { cache: "no-store" });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.scores)) return data.scores;
+          }
+        } catch { /* offline / no backend */ }
+        return localScores();
+      }
+
+      async function submitScore(entry) {
+        try {
+          const res = await fetch(SCORE_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(entry),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.scores)) return data.scores;
+          }
+        } catch { /* offline / no backend */ }
+        // Local fallback so the billboard still works without the API
+        const list = localScores();
+        list.push({ ...entry, date: new Date().toISOString() });
+        list.sort((a, b) => b.score - a.score);
+        const top = list.slice(0, LB_SIZE);
+        try { localStorage.setItem(LS_SCORES, JSON.stringify(top)); } catch { /* storage full/blocked */ }
+        return top;
+      }
+
+      function escHtml(s) {
+        return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
       // ── PolyTris ─────────────────────────────────
       const COLS = 10, ROWS = 20, CELL = 24;
-      // Tetromino definitions: rotation states as [x,y] offsets in a 4x4 box
       const SHAPES = {
         I: [[1,0],[1,1],[1,2],[1,3]],
         J: [[0,0],[1,0],[1,1],[1,2]],
@@ -182,6 +265,8 @@ require __DIR__ . '/partials/header.php';
         Z: [[0,0],[0,1],[1,1],[1,2]],
       };
       const NAMES = Object.keys(SHAPES);
+      const ENTRY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ";
+      const NAME_LEN = 5;
 
       function cssVar(name, fallback) {
         const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -204,7 +289,7 @@ require __DIR__ . '/partials/header.php';
       }
 
       function rotate(cells) {
-        // rotate within 4x4 box: (x,y) -> (y, 3-x), then normalize into top-left
+        // rotate within 4x4 box: (r,c) -> (c, 3-r), then normalize into top-left
         const r = cells.map(([y, x]) => [x, 3 - y]);
         const minY = Math.min(...r.map(c => c[0]));
         const minX = Math.min(...r.map(c => c[1]));
@@ -228,13 +313,35 @@ require __DIR__ . '/partials/header.php';
         const scoreEl = document.getElementById("tetrisScore");
         const linesEl = document.getElementById("tetrisLines");
         const levelEl = document.getElementById("tetrisLevel");
+        const bestEl = document.getElementById("tetrisBest");
         const msgEl = document.getElementById("tetrisMsg");
         const closeBtn = document.getElementById("tetrisClose");
         const colors = palette();
 
         let grid, bag, current, next, hold, holdUsed;
-        let score, lines, level, dropMs, over, paused;
+        let score, lines, level, dropMs, paused;
         let lastDrop = 0, raf = 0;
+
+        // mode: "play" | "entry" (name input) | "over" (billboard shown)
+        let mode = "play";
+        let leaderboard = [];
+        let entryName, entryCursor;
+
+        fetchScores().then((scores) => {
+          leaderboard = scores;
+          updateBest();
+        });
+
+        function updateBest() {
+          const top = leaderboard[0];
+          bestEl.textContent = top ? String(top.score) : "-";
+        }
+
+        function qualifies(s) {
+          if (s <= 0) return false;
+          if (leaderboard.length < LB_SIZE) return true;
+          return s > leaderboard[leaderboard.length - 1].score;
+        }
 
         function refillBag() {
           const b = [...NAMES];
@@ -260,7 +367,8 @@ require __DIR__ . '/partials/header.php';
           holdUsed = false;
           score = 0; lines = 0; level = 1;
           dropMs = 800;
-          over = false; paused = false;
+          paused = false;
+          mode = "play";
           msgEl.hidden = true;
           updateStats();
           drawPreviews();
@@ -280,7 +388,6 @@ require __DIR__ . '/partials/header.php';
             const r = current.row + y, c = current.col + x;
             if (r >= 0) grid[r][c] = current.name;
           });
-          // Clear lines
           let cleared = 0;
           for (let r = ROWS - 1; r >= 0; r--) {
             if (grid[r].every(Boolean)) {
@@ -307,12 +414,80 @@ require __DIR__ . '/partials/header.php';
           if (collides(current, 0, 0)) endGame();
         }
 
+        // ── Game over → name entry → billboard ─────
         function endGame() {
-          over = true;
-          msgEl.textContent = "GAME OVER\nscore " + score + "\n\npress R to restart";
+          if (qualifies(score)) {
+            startNameEntry();
+          } else {
+            mode = "over";
+            renderBillboard(null);
+          }
+        }
+
+        function startNameEntry() {
+          mode = "entry";
+          const saved = (localStorage.getItem(LS_NAME) || "AAAAA").toUpperCase();
+          entryName = Array.from({ length: NAME_LEN }, (_, i) =>
+            ENTRY_CHARS.includes(saved[i] || " ") ? (saved[i] || " ") : "A");
+          entryCursor = 0;
+          renderEntry();
+        }
+
+        function renderEntry() {
+          const slots = entryName.map((ch, i) =>
+            `<span class="tetris-slot${i === entryCursor ? " is-cursor" : ""}">${ch === " " ? "&nbsp;" : escHtml(ch)}</span>`
+          ).join("");
+          msgEl.innerHTML = `
+            <div class="tetris-msg-title">NEW HIGH SCORE</div>
+            <div class="tetris-msg-sub">SCORE ${score}</div>
+            <div class="tetris-entry-slots">${slots}</div>
+            <div class="tetris-msg-hint">TYPE OR &uarr;&darr; TO PICK &middot; &larr;&rarr; MOVE<br>ENTER SAVES &middot; ESC SKIPS</div>
+          `;
           msgEl.hidden = false;
         }
 
+        function cycleChar(dir) {
+          const idx = ENTRY_CHARS.indexOf(entryName[entryCursor]);
+          const nextIdx = (idx + dir + ENTRY_CHARS.length) % ENTRY_CHARS.length;
+          entryName[entryCursor] = ENTRY_CHARS[nextIdx];
+          renderEntry();
+        }
+
+        function confirmEntry() {
+          const name = entryName.join("").replace(/\s+$/, "");
+          if (!name) { cycleChar(0); return; } // require at least one character
+          try { localStorage.setItem(LS_NAME, name); } catch { /* ignore */ }
+          mode = "over";
+          msgEl.innerHTML = `<div class="tetris-msg-title">SAVING...</div>`;
+          const entry = { name, score, lines, level };
+          submitScore(entry).then((scores) => {
+            leaderboard = scores;
+            updateBest();
+            renderBillboard(entry);
+          });
+        }
+
+        function renderBillboard(you) {
+          const rows = leaderboard.slice(0, LB_SIZE).map((s, i) => {
+            const isYou = you && !s._marked && s.name === you.name && s.score === you.score;
+            if (isYou) s._marked = true; // highlight only the first match
+            const cls = [isYou ? "is-you" : "", i === 0 ? "is-top" : ""].filter(Boolean).join(" ");
+            return `<tr${cls ? ` class="${cls}"` : ""}>` +
+              `<td class="num">${i + 1}.</td>` +
+              `<td>${escHtml(String(s.name || "?").padEnd(NAME_LEN))}</td>` +
+              `<td class="num">${escHtml(String(s.score))}</td></tr>`;
+          }).join("");
+
+          msgEl.innerHTML = `
+            <div class="tetris-msg-title">HIGH SCORES</div>
+            ${rows ? `<table class="tetris-lb"><tbody>${rows}</tbody></table>` : `<div class="tetris-msg-sub">NO SCORES YET</div>`}
+            <div class="tetris-msg-sub">GAME OVER &middot; SCORE ${score}</div>
+            <div class="tetris-msg-hint">R RESTART &middot; ESC QUIT</div>
+          `;
+          msgEl.hidden = false;
+        }
+
+        // ── Moves ───────────────────────────────────
         function move(dCol) {
           if (!collides(current, 0, dCol)) { current.col += dCol; }
         }
@@ -333,7 +508,6 @@ require __DIR__ . '/partials/header.php';
         function tryRotate(ccw) {
           let cells = rotate(current.cells);
           if (ccw) { cells = rotate(rotate(cells)); }
-          // simple wall kicks: try 0, -1, +1, -2, +2
           for (const kick of [0, -1, 1, -2, 2]) {
             if (!collides(current, 0, kick, cells)) {
               current.cells = cells;
@@ -364,10 +538,10 @@ require __DIR__ . '/partials/header.php';
           levelEl.textContent = String(level);
         }
 
+        // ── Rendering ───────────────────────────────
         function drawCell(ctx, x, y, size, color) {
           ctx.fillStyle = color;
           ctx.fillRect(x, y, size - 1, size - 1);
-          // retro bevel: lighter top edge, darker bottom
           ctx.fillStyle = "rgba(255,255,255,.25)";
           ctx.fillRect(x, y, size - 1, 2);
           ctx.fillStyle = "rgba(0,0,0,.25)";
@@ -395,19 +569,16 @@ require __DIR__ . '/partials/header.php';
         function draw() {
           bctx.clearRect(0, 0, board.width, board.height);
 
-          // grid dots
           bctx.fillStyle = colors.grid;
           for (let r = 1; r < ROWS; r++)
             for (let c = 1; c < COLS; c++)
               bctx.fillRect(c * CELL, r * CELL, 1, 1);
 
-          // settled blocks
           for (let r = 0; r < ROWS; r++)
             for (let c = 0; c < COLS; c++)
               if (grid[r][c]) drawCell(bctx, c * CELL, r * CELL, CELL, colors[grid[r][c]]);
 
-          if (!over) {
-            // ghost piece
+          if (mode === "play") {
             let dist = 0;
             while (!collides(current, dist + 1, 0)) dist++;
             bctx.globalAlpha = 0.22;
@@ -417,7 +588,6 @@ require __DIR__ . '/partials/header.php';
             });
             bctx.globalAlpha = 1;
 
-            // active piece
             current.cells.forEach(([y, x]) => {
               const r = current.row + y, c = current.col + x;
               if (r >= 0) drawCell(bctx, c * CELL, r * CELL, CELL, colors[current.name]);
@@ -426,7 +596,7 @@ require __DIR__ . '/partials/header.php';
         }
 
         function frame(now) {
-          if (!paused && !over && now - lastDrop >= dropMs) {
+          if (mode === "play" && !paused && now - lastDrop >= dropMs) {
             lastDrop = now;
             if (!collides(current, 1, 0)) current.row++;
             else lockPiece();
@@ -436,18 +606,48 @@ require __DIR__ . '/partials/header.php';
         }
 
         function togglePause() {
-          if (over) return;
           paused = !paused;
-          msgEl.textContent = "PAUSED";
+          msgEl.innerHTML = `<div class="tetris-msg-title">PAUSED</div>`;
           msgEl.hidden = !paused;
         }
 
+        // ── Input ───────────────────────────────────
+        function entryKey(e) {
+          if (e.code === "Escape") { mode = "over"; renderBillboard(null); return; }
+          if (e.code === "Enter" || e.code === "NumpadEnter") { confirmEntry(); return; }
+          if (e.code === "ArrowLeft") { entryCursor = (entryCursor + NAME_LEN - 1) % NAME_LEN; renderEntry(); return; }
+          if (e.code === "ArrowRight") { entryCursor = (entryCursor + 1) % NAME_LEN; renderEntry(); return; }
+          if (e.code === "ArrowUp") { cycleChar(1); return; }
+          if (e.code === "ArrowDown") { cycleChar(-1); return; }
+          if (e.code === "Backspace") {
+            entryName[entryCursor] = " ";
+            entryCursor = Math.max(0, entryCursor - 1);
+            renderEntry();
+            return;
+          }
+          const ch = e.key.length === 1 ? e.key.toUpperCase() : "";
+          if (ch && ENTRY_CHARS.includes(ch)) {
+            entryName[entryCursor] = ch;
+            entryCursor = Math.min(NAME_LEN - 1, entryCursor + 1);
+            renderEntry();
+          }
+        }
+
         function onKey(e) {
+          if (mode === "entry") {
+            e.preventDefault();
+            e.stopPropagation();
+            entryKey(e);
+            return;
+          }
+
           if (e.code === "Escape") { e.preventDefault(); exit(); return; }
-          if (over) {
+
+          if (mode === "over") {
             if (e.code === "KeyR") { e.preventDefault(); reset(); }
             return;
           }
+
           switch (e.code) {
             case "ArrowLeft": e.preventDefault(); if (!paused) move(-1); break;
             case "ArrowRight": e.preventDefault(); if (!paused) move(1); break;
