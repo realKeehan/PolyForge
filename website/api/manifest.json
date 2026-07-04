@@ -12,16 +12,9 @@
     {
       "id": "event-pack",
       "name": "Event Pack",
-      "requiresPassword": true,
-      "passwordHash": "908baa40ef565d0d30fab71f76b9e73d4cf88101984c4f57c6c674804dc4006a"
+      "requiresPassword": true
     }
   ],
-  "optionOverrides": [
-    {
-      "id": "elyprism",
-      "title": "PineconeMC Install",
-      "description": "Install into PineconeMC (formerly ElyPrism)."
-    }
-  ],
+  "optionOverrides": [],
   "disabledOptions": []
 }

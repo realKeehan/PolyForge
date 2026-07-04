@@ -1,5 +1,6 @@
 import type { Store } from '../../app/state';
 import { Step, type RemotePack } from '../../app/types';
+import { verifyPackAccess } from '../../app/ipc';
 import { createSocialLinks } from '../components/social';
 
 const MODPACK_ICON = `
@@ -21,15 +22,15 @@ type ModpackDef = RemotePack;
 // Fallback list used only when the remote content manifest is unavailable
 // (offline first run). The live list comes from polyforge.dev/api/manifest.json
 // so packs can be added or changed without shipping a new binary.
-// NOTE: the password gate is a client-side speed bump, not real protection —
-// the hash ships with the app/manifest and can be extracted.
+// Passwords are verified server-side via /api/pack-access; the local
+// passwordHash here is only an offline fallback for the built-in pack.
 const DEFAULT_MODPACKS: ModpackDef[] = [
   { id: 'turtel-smp', name: 'Turtel SMP' },
   {
     id: 'event-pack',
     name: 'Event Pack',
     requiresPassword: true,
-    // SHA-256 of the pack password
+    // SHA-256 of the pack password (offline fallback only)
     passwordHash: '908baa40ef565d0d30fab71f76b9e73d4cf88101984c4f57c6c674804dc4006a',
   },
 ];
@@ -206,6 +207,13 @@ export function renderModpack(store: Store): HTMLElement {
     store.setStep(Step.Mode);
   });
 
+  const showPasswordError = (message: string, clearInput: boolean) => {
+    passwordError.textContent = message;
+    passwordError.hidden = false;
+    if (clearInput) passwordInput.value = '';
+    passwordInput.focus();
+  };
+
   nextButton.addEventListener('click', async () => {
     if (!store.getState().selectedModpack && packs[0]) {
       activate(packs[0].id);
@@ -215,22 +223,44 @@ export function renderModpack(store: Store): HTMLElement {
     if (currentPack?.requiresPassword && !passwordUnlocked) {
       const value = passwordInput.value.trim();
       if (!value) {
-        passwordError.textContent = 'Please enter the pack password.';
-        passwordError.hidden = false;
-        passwordInput.focus();
+        showPasswordError('Please enter the pack password.', false);
         return;
       }
 
-      const hash = await sha256(value);
-      if (hash !== currentPack.passwordHash) {
-        passwordError.textContent = 'Incorrect password.';
-        passwordError.hidden = false;
-        passwordInput.value = '';
-        passwordInput.focus();
+      nextButton.disabled = true;
+      nextButton.textContent = 'Checking...';
+      let granted = false;
+      let message = 'Incorrect password.';
+      try {
+        // Server-side check — the hash never ships with the app
+        const result = await verifyPackAccess(currentPack.id, value);
+        if (result.granted) {
+          granted = true;
+        } else if (result.offline && currentPack.passwordHash) {
+          // Server unreachable: fall back to the locally cached hash
+          granted = (await sha256(value)) === currentPack.passwordHash;
+        } else if (result.offline) {
+          message = 'Could not reach the verification server. Check your connection.';
+        } else if (result.error) {
+          message = result.error;
+        }
+      } catch (error) {
+        console.error('Pack verification failed', error);
+        if (currentPack.passwordHash) {
+          granted = (await sha256(value)) === currentPack.passwordHash;
+        } else {
+          message = 'Password verification failed. Please try again.';
+        }
+      } finally {
+        nextButton.disabled = false;
+        nextButton.textContent = 'Next';
+      }
+
+      if (!granted) {
+        showPasswordError(message, true);
         return;
       }
 
-      // Password correct
       passwordUnlocked = true;
       passwordField.hidden = true;
     }

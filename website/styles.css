@@ -50,6 +50,8 @@
 
 /* ── Reset ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
+/* The hidden attribute must always win, even over display:flex rules */
+[hidden] { display: none !important; }
 html, body { height: 100%; }
 html {
   scroll-behavior: smooth;

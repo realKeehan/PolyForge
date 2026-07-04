@@ -11,10 +11,10 @@ RewriteEngine On
 # Never serve the shared partials directly
 RewriteRule ^partials(/|$) - [F,L]
 
-# Leaderboard data file is only accessed through api/scores.php
-<Files "tetris-scores.json">
+# Data files are only accessed through their API endpoints
+<FilesMatch "^(tetris-scores\.json|pack-access-state\.json|packs\.data\.php)$">
   Require all denied
-</Files>
+</FilesMatch>
 
 # /index, /index.html, /index.php → / (301 permanent)
 RewriteCond %{THE_REQUEST} \s/+index(?:\.(?:html|php))?[\s?] [NC]

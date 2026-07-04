@@ -37,6 +37,11 @@ func (a *App) GetRemoteContent() kumi.RemoteContentResult {
 	return a.kumi.RemoteContent()
 }
 
+// VerifyPackAccess checks a modpack password against the website endpoint.
+func (a *App) VerifyPackAccess(packID, password string) kumi.PackAccessResult {
+	return a.kumi.VerifyPackAccess(packID, password)
+}
+
 func (a *App) Execute(optionID string, payload kumi.ExecutionPayload) (*kumi.ActionResult, error) {
 	return a.kumi.Execute(optionID, payload)
 }
