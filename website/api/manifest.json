@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-07-03T00:00:00Z",
+  "app": {
+    "latestVersion": "5.5.2",
+    "minSupportedVersion": "5.0.0",
+    "downloadUrl": "https://polyforge.dev/downloads",
+    "notes": ""
+  },
+  "modpacks": [
+    { "id": "turtel-smp", "name": "Turtel SMP" },
+    {
+      "id": "event-pack",
+      "name": "Event Pack",
+      "requiresPassword": true,
+      "passwordHash": "908baa40ef565d0d30fab71f76b9e73d4cf88101984c4f57c6c674804dc4006a"
+    }
+  ],
+  "optionOverrides": [
+    {
+      "id": "elyprism",
+      "title": "PineconeMC Install",
+      "description": "Install into PineconeMC (formerly ElyPrism)."
+    }
+  ],
+  "disabledOptions": []
+}
