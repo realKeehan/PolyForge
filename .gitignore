@@ -15,3 +15,4 @@ frontend/wailsjs/
 # PolyTris leaderboard data (created at runtime)
 website/api/tetris-scores.json
 website/api/pack-access-state.json
+website/api/stats-data.json

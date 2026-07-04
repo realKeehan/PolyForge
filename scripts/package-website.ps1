@@ -51,6 +51,7 @@ try {
     & $sevenZip a -tzip -mx=9 $outZip * `
         '-xr!tetris-scores.json' `
         '-xr!pack-access-state.json' `
+        '-xr!stats-data.json' `
         '-x!router.php'
     if ($LASTEXITCODE -ne 0) {
         Write-Error "7-Zip exited with code $LASTEXITCODE"

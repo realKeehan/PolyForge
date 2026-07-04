@@ -45,5 +45,12 @@ Public URL: `https://polyforge.dev/releases/<version>/<file>`
      `modpacks` / `optionOverrides` sections instead — no release needed,
      apps pick it up on next launch.
 
-5. Optionally update the downloads page buttons and the security page with
-   the new hashes/scan links.
+5. Point the downloads-page buttons (and the manifest `downloadUrl` if you
+   want a direct file link) at the **counting gateway** so the homepage
+   download counter increments:
+
+   ```text
+   /api/download?f=5.6.0/PolyForge-5.6.0-windows-amd64.exe
+   ```
+
+   Also update the security page with the new hashes/scan links.

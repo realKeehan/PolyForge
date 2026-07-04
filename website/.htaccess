@@ -12,7 +12,7 @@ RewriteEngine On
 RewriteRule ^partials(/|$) - [F,L]
 
 # Data files are only accessed through their API endpoints
-<FilesMatch "^(tetris-scores\.json|pack-access-state\.json|packs\.data\.php)$">
+<FilesMatch "^(tetris-scores\.json|pack-access-state\.json|stats-data\.json|packs\.data\.php)$">
   Require all denied
 </FilesMatch>
 

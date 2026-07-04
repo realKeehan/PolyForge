@@ -127,39 +127,24 @@
     });
   }
 
-  // ── Download/user counters ─────────────────────
+  // ── Download counter ───────────────────────────
+  // Counts come from our own server: /api/download increments the counter
+  // for every release fetched through it, and /api/stats reports the total.
   async function fetchStats() {
-    // Primary: site-hosted stats.json
     try {
-      const res = await fetch("./stats.json?" + Date.now());
+      const res = await fetch("/api/stats", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        return { downloads: data.downloads || 0, users: data.users || 0 };
+        return { downloads: data.downloads || 0 };
       }
     } catch {}
-
-    // Fallback: GitHub API release download counts
-    try {
-      const res = await fetch("https://api.github.com/repos/realKeehan/PolyForge/releases");
-      if (res.ok) {
-        const releases = await res.json();
-        let total = 0;
-        releases.forEach(r => {
-          (r.assets || []).forEach(a => { total += a.download_count || 0; });
-        });
-        return { downloads: total, users: 0 };
-      }
-    } catch {}
-
-    return { downloads: 0, users: 0 };
+    return { downloads: 0 };
   }
 
   function renderStats() {
     fetchStats().then(stats => {
       const dlEl = $("#statDownloads");
-      const usEl = $("#statUsers");
       if (dlEl) dlEl.textContent = stats.downloads.toLocaleString();
-      if (usEl) usEl.textContent = stats.users.toLocaleString();
     });
   }
 
