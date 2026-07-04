@@ -31,6 +31,12 @@ func (a *App) GetMenuOptions() []kumi.OptionDescriptor {
 	return a.kumi.Options()
 }
 
+// GetRemoteContent returns the remote content manifest (modpacks, option
+// overrides, update info) fetched from the website, with disk-cache fallback.
+func (a *App) GetRemoteContent() kumi.RemoteContentResult {
+	return a.kumi.RemoteContent()
+}
+
 func (a *App) Execute(optionID string, payload kumi.ExecutionPayload) (*kumi.ActionResult, error) {
 	return a.kumi.Execute(optionID, payload)
 }

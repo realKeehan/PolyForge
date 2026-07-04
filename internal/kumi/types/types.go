@@ -8,6 +8,8 @@ type OptionDescriptor struct {
 	Description  string `json:"description"`
 	RequiresPath bool   `json:"requiresPath"`
 	PathLabel    string `json:"pathLabel,omitempty"`
+	DetectedPath string `json:"detectedPath,omitempty"`
+	Found        bool   `json:"found"`
 }
 
 type ExecutionPayload struct {

@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
+	goruntime "runtime"
 	"strings"
 
 	"crypto/tls"
@@ -52,7 +55,7 @@ func (s *Service) SetContext(ctx context.Context) {
 }
 
 func (s *Service) Options() []OptionDescriptor {
-	return []OptionDescriptor{
+	options := []OptionDescriptor{
 		{ID: "vanilla", Title: "Vanilla Install", Description: "Install the Turtel SMP5 instance for the default Minecraft launcher."},
 		{ID: "multimc", Title: "MultiMC Install", Description: "Provision the MultiMC instance.", RequiresPath: true, PathLabel: "MultiMC Root"},
 		{ID: "curseforge", Title: "CurseForge Install", Description: "Install into CurseForge instances."},
@@ -66,7 +69,7 @@ func (s *Service) Options() []OptionDescriptor {
 		{ID: "polymc", Title: "PolyMC Install", Description: "Install into PolyMC.", RequiresPath: true, PathLabel: "PolyMC Root"},
 		{ID: "sklauncher", Title: "SK Launcher Install", Description: "Install into SK Launcher.", RequiresPath: true, PathLabel: "SK Launcher Root"},
 		{ID: "freesm", Title: "Freesm Launcher Install", Description: "Install into Freesm Launcher.", RequiresPath: true, PathLabel: "Freesm Root"},
-		{ID: "elyprism", Title: "ElyPrism Install", Description: "Install into ElyPrism.", RequiresPath: true, PathLabel: "ElyPrism Root"},
+		{ID: "elyprism", Title: "PineconeMC Install", Description: "Install into PineconeMC (formerly ElyPrism).", RequiresPath: true, PathLabel: "PineconeMC Root"},
 		{ID: "shatteredprism", Title: "ShatteredPrism Install", Description: "Install into ShatteredPrism.", RequiresPath: true, PathLabel: "ShatteredPrism Root"},
 		{ID: "qwertz", Title: "QWERTZ Install", Description: "Install into QWERTZ Launcher.", RequiresPath: true, PathLabel: "QWERTZ Root"},
 		{ID: "fjord", Title: "Fjord Launcher Install", Description: "Install into Fjord Launcher.", RequiresPath: true, PathLabel: "Fjord Root"},
@@ -79,6 +82,106 @@ func (s *Service) Options() []OptionDescriptor {
 		{ID: "about", Title: "About", Description: "View information about PolyForge."},
 		{ID: "cake", Title: "Cake?", Description: "Trigger the playful easter egg."},
 	}
+
+	// Auto-detect launcher paths
+	for i := range options {
+		detected := s.detectLauncherPath(options[i].ID)
+		if detected != "" {
+			options[i].DetectedPath = detected
+			options[i].Found = true
+		}
+	}
+
+	return options
+}
+
+// detectLauncherPath returns the first detected installation path for the given launcher ID.
+func (s *Service) detectLauncherPath(id string) string {
+	switch id {
+	case "vanilla":
+		if mc := defaultMinecraftDir(); pathExists(mc) {
+			return mc
+		}
+		return ""
+	case "curseforge":
+		target, err := curseForgeTarget()
+		if err != nil {
+			return ""
+		}
+		// Check parent (CurseForge root) rather than the pack-specific folder
+		parent := filepath.Dir(filepath.Dir(target))
+		if pathExists(parent) {
+			return parent
+		}
+		return ""
+	case "modrinth":
+		target, err := modrinthTarget()
+		if err != nil {
+			return ""
+		}
+		parent := filepath.Dir(filepath.Dir(target))
+		if pathExists(parent) {
+			return parent
+		}
+		return ""
+	case "multimc":
+		return firstExistingDirectory(multiMCCandidates(""))
+	case "gdlauncher":
+		return firstExistingDirectory(gdLauncherCandidates(""))
+	case "atlauncher":
+		return firstExistingDirectory(atLauncherCandidates(""))
+	case "prismlauncher":
+		return firstExistingDirectory(prismLauncherCandidates(""))
+	case "bakaxl":
+		return firstExistingDirectory(bakaXLCandidates(""))
+	case "feather":
+		return firstExistingDirectory(featherCandidates(""))
+	case "technic":
+		return firstExistingDirectory(technicCandidates(""))
+	case "polymc":
+		return firstExistingDirectory(polyMCCandidates(""))
+	case "sklauncher":
+		return firstExistingDirectory(skLauncherCandidates(""))
+	case "freesm":
+		return firstExistingDirectory(freesmCandidates(""))
+	case "elyprism":
+		return firstExistingDirectory(elyPrismCandidates(""))
+	case "shatteredprism":
+		return firstExistingDirectory(shatteredPrismCandidates(""))
+	case "qwertz":
+		return firstExistingDirectory(qwertzCandidates(""))
+	case "fjord":
+		return firstExistingDirectory(fjordCandidates(""))
+	case "hmcl":
+		return firstExistingDirectory(hmclCandidates(""))
+	case "ultimmc":
+		return firstExistingDirectory(ultimMCCandidates(""))
+	case "polymerium":
+		return firstExistingDirectory(polymeriumCandidates(""))
+	case "xmcl":
+		return firstExistingDirectory(xmclCandidates(""))
+	default:
+		return ""
+	}
+}
+
+// defaultMinecraftDir returns the platform-specific default .minecraft location.
+func defaultMinecraftDir() string {
+	switch goruntime.GOOS {
+	case "windows":
+		if cfg, err := os.UserConfigDir(); err == nil {
+			return filepath.Join(cfg, ".minecraft")
+		}
+	case "darwin":
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, "Library", "Application Support", "minecraft")
+		}
+	default:
+		if home, err := os.UserHomeDir(); err == nil {
+			return filepath.Join(home, ".minecraft")
+		}
+	}
+	return ""
 }
 
 func (s *Service) Execute(optionID string, payload ExecutionPayload) (*ActionResult, error) {

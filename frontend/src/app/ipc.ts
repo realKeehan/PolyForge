@@ -1,7 +1,11 @@
-import type { ActionResult, ExecutionPayload, OptionDescriptor } from './types';
+import type { ActionResult, ExecutionPayload, OptionDescriptor, RemoteContentResult } from './types';
 
 export async function fetchMenuOptions(): Promise<OptionDescriptor[]> {
   return window.go.app.App.GetMenuOptions();
+}
+
+export async function fetchRemoteContent(): Promise<RemoteContentResult> {
+  return window.go.app.App.GetRemoteContent();
 }
 
 export async function runInstaller(optionId: string, payload: ExecutionPayload): Promise<ActionResult> {

@@ -13,6 +13,8 @@ const LAUNCHER_ICON = `
   </svg>
 `;
 
+const FOLDER_ICON = `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5a2 2 0 012-2h3.172a2 2 0 011.414.586l1.828 1.828A2 2 0 0012.828 6H15a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+
 // Test dummy launcher option
 const TEST_DUMMY: OptionDescriptor = {
   id: '__test_dummy__',
@@ -56,6 +58,18 @@ function radioDot(): string {
   return `<span class="radio-dot"><span class="radio-dot__inner"></span></span>`;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Per-option paths chosen via Browse. Module-scoped so the user's choices
+// survive screen re-renders (navigating back and forth) within a session.
+const overriddenPaths = new Map<string, string>();
+
 export function renderInstaller(store: Store): HTMLElement {
   const container = document.createElement('section');
   container.className = 'screen screen--installer';
@@ -74,17 +88,6 @@ export function renderInstaller(store: Store): HTMLElement {
 
   const list = document.createElement('div');
   list.className = 'radio-list';
-
-  const pathField = document.createElement('div');
-  pathField.className = 'field';
-  pathField.hidden = true;
-  pathField.innerHTML = `
-    <label class="field__label" data-role="path-label">Installation path</label>
-    <div class="field__row">
-      <input class="field__input" type="text" data-role="path-input" placeholder="Select a folder" />
-      <button type="button" class="btn btn--plain" data-role="browse">Browse</button>
-    </div>
-  `;
 
   const errorBox = document.createElement('div');
   errorBox.className = 'alert';
@@ -110,12 +113,23 @@ export function renderInstaller(store: Store): HTMLElement {
   actions.append(backButton, runButton);
   footer.append(social, actions);
 
-  container.append(header, list, pathField, errorBox, footer);
+  // Old-style target folder chooser for custom/manual
+  const pathChooser = document.createElement('div');
+  pathChooser.className = 'field';
+  pathChooser.hidden = true;
+  pathChooser.innerHTML = `
+    <label class="field__label">Target Folder</label>
+    <div class="field__row">
+      <input type="text" class="field__input" placeholder="Select a folder" readonly />
+      <button type="button" class="btn btn--plain">Browse</button>
+    </div>
+  `;
+  const pathInput = pathChooser.querySelector('.field__input') as HTMLInputElement;
+  const pathBrowseBtn = pathChooser.querySelector('.btn--plain') as HTMLButtonElement;
+
+  container.append(header, list, pathChooser, errorBox, footer);
 
   const optionButtons = new Map<string, HTMLButtonElement>();
-  const pathLabel = pathField.querySelector('[data-role="path-label"]') as HTMLLabelElement;
-  const pathInput = pathField.querySelector('[data-role="path-input"]') as HTMLInputElement;
-  const browseButton = pathField.querySelector('[data-role="browse"]') as HTMLButtonElement;
 
   const setError = (message: string | null) => {
     if (!message) {
@@ -138,18 +152,37 @@ export function renderInstaller(store: Store): HTMLElement {
       if (button) button.classList.add('is-active');
     }
 
-    if (option && option.requiresPath) {
-      pathField.hidden = false;
-      pathLabel.textContent = option.pathLabel ?? 'Installation path';
-      const existing = store.getState().selectedPath ?? '';
-      if (existing) pathInput.value = existing;
-      runButton.disabled = pathInput.value.trim() === '';
+    // Show/hide old-style path chooser for custom/manual
+    const isCustomManual = option && (option.id === 'custom' || option.id === 'manual');
+    pathChooser.hidden = !isCustomManual;
+    if (isCustomManual) {
+      const existingPath = overriddenPaths.get(option!.id) || '';
+      pathInput.value = existingPath;
+    }
+
+    // Enable install if option selected and either doesn't need path, or has a path
+    if (option) {
+      if (option.requiresPath || (option.id === 'custom' || option.id === 'manual')) {
+        const path = overriddenPaths.get(option.id) || option.detectedPath || '';
+        runButton.disabled = path.trim() === '';
+      } else {
+        runButton.disabled = false;
+      }
     } else {
-      pathField.hidden = true;
-      pathInput.value = '';
-      runButton.disabled = !option;
+      runButton.disabled = true;
     }
   };
+
+  // Path chooser browse button handler
+  pathBrowseBtn.addEventListener('click', async () => {
+    if (!localSelected) return;
+    const chosen = await browseForDirectory(localSelected.pathLabel ?? 'Select folder');
+    if (chosen) {
+      overriddenPaths.set(localSelected.id, chosen);
+      pathInput.value = chosen;
+      runButton.disabled = false;
+    }
+  });
 
   // Filter out excluded options and add real backend options
   const filteredOptions = store.getState().options.filter(
@@ -159,38 +192,88 @@ export function renderInstaller(store: Store): HTMLElement {
   // Build combined list: backend options + test dummy
   const allOptions: OptionDescriptor[] = [...filteredOptions, TEST_DUMMY];
 
-  allOptions.forEach((option) => {
+  // Sort: found options first, then not-found, preserving original order within each group
+  const sortedOptions = [
+    ...allOptions.filter((o) => o.found),
+    ...allOptions.filter((o) => !o.found),
+  ];
+
+  sortedOptions.forEach((option) => {
+    const isFound = !!option.found;
+    const displayPath = option.detectedPath || '';
+    const isSpecial = option.id === 'custom' || option.id === 'manual' || option.id === '__test_dummy__';
+
+    // Restore any path the user already browsed to this session
+    const restoredPath = overriddenPaths.get(option.id);
+    const missing = !isFound && !isSpecial && !restoredPath;
+
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'radio-item radio-item--has-bg';
+    button.className = `radio-item radio-item--launcher radio-item--has-bg${missing ? ' radio-item--not-found' : ''}`;
     button.dataset.optionId = option.id;
+
+    const pathText = isSpecial
+      ? ''
+      : restoredPath || (isFound ? displayPath : 'Not Found');
+
+    // The browse control is a span[role=button] because interactive content
+    // cannot be nested inside the row's <button> in valid HTML.
     button.innerHTML = `
       ${radioDot()}
-      <span class="radio-item__label">${option.title}</span>
+      <span class="radio-item__body">
+        <span class="radio-item__label">${escapeHtml(option.title)}</span>
+        ${pathText ? `<span class="radio-item__path" data-path-for="${option.id}">${escapeHtml(pathText)}</span>` : ''}
+      </span>
+      ${!isSpecial ? `<span role="button" tabindex="0" class="radio-item__browse" data-browse-for="${option.id}" aria-label="Browse for ${escapeHtml(option.title)}" title="Browse">${FOLDER_ICON}</span>` : ''}
     `;
+
     if (localSelected?.id === option.id) {
       button.classList.add('is-active');
     }
-    button.addEventListener('click', () => {
+
+    // Main click selects the option
+    button.addEventListener('click', (e) => {
+      // Don't select if the browse button was clicked
+      if ((e.target as HTMLElement).closest('.radio-item__browse')) return;
       selectOption(option);
     });
+
+    // Browse control (span[role=button]) — handle both click and keyboard
+    const browseBtn = button.querySelector(`[data-browse-for="${option.id}"]`) as HTMLSpanElement | null;
+    if (browseBtn) {
+      const browse = async (e: Event) => {
+        e.stopPropagation();
+        const chosen = await browseForDirectory(option.pathLabel ?? 'Select folder');
+        if (chosen) {
+          overriddenPaths.set(option.id, chosen);
+          // Update path display
+          const pathEl = button.querySelector(`[data-path-for="${option.id}"]`);
+          if (pathEl) {
+            pathEl.textContent = chosen;
+            pathEl.classList.remove('radio-item__path--not-found');
+          }
+          // Remove not-found style
+          button.classList.remove('radio-item--not-found');
+          // Select this option
+          selectOption(option);
+        }
+      };
+      browseBtn.addEventListener('click', browse);
+      browseBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          void browse(e);
+        }
+      });
+    }
+
+    const pathEl = button.querySelector(`[data-path-for="${option.id}"]`) as HTMLSpanElement | null;
+    if (pathEl && missing) {
+      pathEl.classList.add('radio-item__path--not-found');
+    }
+
     optionButtons.set(option.id, button);
     list.appendChild(button);
-  });
-
-  pathInput.addEventListener('input', () => {
-    const value = pathInput.value.trim();
-    store.setPath(value || undefined);
-    runButton.disabled = value.length === 0;
-  });
-
-  browseButton.addEventListener('click', async () => {
-    const chosen = await browseForDirectory(localSelected?.pathLabel ?? 'Select folder');
-    if (chosen) {
-      pathInput.value = chosen;
-      store.setPath(chosen);
-      runButton.disabled = false;
-    }
   });
 
   backButton.addEventListener('click', () => {
@@ -218,13 +301,17 @@ export function renderInstaller(store: Store): HTMLElement {
       return;
     }
 
-    if (option.requiresPath) {
-      const path = pathInput.value.trim();
-      if (!path) {
+    // Determine path
+    const overridden = overriddenPaths.get(option.id);
+    const effectivePath = overridden || option.detectedPath || '';
+    const needsPath = option.requiresPath || option.id === 'custom' || option.id === 'manual';
+
+    if (needsPath) {
+      if (!effectivePath) {
         setError('Please choose a directory for this launcher.');
         return;
       }
-      store.setPath(path);
+      store.setPath(effectivePath);
     } else {
       store.setPath(undefined);
     }
@@ -234,7 +321,7 @@ export function renderInstaller(store: Store): HTMLElement {
     store.setBusy(true);
 
     try {
-      const payload = option.requiresPath ? { path: store.getState().selectedPath } : {};
+      const payload = needsPath ? { path: store.getState().selectedPath } : {};
       const result = await runInstaller(option.id, payload);
       store.appendLogs(result.messages);
       store.setResult(result);
@@ -251,10 +338,6 @@ export function renderInstaller(store: Store): HTMLElement {
   // Restore selection state (local only, no store emit)
   if (localSelected) {
     selectOption(localSelected);
-    if (localSelected.requiresPath && store.getState().selectedPath) {
-      pathInput.value = store.getState().selectedPath ?? '';
-      runButton.disabled = false;
-    }
   }
 
   return container;

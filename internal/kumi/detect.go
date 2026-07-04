@@ -102,9 +102,13 @@ func freesmCandidates(explicit string) []string {
 	}
 }
 
+// PineconeMC is the rebranded ElyPrism; probe the new folders first but keep
+// the legacy ElyPrism locations for existing installs.
 func elyPrismCandidates(explicit string) []string {
 	return []string{
 		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "PineconeMC"),
+		filepath.Join(os.Getenv("APPDATA"), "PineconeMCLauncher"),
 		filepath.Join(os.Getenv("APPDATA"), "ElyPrism"),
 		filepath.Join(os.Getenv("APPDATA"), "ElyPrismLauncher"),
 	}

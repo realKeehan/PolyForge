@@ -4,6 +4,8 @@ export interface OptionDescriptor {
   description: string;
   requiresPath?: boolean;
   pathLabel?: string;
+  detectedPath?: string;
+  found?: boolean;
 }
 
 export interface ExecutionPayload {
@@ -36,9 +38,51 @@ export enum Step {
 
 export type Mode = 'install' | 'repair' | 'update' | 'uninstall';
 
+// ── Remote content manifest (fetched from polyforge.dev) ──
+
+export interface RemotePack {
+  id: string;
+  name: string;
+  description?: string;
+  requiresPassword?: boolean;
+  passwordHash?: string;
+}
+
+export interface RemoteOptionOverride {
+  id: string;
+  title?: string;
+  description?: string;
+}
+
+export interface RemoteAppInfo {
+  latestVersion: string;
+  minSupportedVersion?: string;
+  downloadUrl?: string;
+  notes?: string;
+}
+
+export interface RemoteManifest {
+  schemaVersion: number;
+  updated?: string;
+  app: RemoteAppInfo;
+  modpacks?: RemotePack[];
+  optionOverrides?: RemoteOptionOverride[];
+  disabledOptions?: string[];
+}
+
+export interface RemoteContentResult {
+  manifest?: RemoteManifest | null;
+  fromCache: boolean;
+  updateAvailable: boolean;
+  mandatory: boolean;
+  currentVersion: string;
+  error?: string;
+}
+
 export interface AppState {
   step: Step;
   options: OptionDescriptor[];
+  modpacks?: RemotePack[];
   selectedMode?: Mode;
   selectedModpack?: string;
   selectedInstaller?: OptionDescriptor;
