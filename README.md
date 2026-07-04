@@ -90,7 +90,7 @@ Supported on Windows, Linux, and macOS.
 | Flag | Description |
 |------|-------------|
 | `-UPX` | Compress the output binary with [UPX](https://github.com/upx/upx/releases). Requires `upx` on PATH. |
-| `-Obfuscated` | Future preset for Wails v3 garble/obfuscation support. Currently a no-op that warns. |
+| `-Obfuscated` | Obfuscate bound Wails methods via [garble](https://github.com/burrowers/garble) (`wails build -obfuscated`). Requires `go install mvdan.cc/garble@latest`. |
 | `-SkipFrontend` | Skip `npm ci` and `npm run build` if the frontend is already built. |
 
 #### Examples
@@ -163,9 +163,9 @@ The updater architecture separates binary updates from content updates:
 - **Content updates**: modpack manifests fetched independently so new packs appear without app updates.
 - **Auth**: password-based access for private packs (no key system).
 
-### Obfuscation roadmap
+### Obfuscation
 
-When Wails v3 releases with garble integration, the `-Obfuscated` build flag will enable code obfuscation for closed-source distribution builds. The script infrastructure is already in place.
+The `-Obfuscated` build flag passes `-obfuscated` to `wails build`, garbling bound method names for distribution builds. Install garble first: `go install mvdan.cc/garble@latest`. Interactive flag selection (UPX, NSIS, obfuscation, trimpath, WebView2 embedding, debug) is available through `dev-menu.bat` → "Build app release".
 
 ## Distribution formats
 
