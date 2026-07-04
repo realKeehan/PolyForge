@@ -3,6 +3,7 @@ package kumi
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	osruntime "runtime"
@@ -141,17 +142,17 @@ func (s *Service) scanRoots(roots []string, exeName string, args string) []strin
 			if d.IsDir() {
 				return nil
 			}
-			if !strings.EqualFold(filepath.Base(path), exeName) {
-				if strings.HasSuffix(strings.ToLower(path), ".lnk") {
-					if resolved := resolveShortcut(path, exeName, args); resolved != "" {
-						matches = append(matches, resolved)
-						return filepath.SkipDir
-					}
-				}
-				return nil
+			if strings.EqualFold(filepath.Base(path), exeName) {
+				matches = append(matches, path)
+				return fs.SkipAll // stop the whole walk on first hit
 			}
-			matches = append(matches, path)
-			return filepath.SkipDir
+			if strings.EqualFold(filepath.Ext(path), ".lnk") {
+				if resolved := resolveShortcut(path, exeName, args); resolved != "" {
+					matches = append(matches, resolved)
+					return fs.SkipAll
+				}
+			}
+			return nil
 		})
 		if len(matches) > 0 {
 			break
@@ -174,9 +175,24 @@ func (s *Service) enumerateDrives() []string {
 	return drives
 }
 
+// resolveShortcut parses a .lnk file and returns its target when it points at
+// the requested executable (and, if given, its arguments contain args).
 func resolveShortcut(path, exeName, args string) string {
-	// Placeholder: resolving Windows shortcuts requires COM and is left for a dedicated Windows build.
-	return ""
+	target, lnkArgs, err := parseShortcut(path)
+	if err != nil || target == "" {
+		return ""
+	}
+	if !strings.EqualFold(filepath.Base(target), exeName) {
+		return ""
+	}
+	if strings.TrimSpace(args) != "" &&
+		!strings.Contains(strings.ToLower(lnkArgs), strings.ToLower(args)) {
+		return ""
+	}
+	if !fileExistsR(target) {
+		return ""
+	}
+	return target
 }
 
 func unique(values []string) []string {
