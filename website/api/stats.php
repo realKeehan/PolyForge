@@ -17,12 +17,15 @@ header('Cache-Control: no-store');
 
 const STATS_FILE = __DIR__ . '/stats-data.json';
 
-$stats = ['downloads' => 0, 'updated' => null];
+$stats = ['downloads' => 0, 'byType' => new stdClass(), 'updated' => null];
 if (is_file(STATS_FILE)) {
     $decoded = json_decode((string) file_get_contents(STATS_FILE), true);
     if (is_array($decoded)) {
         $stats['downloads'] = max(0, (int) ($decoded['downloads'] ?? 0));
-        $stats['updated']   = $decoded['updated'] ?? null;
+        if (is_array($decoded['byType'] ?? null)) {
+            $stats['byType'] = $decoded['byType'];
+        }
+        $stats['updated'] = $decoded['updated'] ?? null;
     }
 }
 
