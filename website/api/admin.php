@@ -443,20 +443,36 @@ case 'pack-build': {
         'mods'          => $mods,
         'overrides'     => ['folders' => $folders, 'fileCount' => $fileCount, 'totalBytes' => $totalBytes],
     ];
+    // Launcher-agnostic info fields for every supported launcher, so one
+    // pack installs everywhere (the installer generates each launcher's
+    // real files from these + the manifest).
+    $launcherIds = [
+        'vanilla', 'multimc', 'polymc', 'prismlauncher', 'shatteredprism', 'elyprism',
+        'ultimmc', 'fjord', 'modrinth', 'curseforge', 'atlauncher', 'gdlauncher',
+        'technic', 'feather', 'bakaxl', 'sklauncher', 'freesm', 'qwertz', 'hmcl',
+        'polymerium', 'xmcl',
+    ];
+    $launcherEntries = [];
+    foreach ($launcherIds as $lid) {
+        $launcherEntries[$lid] = ['profileName' => $name, 'instanceName' => $name];
+    }
     $launchers = [
         'schemaVersion' => 1,
         'defaults'      => ['minMemoryMb' => 2048, 'recommendedMemoryMb' => 4096, 'javaArgs' => '', 'iconPath' => ''],
-        'launchers'     => [
-            'vanilla'    => ['profileName' => $name],
-            'multimc'    => ['instanceName' => $name],
-            'modrinth'   => ['profileName' => $name],
-            'curseforge' => ['instanceName' => $name],
-        ],
+        'launchers'     => $launcherEntries,
     ];
     $manifestJson = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     $out->addFromString('pack-manifest.json', $manifestJson);
     $out->addFromString('launchers.json', json_encode($launchers, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     $out->close();
+
+    // Wrap the built zip into a .slime container (same transform the app and
+    // the PowerShell packager use), then drop the intermediate zip.
+    require __DIR__ . '/slime-lib.php';
+    $zipBytes = file_get_contents($outZipPath);
+    $slimePath = PACKS_DIR . "/$id-$version.slime";
+    file_put_contents($slimePath, slime_wrap((string) $zipBytes), LOCK_EX);
+    @unlink($outZipPath);
 
     file_put_contents(PACKS_DIR . "/$id-$version.manifest.json", $manifestJson, LOCK_EX);
 
@@ -464,13 +480,13 @@ case 'pack-build': {
     $registry = loadPackRegistry();
     $entry = $registry[$id] ?? ['name' => $name, 'requiresPassword' => false, 'passwordHash' => null];
     $entry['name'] = $name;
-    $entry['downloadUrl'] = "/packs/$id-$version.polypack.zip";
+    $entry['downloadUrl'] = "/packs/$id-$version.slime";
     $registry[$id] = $entry;
     savePackRegistry($registry);
 
     respond(200, [
         'ok'       => true,
-        'zip'      => "/packs/$id-$version.polypack.zip",
+        'pack'     => "/packs/$id-$version.slime",
         'manifest' => "/packs/$id-$version.manifest.json",
         'mods'     => count($mods),
         'files'    => $fileCount,

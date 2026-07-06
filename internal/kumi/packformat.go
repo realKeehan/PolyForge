@@ -2,6 +2,7 @@ package kumi
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -161,15 +162,28 @@ type PolyPackInfo struct {
 	ModCount      int    `json:"modCount"`
 }
 
-// InspectPolyPack opens a local pack zip and returns its manifest summary.
-func InspectPolyPack(path string) (*PolyPackInfo, error) {
-	reader, err := zip.OpenReader(path)
+// openPackReader reads a pack file (either a .slime container or a plain
+// zip) and returns a zip.Reader over its contents.
+func openPackReader(path string) (*zip.Reader, error) {
+	data, err := readPackArchive(path)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open pack: %w", err)
 	}
-	defer reader.Close()
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, fmt.Errorf("pack is not a valid archive: %w", err)
+	}
+	return reader, nil
+}
 
-	manifest, err := readZipPackManifest(&reader.Reader)
+// InspectPolyPack opens a local pack and returns its manifest summary.
+func InspectPolyPack(path string) (*PolyPackInfo, error) {
+	reader, err := openPackReader(path)
+	if err != nil {
+		return nil, err
+	}
+
+	manifest, err := readZipPackManifest(reader)
 	if err != nil {
 		return nil, err
 	}
@@ -207,14 +221,13 @@ func readZipPackManifest(reader *zip.Reader) (*PackManifest, error) {
 
 // installLocalPack extracts a pack's overrides/ into targetDir and writes
 // the manifest copy used for future update diffs. Returns counts for logs.
-func installLocalPack(zipPath, targetDir string) (files int, manifest *PackManifest, err error) {
-	reader, err := zip.OpenReader(zipPath)
+func installLocalPack(packPath, targetDir string) (files int, manifest *PackManifest, err error) {
+	reader, err := openPackReader(packPath)
 	if err != nil {
-		return 0, nil, fmt.Errorf("cannot open pack: %w", err)
+		return 0, nil, err
 	}
-	defer reader.Close()
 
-	manifest, err = readZipPackManifest(&reader.Reader)
+	manifest, err = readZipPackManifest(reader)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -258,12 +271,89 @@ func installLocalPack(zipPath, targetDir string) (files int, manifest *PackManif
 	return files, manifest, nil
 }
 
-// ── Installer integration stubs ──────────────────
-// TODO (pending test-machine pack structures):
-//   - Per-launcher generators driven by LaunchersFile info fields:
-//       vanilla    → launcher_profiles.json entry
-//       multimc    → instance.cfg + mmc-pack.json (components from Loader)
-//       modrinth   → Theseus profile entry
-//       curseforge → minecraftinstance.json
-//   - CheckPackUpdate(installedManifest, hostedManifestURL) using
-//     ComparePackMods to decide whether and what to update.
+// ── Dynamic per-launcher generation (scaffold) ───
+//
+// A pack is launcher-agnostic: overrides/ + a manifest + info fields. The
+// installer turns those into the concrete files a given launcher needs, so
+// one pack installs everywhere. Generation is data-driven through this
+// registry — add a launcher's real writer once its folder structure is
+// known (see scripts/dump-launcher-trees.ps1 output) without touching the
+// packager or the pack format.
+
+// LauncherTarget describes where and how a launcher expects an instance.
+type LauncherTarget struct {
+	ID string
+	// InstanceSubdir is where overrides/ land relative to the launcher's
+	// instance root, e.g. "minecraft" or ".minecraft" or "" (root).
+	InstanceSubdir string
+	// Generate writes the launcher-specific files (profile/instance configs)
+	// from the pack manifest + info fields into instanceDir. nil = not yet
+	// implemented (overrides still get extracted; profile is manual).
+	Generate func(instanceDir string, m *PackManifest, info map[string]any, defaults PackLauncherDefaults) error
+}
+
+// launcherTargets is the generation registry. Subdirs reflect common
+// conventions; the Generate writers are stubbed until the real per-launcher
+// file schemas are captured from a test machine.
+var launcherTargets = map[string]LauncherTarget{
+	"vanilla":        {ID: "vanilla", InstanceSubdir: ""},         // profile in launcher_profiles.json → .minecraft
+	"multimc":        {ID: "multimc", InstanceSubdir: ".minecraft"},
+	"polymc":         {ID: "polymc", InstanceSubdir: ".minecraft"},
+	"prismlauncher":  {ID: "prismlauncher", InstanceSubdir: ".minecraft"},
+	"shatteredprism": {ID: "shatteredprism", InstanceSubdir: ".minecraft"},
+	"elyprism":       {ID: "elyprism", InstanceSubdir: ".minecraft"},
+	"ultimmc":        {ID: "ultimmc", InstanceSubdir: ".minecraft"},
+	"fjord":          {ID: "fjord", InstanceSubdir: ".minecraft"},
+	"modrinth":       {ID: "modrinth", InstanceSubdir: ""},
+	"curseforge":     {ID: "curseforge", InstanceSubdir: ""},
+	"atlauncher":     {ID: "atlauncher", InstanceSubdir: ".minecraft"},
+	"gdlauncher":     {ID: "gdlauncher", InstanceSubdir: ""},
+	"technic":        {ID: "technic", InstanceSubdir: "bin"},
+	"feather":        {ID: "feather", InstanceSubdir: ""},
+	"bakaxl":         {ID: "bakaxl", InstanceSubdir: ""},
+	"sklauncher":     {ID: "sklauncher", InstanceSubdir: ""},
+	"freesm":         {ID: "freesm", InstanceSubdir: ".minecraft"},
+	"qwertz":         {ID: "qwertz", InstanceSubdir: ".minecraft"},
+	"hmcl":           {ID: "hmcl", InstanceSubdir: ""},
+	"polymerium":     {ID: "polymerium", InstanceSubdir: ""},
+	"xmcl":           {ID: "xmcl", InstanceSubdir: ""},
+}
+
+// InstanceSubdirFor returns where a launcher expects the pack's overrides,
+// relative to the instance root ("" = the root itself).
+func InstanceSubdirFor(launcherID string) string {
+	if t, ok := launcherTargets[launcherID]; ok {
+		return t.InstanceSubdir
+	}
+	return ""
+}
+
+// GenerateLauncherFiles writes the launcher-specific configuration for an
+// installed pack. Returns (false, nil) when no generator exists yet for the
+// launcher — the caller should tell the user to add the instance manually.
+func GenerateLauncherFiles(launcherID, instanceDir string, m *PackManifest, l *LaunchersFile) (generated bool, err error) {
+	target, ok := launcherTargets[launcherID]
+	if !ok || target.Generate == nil {
+		return false, nil
+	}
+	var info map[string]any
+	var defaults PackLauncherDefaults
+	if l != nil {
+		info = l.Launchers[launcherID]
+		defaults = l.Defaults
+	}
+	return true, target.Generate(instanceDir, m, info, defaults)
+}
+
+// AllLauncherIDs returns every launcher the generator knows about, so the
+// packager can emit info fields for all of them.
+func AllLauncherIDs() []string {
+	ids := make([]string, 0, len(launcherTargets))
+	for id := range launcherTargets {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+// TODO: CheckPackUpdate(installedManifest, hostedManifestURL) using
+// ComparePackMods to decide whether and what to update.

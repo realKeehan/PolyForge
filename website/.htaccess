@@ -12,8 +12,13 @@ RewriteEngine On
 RewriteRule ^partials(/|$) - [F,L]
 
 # Data files are only accessed through their API endpoints
-<FilesMatch "^(tetris-scores\.json|pack-access-state\.json|stats-data\.json|packs-data\.json|admin-state\.json|manifest-history\.json|packs\.data\.php|packs-registry\.php|admin-config\.php)$">
+<FilesMatch "^(tetris-scores\.json|pack-access-state\.json|stats-data\.json|packs-data\.json|admin-state\.json|manifest-history\.json|packs\.data\.php|packs-registry\.php|admin-config\.php|slime-lib\.php)$">
   Require all denied
+</FilesMatch>
+
+# .slime packs are downloads, not executables — serve as a binary blob
+<FilesMatch "\.slime$">
+  ForceType application/octet-stream
 </FilesMatch>
 
 # /index, /index.html, /index.php → / (301 permanent)

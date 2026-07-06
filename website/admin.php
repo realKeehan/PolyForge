@@ -503,7 +503,7 @@
         msg($("#bMsg"), "Building… (large zips take a while)", true);
         try {
           const r = await call("pack-build", { form });
-          msg($("#bMsg"), `Built ${r.zip} — ${r.mods} mods, ${r.files} files (${fmtSize(r.bytes)}). Folders: ${r.folders.join(", ")}`, true);
+          msg($("#bMsg"), `Built ${r.pack} — ${r.mods} mods, ${r.files} files (${fmtSize(r.bytes)}). Folders: ${r.folders.join(", ")}`, true);
           loadPacks();
         } catch (e) { msg($("#bMsg"), e.message, false); }
         finally { $("#bBuildBtn").disabled = false; }

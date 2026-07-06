@@ -1,15 +1,45 @@
-# PolyForge modpack format (.polypack.zip)
+# PolyForge modpack format (.slime)
 
 > **Status: scaffold.** The layout and schemas below are the working
 > structure; exact per-launcher fields and default folder locations will be
-> filled in once real pack structures from the test machine are provided.
+> filled in once real launcher trees from the test machine are provided
+> (`scripts/dump-launcher-trees.ps1`).
 
-## Archive layout
+## The .slime container
 
-A pack is a plain zip named `<id>-<version>.polypack.zip`:
+A pack ships as `<id>-<version>.slime` — PolyForge's branded container. It
+is a standard ZIP archive wrapped by a simple, reversible transform so the
+file isn't a plain openable zip and gets its own extension + double-click
+handler:
 
 ```text
-turtel-smp-1.0.0.polypack.zip
+[0:5] "SLIME"  [5] version 0x01  [6] flags 0x00  [7] reserved
+[8:]  zip bytes, out[i] = zip[i] XOR key[i%32] XOR (i & 0xFF)
+      key = SHA-256("PolyForge-Slime-v1")
+```
+
+The identical transform lives in three places and is covered by a pinned
+test vector (`df5758d227b17001` for 8 zero bytes) so they can't drift:
+
+- Go: `internal/kumi/slime.go` (the app reads packs)
+- PowerShell: `scripts/slime-lib.ps1` (local packager)
+- PHP: `website/api/slime-lib.php` (admin online packager)
+
+**This is obfuscation, not encryption.** The key is a constant, so anyone
+with the source can reverse it — its purpose is format obscurity and
+branding. Real access control for private packs is the server-side password
+gate (`api/pack-access.php`), never the container.
+
+On first launch the app registers `.slime` with Windows (per-user registry,
+no admin/drivers) so double-clicking a pack opens it in PolyForge — see
+`internal/kumi/firstrun.go` + `fileassoc_windows.go`.
+
+## Archive layout (inside the container)
+
+Unwrapped, a pack is a zip:
+
+```text
+turtel-smp-1.0.0.slime   (contains, once unwrapped:)
 ├── pack-manifest.json     identity + mod versions (drives updates)
 ├── launchers.json         per-launcher info fields (installer generates
 │                          the actual launcher files from these)
@@ -21,9 +51,10 @@ turtel-smp-1.0.0.polypack.zip
     └── ...any other minecraft folders included at pack time
 ```
 
-The packager also emits `<id>-<version>.manifest.json` (a standalone copy of
-`pack-manifest.json`) next to the zip, so the website can host just the
-manifest for update checks without clients downloading the full archive.
+The packager also emits `<id>-<version>.manifest.json` (a standalone,
+un-obfuscated copy of `pack-manifest.json`) next to the `.slime`, so the
+website can host just the manifest for update checks without clients
+downloading the full pack.
 
 ## pack-manifest.json
 
@@ -61,38 +92,42 @@ Mod `name`/`version` are currently derived from the jar filename
 (best-effort). TODO: read `fabric.mod.json` / `META-INF/mods.toml` from
 inside each jar for authoritative metadata.
 
-## launchers.json
+## launchers.json — one pack, every launcher
 
-Per-launcher **info fields only** — the installer dynamically generates the
-real launcher files (profiles, instance configs) from these plus the pack
-manifest. The packager never ships launcher-specific files.
+The pack is **launcher-agnostic**: `launchers.json` carries info fields for
+*every* supported launcher, and the installer generates each launcher's real
+files (profiles, instance configs) from those fields + the manifest. The
+packager never targets a single launcher and never ships launcher-specific
+files, so the same `.slime` installs everywhere.
 
 ```json
 {
   "schemaVersion": 1,
-  "defaults": {
-    "minMemoryMb": 2048,
-    "recommendedMemoryMb": 4096,
-    "javaArgs": "",
-    "iconPath": ""
-  },
+  "defaults": { "minMemoryMb": 2048, "recommendedMemoryMb": 4096, "javaArgs": "", "iconPath": "" },
   "launchers": {
-    "vanilla":    { "profileName": "Turtel SMP" },
-    "multimc":    { "instanceName": "TurtelSMP5" },
-    "modrinth":   { "profileName": "TurtelSMP5" },
-    "curseforge": { "instanceName": "TurtelSMP5" }
+    "vanilla":       { "profileName": "...", "instanceName": "..." },
+    "multimc":       { "profileName": "...", "instanceName": "..." },
+    "prismlauncher": { "profileName": "...", "instanceName": "..." },
+    "modrinth":      { "profileName": "...", "instanceName": "..." },
+    "curseforge":    { "profileName": "...", "instanceName": "..." }
+    /* ...all 21 supported launchers... */
   }
 }
 ```
 
-What the installer generates from this (all TODO, pending real structures):
+Generation is data-driven through the registry in
+`internal/kumi/packformat.go` (`launcherTargets`): each launcher declares
+where overrides go (`InstanceSubdirFor`) and a `Generate` writer. Overrides
+are always extracted; the `Generate` writers are stubs until the real
+schemas are captured. Rough plan per family:
 
-| Launcher   | Generated at install time                                   |
-|------------|-------------------------------------------------------------|
-| vanilla    | `launcher_profiles.json` entry (profile id, icon, args)     |
-| multimc/prism-family | `instance.cfg` + `mmc-pack.json` (components from `minecraft` + `loader`) |
-| modrinth   | Theseus profile entry / `profile.json`                      |
-| curseforge | `minecraftinstance.json`                                    |
+| Launcher family | Generated at install time |
+|-----------------|---------------------------|
+| vanilla | `launcher_profiles.json` entry (profile id, icon, args) |
+| MultiMC / PolyMC / Prism forks | `instance.cfg` + `mmc-pack.json` (components from `minecraft` + `loader`) |
+| Modrinth (Theseus) | profile entry / `profile.json` |
+| CurseForge | `minecraftinstance.json` |
+| others | TBD from `dump-launcher-trees.ps1` output |
 
 ## Update flow (planned)
 

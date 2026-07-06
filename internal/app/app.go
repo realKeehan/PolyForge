@@ -21,6 +21,23 @@ func New(service *kumi.Service) *App {
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.kumi.SetContext(ctx)
+
+	// One-time preliminary setup (registers the .slime file type, etc.).
+	kumi.CleanupOldBinary()
+	if note := kumi.RunFirstRunSetup(); note != "" {
+		runtime.LogInfo(ctx, note)
+	}
+}
+
+// FirstRunNote runs first-run setup if needed and returns a note for the UI.
+func (a *App) FirstRunNote() string {
+	return kumi.RunFirstRunSetup()
+}
+
+// LaunchedPackPath returns a pack file passed on the command line (e.g. from
+// double-clicking a .slime), or "" if the app was launched normally.
+func (a *App) LaunchedPackPath() string {
+	return kumi.LaunchedPackPath()
 }
 
 func (a *App) Shutdown(context.Context) {
