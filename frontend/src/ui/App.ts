@@ -2,7 +2,8 @@ import { APP_VERSION } from '../app/constants';
 import { Quit, WindowMinimise } from '@wailsapp/runtime';
 import { createStore } from '../app/state';
 import { Step, type OptionDescriptor, type RemoteContentResult } from '../app/types';
-import { fetchMenuOptions, fetchRemoteContent } from '../app/ipc';
+import { fetchMenuOptions, fetchRemoteContent, inspectPolyPack, launchedPackPath } from '../app/ipc';
+import { LOCAL_PACK_ID } from '../app/types';
 import { renderLoading } from './screens/Loading';
 import { renderStartup } from './screens/Startup';
 import { renderLicense } from './screens/License';
@@ -260,6 +261,19 @@ export async function createApp(root: HTMLElement) {
     store.setOptions(applyRemoteOverrides(options, remote));
     if (remote?.manifest?.modpacks?.length) {
       store.setModpacks(remote.manifest.modpacks);
+    }
+
+    // If launched by double-clicking a .slime pack, pre-load it so the
+    // modpack screen shows it selected and ready to install.
+    const packPath = await launchedPackPath();
+    if (packPath) {
+      try {
+        const info = await inspectPolyPack(packPath);
+        store.setLocalPack(info);
+        store.setModpack(LOCAL_PACK_ID);
+      } catch (error) {
+        console.error('Could not read the opened pack', error);
+      }
     }
 
     await loadingReady;

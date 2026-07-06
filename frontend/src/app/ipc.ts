@@ -26,6 +26,15 @@ export async function inspectPolyPack(path: string): Promise<PolyPackInfo> {
   return window.go.app.App.InspectPolyPack(path);
 }
 
+export async function launchedPackPath(): Promise<string | undefined> {
+  try {
+    const path = await window.go.app.App.LaunchedPackPath();
+    return path || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function runInstaller(optionId: string, payload: ExecutionPayload): Promise<ActionResult> {
   return window.go.app.App.Execute(optionId, payload);
 }

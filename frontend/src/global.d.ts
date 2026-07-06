@@ -48,6 +48,7 @@ declare global {
           VerifyPackAccess(packID: string, password: string): Promise<PackAccessResult>;
           SelectPackFile(): Promise<string>;
           InspectPolyPack(path: string): Promise<PolyPackInfo>;
+          LaunchedPackPath(): Promise<string>;
           Execute(optionID: string, payload: ExecutionPayload): Promise<ActionResult>;
           SelectDirectory(title: string): Promise<string>;
           CloneModrinthProfile(request: ModrinthCloneRequest): Promise<ActionResult>;

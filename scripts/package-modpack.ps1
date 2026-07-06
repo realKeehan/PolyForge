@@ -161,10 +161,23 @@ $manifest = [ordered]@{
 $manifestJson = $manifest | ConvertTo-Json -Depth 6
 [IO.File]::WriteAllText((Join-Path $staging 'pack-manifest.json'), $manifestJson)
 
-# ── launchers.json (info fields only) ────────────
-# The installer generates the actual launcher files (profiles, instance
-# configs) from these fields plus the manifest. TODO: finalize fields per
-# launcher once the test-machine structures are provided.
+# ── launchers.json (launcher-agnostic info fields) ─
+# The pack is generic: the installer generates each launcher's real files
+# (profiles, instance configs) from these fields + the manifest. We emit an
+# entry for EVERY supported launcher so one pack installs everywhere; the
+# per-launcher install locations/schemas are filled in on the installer side
+# (see internal/kumi/packformat.go and scripts/dump-launcher-trees.ps1).
+$profileName = $PackName
+$launcherIds = @(
+    'vanilla', 'multimc', 'polymc', 'prismlauncher', 'shatteredprism', 'elyprism',
+    'ultimmc', 'fjord', 'modrinth', 'curseforge', 'atlauncher', 'gdlauncher',
+    'technic', 'feather', 'bakaxl', 'sklauncher', 'freesm', 'qwertz', 'hmcl',
+    'polymerium', 'xmcl'
+)
+$launcherEntries = [ordered]@{}
+foreach ($lid in $launcherIds) {
+    $launcherEntries[$lid] = [ordered]@{ profileName = $profileName; instanceName = $profileName }
+}
 $launchers = [ordered]@{
     schemaVersion = 1
     defaults      = [ordered]@{
@@ -173,22 +186,17 @@ $launchers = [ordered]@{
         javaArgs            = ''
         iconPath            = ''
     }
-    launchers     = [ordered]@{
-        vanilla    = [ordered]@{ profileName = $PackName }
-        multimc    = [ordered]@{ instanceName = $PackName }
-        modrinth   = [ordered]@{ profileName = $PackName }
-        curseforge = [ordered]@{ instanceName = $PackName }
-    }
+    launchers     = $launcherEntries
 }
 [IO.File]::WriteAllText((Join-Path $staging 'launchers.json'), ($launchers | ConvertTo-Json -Depth 6))
 
-# ── Zip it ───────────────────────────────────────
-$outZip = Join-Path $OutDir "$PackId-$PackVersion.polypack.zip"
-if (Test-Path $outZip) { Remove-Item $outZip -Force }
+# ── Zip, then wrap into a .slime container ───────
+$tmpZip = Join-Path $OutDir "$PackId-$PackVersion.polypack.zip"
+if (Test-Path $tmpZip) { Remove-Item $tmpZip -Force }
 
 Push-Location $staging
 try {
-    & $sevenZip a -tzip -mx=9 $outZip *
+    & $sevenZip a -tzip -mx=9 $tmpZip *
     if ($LASTEXITCODE -ne 0) {
         Write-Error "7-Zip exited with code $LASTEXITCODE"
         exit $LASTEXITCODE
@@ -198,13 +206,21 @@ try {
     Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# Standalone manifest for hosted update checks (no zip download needed).
+# Wrap the zip into PolyForge's branded .slime container. This is the same
+# obfuscation the app reverses (internal/kumi/slime.go) and the PHP admin
+# packager applies: magic header + XOR keystream. Obfuscation, not crypto.
+. (Join-Path $PSScriptRoot 'slime-lib.ps1')
+$outSlime = Join-Path $OutDir "$PackId-$PackVersion.slime"
+ConvertTo-Slime -InputPath $tmpZip -OutputPath $outSlime
+Remove-Item $tmpZip -Force
+
+# Standalone manifest for hosted update checks (no pack download needed).
 $manifestOut = Join-Path $OutDir "$PackId-$PackVersion.manifest.json"
 [IO.File]::WriteAllText($manifestOut, $manifestJson)
 
-$sizeMB = [math]::Round((Get-Item $outZip).Length / 1MB, 2)
+$sizeMB = [math]::Round((Get-Item $outSlime).Length / 1MB, 2)
 Write-Host ''
-Write-Host "Packaged modpack -> $outZip ($sizeMB MB)" -ForegroundColor Green
+Write-Host "Packaged modpack -> $outSlime ($sizeMB MB)" -ForegroundColor Green
 Write-Host "Update manifest  -> $manifestOut" -ForegroundColor Green
 Write-Host ''
 Write-Host 'Host both next to your releases (or behind api/pack-access for' -ForegroundColor Yellow
