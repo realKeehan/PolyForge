@@ -7,6 +7,7 @@ toolchain go1.24.7
 require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/wailsapp/wails/v2 v2.10.2
+	golang.org/x/sys v0.30.0
 )
 
 require (
@@ -40,7 +41,6 @@ require (
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	gorm.io/gorm v1.25.7 // indirect
 	modernc.org/libc v1.22.5 // indirect

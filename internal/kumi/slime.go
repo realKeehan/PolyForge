@@ -33,9 +33,26 @@ import (
 //   key    = SHA-256("PolyForge-Slime-v1")   (32 bytes)
 // ══════════════════════════════════════════════════
 
+// ── Future reference: LZMA payload compression (heavy update) ──────
+// The .slime payload is a DEFLATE zip today. LZMA (xz) compresses better on
+// low-entropy data; for modpacks the real wins are Distant Horizons LOD
+// databases and uncompressed resource/datapacks. Already-compressed .jar /
+// .zip / .png files gain little (that's most of a typical pack's bytes),
+// so pair it with store-mode for those and LZMA only the rest.
+//
+// Measured cost to add a pure-Go, CGO-free codec (keeps our clean
+// GOOS=linux/darwin cross-compiles), stripped binary delta over a baseline:
+//   github.com/ulikunitz/xz    raw xz/LZMA codec    +~284 KB, 1 dep    ← preferred
+//   github.com/bodgit/sevenzip full 7z container    +~3.5 MB, ~13 deps ← avoid
+// We own both ends of .slime, so the 7z *container* is unnecessary — a
+// future update would xz-compress the payload with ulikunitz/xz, set a new
+// slimeFlags value to signal the codec, and keep flags 0x00 (DEFLATE)
+// readable for back-compat. Bandwidth-wise, delta updates (ComparePackMods
+// on the manifest hashes) still save far more than any codec swap.
+
 const (
 	slimeVersion  = 0x01
-	slimeFlagsXor = 0x00
+	slimeFlagsXor = 0x00 // 0x00 = XOR-obfuscated DEFLATE zip; reserve others for LZMA
 	slimeKeyPhrase = "PolyForge-Slime-v1"
 )
 

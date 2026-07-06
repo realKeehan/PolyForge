@@ -140,6 +140,22 @@ func SaveManualChoice(cache *LauncherCache, id LauncherID, exePath string, valid
 }
 
 // ── Targeted concurrent scan ─────────────────────
+//
+// Future reference: instant-search fast-path (heavy update). This bounded
+// scan is the slow path (cold start ~seconds). It is already rare — the
+// cache + Start Menu shortcut resolution catch most launchers first, and
+// this is throttled to once per 12h — but for cold starts or launchers
+// without a shortcut, two Windows-only options could make "find <exe> on
+// any NTFS drive" near-instant:
+//   1. voidtools Everything SDK — query its live MFT index over IPC
+//      (Everything.dll / the IPC window). Millisecond lookups, but only
+//      when Everything is installed and its service is running, so it can
+//      only be an optional accelerator, never a dependency.
+//   2. Read the NTFS USN journal / $MFT directly (what Everything does).
+//      No third-party app, but needs elevation and is NTFS-only.
+// Either would sit in front of this scan as the fallback; neither helps
+// Linux/macOS. Only worth building if cold-scan latency becomes a real
+// complaint — the shortcut+cache pipeline already covers the common case.
 
 func scanForExe(ctx context.Context, roots []string, exeName string, maxDepth int, workers int) string {
 	hits := scanForExes(ctx, roots, map[string]string{strings.ToLower(exeName): exeName}, maxDepth, workers)
