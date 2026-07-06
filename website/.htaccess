@@ -16,8 +16,8 @@ RewriteRule ^partials(/|$) - [F,L]
   Require all denied
 </FilesMatch>
 
-# .slime packs are downloads, not executables — serve as a binary blob
-<FilesMatch "\.slime$">
+# .polypack files are downloads, not executables — serve as a binary blob
+<FilesMatch "\.polypack$">
   ForceType application/octet-stream
 </FilesMatch>
 

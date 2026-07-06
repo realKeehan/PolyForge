@@ -9,14 +9,17 @@ import (
 // First-run setup
 //
 // On first launch PolyForge performs one-time preliminary setup — chiefly
-// registering the .slime file type so packs double-click into the app.
-// A stamp file records that setup ran so it only happens once. No admin
-// rights or drivers are required; the Windows implementation writes only to
-// the per-user registry hive (see fileassoc_windows.go).
+// registering the .polypack file type (with its own icon) so packs
+// double-click into the app. A stamp file records that setup ran so it only
+// happens once. No admin rights or drivers are required; the Windows
+// implementation writes only to the per-user registry hive (see
+// fileassoc_windows.go).
 // ══════════════════════════════════════════════════
 
-// SlimeExtension is PolyForge's pack file extension.
-const SlimeExtension = ".slime"
+// PackExtension is PolyForge's pack file extension. The file itself is the
+// obfuscated container implemented in slime.go — .polypack is just the
+// user-facing name/extension for it.
+const PackExtension = ".polypack"
 
 func firstRunStampPath() (string, error) {
 	dir, err := os.UserConfigDir()
@@ -24,6 +27,15 @@ func firstRunStampPath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(dir, "PolyForge", "first-run-done"), nil
+}
+
+// packIconPath is where the generated .polypack file-type icon is written.
+func packIconPath() (string, error) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "PolyForge", "polypack.ico"), nil
 }
 
 // NeedsFirstRunSetup reports whether first-run setup has not yet completed.
@@ -59,13 +71,13 @@ func RunFirstRunSetup() string {
 	return note
 }
 
-// LaunchedPackPath returns a .slime/.polypack path passed on the command
-// line (e.g. from double-clicking a pack), or "" if none. Lets the app jump
+// LaunchedPackPath returns a .polypack/.zip path passed on the command line
+// (e.g. from double-clicking a pack), or "" if none. Lets the app jump
 // straight into installing a pack the user opened.
 func LaunchedPackPath() string {
 	for _, arg := range os.Args[1:] {
-		lower := filepath.Ext(arg)
-		if lower == SlimeExtension || filepath.Ext(filepath.Base(arg)) == ".zip" {
+		ext := filepath.Ext(arg)
+		if ext == PackExtension || ext == ".zip" {
 			if fileExistsR(arg) {
 				return arg
 			}

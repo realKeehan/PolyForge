@@ -22,7 +22,7 @@ func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.kumi.SetContext(ctx)
 
-	// One-time preliminary setup (registers the .slime file type, etc.).
+	// One-time preliminary setup (registers the .polypack file type, etc.).
 	kumi.CleanupOldBinary()
 	if note := kumi.RunFirstRunSetup(); note != "" {
 		runtime.LogInfo(ctx, note)
@@ -35,7 +35,7 @@ func (a *App) FirstRunNote() string {
 }
 
 // LaunchedPackPath returns a pack file passed on the command line (e.g. from
-// double-clicking a .slime), or "" if the app was launched normally.
+// double-clicking a .polypack), or "" if the app was launched normally.
 func (a *App) LaunchedPackPath() string {
 	return kumi.LaunchedPackPath()
 }
@@ -76,7 +76,7 @@ func (a *App) SelectDirectory(title string) (string, error) {
 	return path, nil
 }
 
-// SelectPackFile opens a file picker for a local .polypack.zip.
+// SelectPackFile opens a file picker for a local .polypack file.
 func (a *App) SelectPackFile() (string, error) {
 	if a.ctx == nil {
 		return "", fmt.Errorf("application context not available")
@@ -84,7 +84,7 @@ func (a *App) SelectPackFile() (string, error) {
 	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
 		Title: "Select a PolyForge pack",
 		Filters: []runtime.FileFilter{
-			{DisplayName: "PolyForge packs (*.polypack.zip;*.zip)", Pattern: "*.polypack.zip;*.zip"},
+			{DisplayName: "PolyForge packs (*.polypack;*.zip)", Pattern: "*.polypack;*.zip"},
 		},
 	})
 }

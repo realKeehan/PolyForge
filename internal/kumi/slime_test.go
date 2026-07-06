@@ -96,7 +96,7 @@ func TestInstallLocalSlimePack(t *testing.T) {
 
 	// Wrap into .slime and write to disk.
 	dir := t.TempDir()
-	packPath := filepath.Join(dir, "test-pack-1.0.0.slime")
+	packPath := filepath.Join(dir, "test-pack-1.0.0.polypack")
 	if err := os.WriteFile(packPath, WrapSlime(buf.Bytes()), 0o644); err != nil {
 		t.Fatal(err)
 	}

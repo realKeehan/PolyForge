@@ -334,7 +334,7 @@ case 'pack-delete': {
 // ── Online packager ──────────────────────────────
 // Upload a zip of the pack source folder (a .minecraft-style profile dir);
 // this extracts it, keeps only pack-worthy folders/files, reads mod
-// metadata from the jars, and produces <id>-<version>.polypack.zip plus
+// metadata from the jars, and produces <id>-<version>.polypack plus
 // the standalone update manifest in packs/.
 case 'pack-build': {
     if (!$isPost) {
@@ -379,7 +379,7 @@ case 'pack-build': {
     if (!is_dir(PACKS_DIR)) {
         mkdir(PACKS_DIR, 0o755, true);
     }
-    $outZipPath = PACKS_DIR . "/$id-$version.polypack.zip";
+    $outZipPath = PACKS_DIR . "/$id-$version.pack.tmp.zip";
     @unlink($outZipPath);
     $out = new ZipArchive();
     if ($out->open($outZipPath, ZipArchive::CREATE) !== true) {
@@ -466,12 +466,12 @@ case 'pack-build': {
     $out->addFromString('launchers.json', json_encode($launchers, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     $out->close();
 
-    // Wrap the built zip into a .slime container (same transform the app and
-    // the PowerShell packager use), then drop the intermediate zip.
+    // Wrap the built zip into a .polypack container (same transform the app
+    // and the PowerShell packager use), then drop the intermediate zip.
     require __DIR__ . '/slime-lib.php';
     $zipBytes = file_get_contents($outZipPath);
-    $slimePath = PACKS_DIR . "/$id-$version.slime";
-    file_put_contents($slimePath, slime_wrap((string) $zipBytes), LOCK_EX);
+    $packPath = PACKS_DIR . "/$id-$version.polypack";
+    file_put_contents($packPath, slime_wrap((string) $zipBytes), LOCK_EX);
     @unlink($outZipPath);
 
     file_put_contents(PACKS_DIR . "/$id-$version.manifest.json", $manifestJson, LOCK_EX);
@@ -480,13 +480,13 @@ case 'pack-build': {
     $registry = loadPackRegistry();
     $entry = $registry[$id] ?? ['name' => $name, 'requiresPassword' => false, 'passwordHash' => null];
     $entry['name'] = $name;
-    $entry['downloadUrl'] = "/packs/$id-$version.slime";
+    $entry['downloadUrl'] = "/packs/$id-$version.polypack";
     $registry[$id] = $entry;
     savePackRegistry($registry);
 
     respond(200, [
         'ok'       => true,
-        'pack'     => "/packs/$id-$version.slime",
+        'pack'     => "/packs/$id-$version.polypack",
         'manifest' => "/packs/$id-$version.manifest.json",
         'mods'     => count($mods),
         'files'    => $fileCount,

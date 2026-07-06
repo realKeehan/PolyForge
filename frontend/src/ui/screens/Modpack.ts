@@ -197,7 +197,7 @@ export function renderModpack(store: Store): HTMLElement {
   });
 
   // ── Local pack (manual profile mode) ──────────
-  // Lets the user load a .polypack.zip from disk instead of a hosted pack.
+  // Lets the user load a .polypack from disk instead of a hosted pack.
   const localPack = store.getState().localPack;
   const localBtn = document.createElement('button');
   localBtn.type = 'button';
@@ -205,7 +205,7 @@ export function renderModpack(store: Store): HTMLElement {
   localBtn.dataset.modpack = LOCAL_PACK_ID;
   const localLabel = localPack
     ? `${localPack.name} <span style="color:var(--text-muted, #888);font-size:.78em">v${localPack.version} · ${localPack.modCount} mods · local file</span>`
-    : `Load local pack&hellip; <span style="color:var(--text-muted, #888);font-size:.78em">(.polypack.zip)</span>`;
+    : `Load local pack&hellip; <span style="color:var(--text-muted, #888);font-size:.78em">(.polypack)</span>`;
   localBtn.innerHTML = `
     ${radioDot()}
     <span class="radio-item__body">

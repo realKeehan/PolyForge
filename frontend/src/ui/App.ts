@@ -263,7 +263,7 @@ export async function createApp(root: HTMLElement) {
       store.setModpacks(remote.manifest.modpacks);
     }
 
-    // If launched by double-clicking a .slime pack, pre-load it so the
+    // If launched by double-clicking a .polypack, pre-load it so the
     // modpack screen shows it selected and ready to install.
     const packPath = await launchedPackPath();
     if (packPath) {

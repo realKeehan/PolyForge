@@ -1,10 +1,10 @@
-# Modpack packager scaffold — builds a .polypack.zip the installer consumes.
+# Modpack packager scaffold — builds a .polypack the installer consumes.
 # Format spec: docs/modpack-format.md
 #
 # Takes a source folder containing minecraft-style folders (mods/, config/,
 # resourcepacks/, ...) and produces:
-#   <OutDir>\<id>-<version>.polypack.zip   (pack-manifest.json + launchers.json + overrides/)
-#   <OutDir>\<id>-<version>.manifest.json  (standalone manifest for hosted update checks)
+#   <OutDir>\<id>-<version>.polypack        (obfuscated zip: manifest + launchers + overrides/)
+#   <OutDir>\<id>-<version>.manifest.json   (standalone manifest for hosted update checks)
 #
 # The mods list in pack-manifest.json (names + versions + hashes) is the
 # only thing used for update decisions. launchers.json carries per-launcher
@@ -190,7 +190,7 @@ $launchers = [ordered]@{
 }
 [IO.File]::WriteAllText((Join-Path $staging 'launchers.json'), ($launchers | ConvertTo-Json -Depth 6))
 
-# ── Zip, then wrap into a .slime container ───────
+# ── Zip, then wrap into a .polypack container ────
 # Future reference (heavy update): switch the payload from -tzip (DEFLATE) to
 # LZMA for better ratio on Distant Horizons LODs / uncompressed packs. 7-Zip
 # already supports it here (-t7z -m0=lzma2, or -tzip -mm=LZMA), but the
@@ -212,21 +212,21 @@ try {
     Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# Wrap the zip into PolyForge's branded .slime container. This is the same
-# obfuscation the app reverses (internal/kumi/slime.go) and the PHP admin
+# Wrap the zip into a .polypack — PolyForge's branded, obfuscated container.
+# Same transform the app reverses (internal/kumi/slime.go) and the PHP admin
 # packager applies: magic header + XOR keystream. Obfuscation, not crypto.
 . (Join-Path $PSScriptRoot 'slime-lib.ps1')
-$outSlime = Join-Path $OutDir "$PackId-$PackVersion.slime"
-ConvertTo-Slime -InputPath $tmpZip -OutputPath $outSlime
+$outPack = Join-Path $OutDir "$PackId-$PackVersion.polypack"
+ConvertTo-Slime -InputPath $tmpZip -OutputPath $outPack
 Remove-Item $tmpZip -Force
 
 # Standalone manifest for hosted update checks (no pack download needed).
 $manifestOut = Join-Path $OutDir "$PackId-$PackVersion.manifest.json"
 [IO.File]::WriteAllText($manifestOut, $manifestJson)
 
-$sizeMB = [math]::Round((Get-Item $outSlime).Length / 1MB, 2)
+$sizeMB = [math]::Round((Get-Item $outPack).Length / 1MB, 2)
 Write-Host ''
-Write-Host "Packaged modpack -> $outSlime ($sizeMB MB)" -ForegroundColor Green
+Write-Host "Packaged modpack -> $outPack ($sizeMB MB)" -ForegroundColor Green
 Write-Host "Update manifest  -> $manifestOut" -ForegroundColor Green
 Write-Host ''
 Write-Host 'Host both next to your releases (or behind api/pack-access for' -ForegroundColor Yellow

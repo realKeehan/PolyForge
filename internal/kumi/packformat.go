@@ -12,7 +12,7 @@ import (
 )
 
 // ══════════════════════════════════════════════════
-// PolyForge modpack format (.polypack.zip)
+// PolyForge modpack format (.polypack)
 //
 // Scaffold mirroring docs/modpack-format.md. Packs are built by
 // scripts/package-modpack.ps1 and contain:
@@ -150,7 +150,7 @@ func ComparePackMods(installed, latest []PackMod) PackModDiff {
 // ── Local pack files (manual profile mode) ───────
 
 // PolyPackInfo is the summary shown in the UI after inspecting a local
-// .polypack.zip chosen by the user.
+// .polypack chosen by the user.
 type PolyPackInfo struct {
 	Path          string `json:"path"`
 	ID            string `json:"id"`
@@ -162,7 +162,7 @@ type PolyPackInfo struct {
 	ModCount      int    `json:"modCount"`
 }
 
-// openPackReader reads a pack file (either a .slime container or a plain
+// openPackReader reads a pack file (either a .polypack container or a plain
 // zip) and returns a zip.Reader over its contents.
 func openPackReader(path string) (*zip.Reader, error) {
 	data, err := readPackArchive(path)
