@@ -191,6 +191,12 @@ $launchers = [ordered]@{
 [IO.File]::WriteAllText((Join-Path $staging 'launchers.json'), ($launchers | ConvertTo-Json -Depth 6))
 
 # ── Zip, then wrap into a .slime container ───────
+# Future reference (heavy update): switch the payload from -tzip (DEFLATE) to
+# LZMA for better ratio on Distant Horizons LODs / uncompressed packs. 7-Zip
+# already supports it here (-t7z -m0=lzma2, or -tzip -mm=LZMA), but the
+# READER side is the cost: the app would need a pure-Go xz codec
+# (github.com/ulikunitz/xz, ~+284 KB) and a new slime flags byte. See the
+# LZMA note in internal/kumi/slime.go before changing this.
 $tmpZip = Join-Path $OutDir "$PackId-$PackVersion.polypack.zip"
 if (Test-Path $tmpZip) { Remove-Item $tmpZip -Force }
 
