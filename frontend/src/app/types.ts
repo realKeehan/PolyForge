@@ -87,7 +87,7 @@ export interface PackAccessResult {
   offline: boolean;
 }
 
-/** Summary of a user-selected local .polypack.zip (manual profile mode). */
+/** Summary of a user-selected local .polypack (manual profile mode). */
 export interface PolyPackInfo {
   path: string;
   id: string;

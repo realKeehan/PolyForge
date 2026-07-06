@@ -1,13 +1,13 @@
-# PolyForge modpack format (.slime)
+# PolyForge modpack format (.polypack)
 
 > **Status: scaffold.** The layout and schemas below are the working
 > structure; exact per-launcher fields and default folder locations will be
 > filled in once real launcher trees from the test machine are provided
 > (`scripts/dump-launcher-trees.ps1`).
 
-## The .slime container
+## The .polypack container
 
-A pack ships as `<id>-<version>.slime` — PolyForge's branded container. It
+A pack ships as `<id>-<version>.polypack` — PolyForge's branded container. It
 is a standard ZIP archive wrapped by a simple, reversible transform so the
 file isn't a plain openable zip and gets its own extension + double-click
 handler:
@@ -30,7 +30,7 @@ with the source can reverse it — its purpose is format obscurity and
 branding. Real access control for private packs is the server-side password
 gate (`api/pack-access.php`), never the container.
 
-On first launch the app registers `.slime` with Windows (per-user registry,
+On first launch the app registers `.polypack` with Windows (per-user registry,
 no admin/drivers) so double-clicking a pack opens it in PolyForge — see
 `internal/kumi/firstrun.go` + `fileassoc_windows.go`.
 
@@ -39,7 +39,7 @@ no admin/drivers) so double-clicking a pack opens it in PolyForge — see
 Unwrapped, a pack is a zip:
 
 ```text
-turtel-smp-1.0.0.slime   (contains, once unwrapped:)
+turtel-smp-1.0.0.polypack   (contains, once unwrapped:)
 ├── pack-manifest.json     identity + mod versions (drives updates)
 ├── launchers.json         per-launcher info fields (installer generates
 │                          the actual launcher files from these)
@@ -52,7 +52,7 @@ turtel-smp-1.0.0.slime   (contains, once unwrapped:)
 ```
 
 The packager also emits `<id>-<version>.manifest.json` (a standalone,
-un-obfuscated copy of `pack-manifest.json`) next to the `.slime`, so the
+un-obfuscated copy of `pack-manifest.json`) next to the `.polypack`, so the
 website can host just the manifest for update checks without clients
 downloading the full pack.
 
@@ -98,7 +98,7 @@ The pack is **launcher-agnostic**: `launchers.json` carries info fields for
 *every* supported launcher, and the installer generates each launcher's real
 files (profiles, instance configs) from those fields + the manifest. The
 packager never targets a single launcher and never ships launcher-specific
-files, so the same `.slime` installs everywhere.
+files, so the same `.polypack` installs everywhere.
 
 ```json
 {

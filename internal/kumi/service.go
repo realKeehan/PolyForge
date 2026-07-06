@@ -332,7 +332,7 @@ func (s *Service) detectLauncherPath(id string) string {
 	}
 }
 
-// installFromLocalPack installs a user-provided .polypack.zip (manual
+// installFromLocalPack installs a user-provided .polypack (manual
 // profile mode): extracts the pack's overrides into the chosen target
 // directory and records the installed manifest for future update diffs.
 // Per-launcher profile generation is a TODO (see packformat.go).

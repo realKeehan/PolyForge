@@ -20,4 +20,6 @@ website/api/packs-data.json
 website/api/admin-state.json
 website/api/manifest-history.json
 website/packs/*.zip
+website/packs/*.polypack
 website/packs/*.json
+launcher-trees-*/

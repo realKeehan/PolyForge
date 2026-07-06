@@ -1,5 +1,6 @@
-# .slime container helpers — must stay byte-for-byte compatible with
-# internal/kumi/slime.go and website/api/slime-lib.php.
+# .polypack container helpers ("slime" is the internal codec name) — must
+# stay byte-for-byte compatible with internal/kumi/slime.go and
+# website/api/slime-lib.php.
 #
 # Layout: "SLIME" + 0x01 (version) + 0x00 (flags) + 0x00 (reserved) + payload
 # payload[i] = zip[i] XOR key[i % 32] XOR (i & 0xFF)

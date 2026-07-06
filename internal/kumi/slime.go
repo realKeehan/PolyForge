@@ -8,11 +8,14 @@ import (
 )
 
 // ══════════════════════════════════════════════════
-// .slime container format
+// Pack container format ("slime" is the internal codec name)
 //
-// A .slime file is PolyForge's branded pack container: a standard ZIP
+// PolyForge packs ship with the .polypack extension (see PackExtension);
+// this file implements the container those files use: a standard ZIP
 // archive whose bytes are obfuscated so the file is not a plain openable
-// zip and gets its own extension + double-click handler.
+// zip and gets its own extension + double-click handler. The functions and
+// magic bytes keep the "slime" codename internally — only the extension is
+// user-facing.
 //
 // IMPORTANT: this is obfuscation, not cryptography. The keystream is
 // derived from a constant, so anyone with this code can reverse it. Its
@@ -34,7 +37,7 @@ import (
 // ══════════════════════════════════════════════════
 
 // ── Future reference: LZMA payload compression (heavy update) ──────
-// The .slime payload is a DEFLATE zip today. LZMA (xz) compresses better on
+// The .polypack payload is a DEFLATE zip today. LZMA (xz) compresses better on
 // low-entropy data; for modpacks the real wins are Distant Horizons LOD
 // databases and uncompressed resource/datapacks. Already-compressed .jar /
 // .zip / .png files gain little (that's most of a typical pack's bytes),
@@ -44,7 +47,7 @@ import (
 // GOOS=linux/darwin cross-compiles), stripped binary delta over a baseline:
 //   github.com/ulikunitz/xz    raw xz/LZMA codec    +~284 KB, 1 dep    ← preferred
 //   github.com/bodgit/sevenzip full 7z container    +~3.5 MB, ~13 deps ← avoid
-// We own both ends of .slime, so the 7z *container* is unnecessary — a
+// We own both ends of .polypack, so the 7z *container* is unnecessary — a
 // future update would xz-compress the payload with ulikunitz/xz, set a new
 // slimeFlags value to signal the codec, and keep flags 0x00 (DEFLATE)
 // readable for back-compat. Bandwidth-wise, delta updates (ComparePackMods
@@ -89,20 +92,20 @@ func IsSlime(data []byte) bool {
 // UnwrapSlime reverses WrapSlime, returning the underlying zip bytes.
 func UnwrapSlime(data []byte) ([]byte, error) {
 	if !IsSlime(data) {
-		return nil, fmt.Errorf("not a .slime file (bad magic)")
+		return nil, fmt.Errorf("not a .polypack file (bad magic)")
 	}
 	if data[5] != slimeVersion {
-		return nil, fmt.Errorf("unsupported .slime version %d", data[5])
+		return nil, fmt.Errorf("unsupported .polypack version %d", data[5])
 	}
 	if data[6] != slimeFlagsXor {
-		return nil, fmt.Errorf("unsupported .slime flags 0x%02x", data[6])
+		return nil, fmt.Errorf("unsupported .polypack flags 0x%02x", data[6])
 	}
 	return slimeTransform(data[8:]), nil
 }
 
 // readPackArchive reads a pack file from disk and returns the plaintext zip
-// bytes. It accepts both .slime containers and plain .zip/.polypack.zip
-// files (detected by magic), so dev builds and end users interoperate.
+// bytes. It accepts both .polypack containers and plain .zip files
+// (detected by magic), so dev builds and end users interoperate.
 func readPackArchive(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
