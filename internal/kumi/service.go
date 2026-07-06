@@ -332,6 +332,44 @@ func (s *Service) detectLauncherPath(id string) string {
 	}
 }
 
+// installFromLocalPack installs a user-provided .polypack.zip (manual
+// profile mode): extracts the pack's overrides into the chosen target
+// directory and records the installed manifest for future update diffs.
+// Per-launcher profile generation is a TODO (see packformat.go).
+func (s *Service) installFromLocalPack(payload ExecutionPayload) (*ActionResult, error) {
+	result := NewResult()
+	packPath := strings.TrimSpace(payload.Extra["packPath"])
+	target := strings.TrimSpace(payload.Path)
+	if packPath == "" {
+		result.Error("No pack file provided.")
+		result.Success = false
+		return result, nil
+	}
+	if target == "" {
+		result.Error("No target directory selected.")
+		result.Success = false
+		return result, nil
+	}
+	if err := ensureDir(target); err != nil {
+		result.Error(fmt.Sprintf("cannot create target directory: %v", err))
+		result.Success = false
+		return result, nil
+	}
+
+	result.Info(fmt.Sprintf("Installing local pack from %s", packPath))
+	files, manifest, err := installLocalPack(packPath, target)
+	if err != nil {
+		result.Error(fmt.Sprintf("pack install failed: %v", err))
+		result.Success = false
+		return result, nil
+	}
+	result.Info(fmt.Sprintf("Extracted %d files to %s", files, target))
+	result.Info(fmt.Sprintf("Installed %s v%s (%d mods)", manifest.Name, manifest.Version, len(manifest.Mods)))
+	result.Warning("Launcher profile generation is not wired up yet - add the instance to your launcher manually.")
+	result.Success = true
+	return result, nil
+}
+
 // defaultMinecraftDir returns the platform-specific default .minecraft location.
 func defaultMinecraftDir() string {
 	switch goruntime.GOOS {
@@ -399,6 +437,8 @@ func (s *Service) Execute(optionID string, payload ExecutionPayload) (*ActionRes
 		return s.installCustomMods(payload.Path)
 	case "manual":
 		return s.installManual(payload.Path)
+	case "localpack":
+		return s.installFromLocalPack(payload)
 	case "about":
 		return s.aboutMessage(), nil
 	case "cake":

@@ -1,6 +1,6 @@
 import { browseForDirectory, runInstaller } from '../../app/ipc';
 import type { Store } from '../../app/state';
-import { Step, type OptionDescriptor } from '../../app/types';
+import { LOCAL_PACK_ID, Step, type OptionDescriptor } from '../../app/types';
 import { createSocialLinks } from '../components/social';
 
 const LAUNCHER_ICON = `
@@ -301,14 +301,21 @@ export function renderInstaller(store: Store): HTMLElement {
       return;
     }
 
+    // Local pack (manual profile mode): the pack zip is extracted into the
+    // chosen directory instead of running the launcher's own installer.
+    const localPack = store.getState().localPack;
+    const isLocalPack = store.getState().selectedModpack === LOCAL_PACK_ID && !!localPack;
+
     // Determine path
     const overridden = overriddenPaths.get(option.id);
     const effectivePath = overridden || option.detectedPath || '';
-    const needsPath = option.requiresPath || option.id === 'custom' || option.id === 'manual';
+    const needsPath = isLocalPack || option.requiresPath || option.id === 'custom' || option.id === 'manual';
 
     if (needsPath) {
       if (!effectivePath) {
-        setError('Please choose a directory for this launcher.');
+        setError(isLocalPack
+          ? 'Please choose the directory to extract the pack into.'
+          : 'Please choose a directory for this launcher.');
         return;
       }
       store.setPath(effectivePath);
@@ -321,8 +328,10 @@ export function renderInstaller(store: Store): HTMLElement {
     store.setBusy(true);
 
     try {
-      const payload = needsPath ? { path: store.getState().selectedPath } : {};
-      const result = await runInstaller(option.id, payload);
+      const payload = isLocalPack
+        ? { path: store.getState().selectedPath, extra: { packPath: localPack!.path } }
+        : needsPath ? { path: store.getState().selectedPath } : {};
+      const result = await runInstaller(isLocalPack ? 'localpack' : option.id, payload);
       store.appendLogs(result.messages);
       store.setResult(result);
       store.setStep(Step.Status);

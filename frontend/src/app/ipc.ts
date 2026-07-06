@@ -1,4 +1,4 @@
-import type { ActionResult, ExecutionPayload, OptionDescriptor, PackAccessResult, RemoteContentResult } from './types';
+import type { ActionResult, ExecutionPayload, OptionDescriptor, PackAccessResult, PolyPackInfo, RemoteContentResult } from './types';
 
 export async function fetchMenuOptions(): Promise<OptionDescriptor[]> {
   return window.go.app.App.GetMenuOptions();
@@ -10,6 +10,20 @@ export async function fetchRemoteContent(): Promise<RemoteContentResult> {
 
 export async function verifyPackAccess(packId: string, password: string): Promise<PackAccessResult> {
   return window.go.app.App.VerifyPackAccess(packId, password);
+}
+
+export async function selectPackFile(): Promise<string | undefined> {
+  try {
+    const path = await window.go.app.App.SelectPackFile();
+    return path || undefined;
+  } catch (error) {
+    console.error('Failed to open pack file dialog', error);
+    return undefined;
+  }
+}
+
+export async function inspectPolyPack(path: string): Promise<PolyPackInfo> {
+  return window.go.app.App.InspectPolyPack(path);
 }
 
 export async function runInstaller(optionId: string, payload: ExecutionPayload): Promise<ActionResult> {

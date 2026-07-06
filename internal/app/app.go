@@ -59,6 +59,24 @@ func (a *App) SelectDirectory(title string) (string, error) {
 	return path, nil
 }
 
+// SelectPackFile opens a file picker for a local .polypack.zip.
+func (a *App) SelectPackFile() (string, error) {
+	if a.ctx == nil {
+		return "", fmt.Errorf("application context not available")
+	}
+	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select a PolyForge pack",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "PolyForge packs (*.polypack.zip;*.zip)", Pattern: "*.polypack.zip;*.zip"},
+		},
+	})
+}
+
+// InspectPolyPack reads a local pack's manifest for display before install.
+func (a *App) InspectPolyPack(path string) (*kumi.PolyPackInfo, error) {
+	return kumi.InspectPolyPack(path)
+}
+
 func (a *App) CloneModrinthProfile(request kumi.ModrinthCloneRequest) (*kumi.ActionResult, error) {
 	return a.kumi.CloneModrinthProfile(request)
 }

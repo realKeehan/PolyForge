@@ -1,8 +1,13 @@
 package kumi
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // ══════════════════════════════════════════════════
@@ -141,11 +146,120 @@ func ComparePackMods(installed, latest []PackMod) PackModDiff {
 	return diff
 }
 
+// ── Local pack files (manual profile mode) ───────
+
+// PolyPackInfo is the summary shown in the UI after inspecting a local
+// .polypack.zip chosen by the user.
+type PolyPackInfo struct {
+	Path          string `json:"path"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Version       string `json:"version"`
+	Minecraft     string `json:"minecraft,omitempty"`
+	LoaderType    string `json:"loaderType,omitempty"`
+	LoaderVersion string `json:"loaderVersion,omitempty"`
+	ModCount      int    `json:"modCount"`
+}
+
+// InspectPolyPack opens a local pack zip and returns its manifest summary.
+func InspectPolyPack(path string) (*PolyPackInfo, error) {
+	reader, err := zip.OpenReader(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open pack: %w", err)
+	}
+	defer reader.Close()
+
+	manifest, err := readZipPackManifest(&reader.Reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PolyPackInfo{
+		Path:          path,
+		ID:            manifest.ID,
+		Name:          manifest.Name,
+		Version:       manifest.Version,
+		Minecraft:     manifest.Minecraft,
+		LoaderType:    manifest.Loader.Type,
+		LoaderVersion: manifest.Loader.Version,
+		ModCount:      len(manifest.Mods),
+	}, nil
+}
+
+func readZipPackManifest(reader *zip.Reader) (*PackManifest, error) {
+	for _, f := range reader.File {
+		if f.Name != "pack-manifest.json" {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return nil, err
+		}
+		data, err := io.ReadAll(io.LimitReader(rc, 4<<20))
+		rc.Close()
+		if err != nil {
+			return nil, err
+		}
+		return ParsePackManifest(data)
+	}
+	return nil, fmt.Errorf("not a PolyForge pack: pack-manifest.json missing")
+}
+
+// installLocalPack extracts a pack's overrides/ into targetDir and writes
+// the manifest copy used for future update diffs. Returns counts for logs.
+func installLocalPack(zipPath, targetDir string) (files int, manifest *PackManifest, err error) {
+	reader, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return 0, nil, fmt.Errorf("cannot open pack: %w", err)
+	}
+	defer reader.Close()
+
+	manifest, err = readZipPackManifest(&reader.Reader)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	cleanTarget := filepath.Clean(targetDir)
+	for _, f := range reader.File {
+		rel, ok := strings.CutPrefix(f.Name, "overrides/")
+		if !ok || rel == "" || strings.HasSuffix(f.Name, "/") {
+			continue
+		}
+		dest := filepath.Join(cleanTarget, filepath.FromSlash(rel))
+		// Zip-slip guard: extracted paths must stay inside the target.
+		if !strings.HasPrefix(dest, cleanTarget+string(os.PathSeparator)) {
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+			return files, manifest, err
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return files, manifest, err
+		}
+		out, err := os.Create(dest)
+		if err != nil {
+			rc.Close()
+			return files, manifest, err
+		}
+		_, copyErr := io.Copy(out, rc)
+		rc.Close()
+		out.Close()
+		if copyErr != nil {
+			return files, manifest, copyErr
+		}
+		files++
+	}
+
+	// Installed manifest copy — the future update check diffs against this.
+	if data, jsonErr := json.MarshalIndent(manifest, "", "  "); jsonErr == nil {
+		_ = os.WriteFile(filepath.Join(cleanTarget, ".polyforge-pack.json"), data, 0o644)
+	}
+	return files, manifest, nil
+}
+
 // ── Installer integration stubs ──────────────────
 // TODO (pending test-machine pack structures):
-//   - InstallPack(zipPath, launcherID, targetDir): extract overrides/,
-//     write the installed manifest copy for future update diffs, and call
-//     the per-launcher generator.
 //   - Per-launcher generators driven by LaunchersFile info fields:
 //       vanilla    → launcher_profiles.json entry
 //       multimc    → instance.cfg + mmc-pack.json (components from Loader)

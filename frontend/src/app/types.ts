@@ -87,10 +87,26 @@ export interface PackAccessResult {
   offline: boolean;
 }
 
+/** Summary of a user-selected local .polypack.zip (manual profile mode). */
+export interface PolyPackInfo {
+  path: string;
+  id: string;
+  name: string;
+  version: string;
+  minecraft?: string;
+  loaderType?: string;
+  loaderVersion?: string;
+  modCount: number;
+}
+
+/** Sentinel modpack id representing a user-loaded local pack. */
+export const LOCAL_PACK_ID = '__localpack__';
+
 export interface AppState {
   step: Step;
   options: OptionDescriptor[];
   modpacks?: RemotePack[];
+  localPack?: PolyPackInfo;
   selectedMode?: Mode;
   selectedModpack?: string;
   selectedInstaller?: OptionDescriptor;
