@@ -8,7 +8,10 @@
     "notes": ""
   },
   "modpacks": [
-    { "id": "turtel-smp", "name": "Turtel SMP" },
+    {
+      "id": "turtel-smp",
+      "name": "Turtel SMP"
+    },
     {
       "id": "event-pack",
       "name": "Event Pack",

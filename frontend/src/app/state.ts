@@ -1,4 +1,4 @@
-import type { ActionResult, AppState, LogEntry, Mode, OptionDescriptor, RemotePack } from './types';
+import type { ActionResult, AppState, LogEntry, Mode, OptionDescriptor, PolyPackInfo, RemotePack } from './types';
 import { Step } from './types';
 
 type Listener = (state: AppState) => void;
@@ -81,6 +81,11 @@ export class Store {
 
   setModpacks(modpacks: RemotePack[]) {
     this.state = { ...this.state, modpacks };
+    this.emit();
+  }
+
+  setLocalPack(localPack: PolyPackInfo | undefined) {
+    this.state = { ...this.state, localPack };
     this.emit();
   }
 

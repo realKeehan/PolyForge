@@ -32,7 +32,7 @@ function fail(int $status, string $message): never
     exit;
 }
 
-function recordDownload(?string $type): void
+function recordDownload(?string $type, string $file = ''): void
 {
     $stats = [];
     if (is_file(STATS_FILE)) {
@@ -47,6 +47,26 @@ function recordDownload(?string $type): void
         $byType[$type] = max(0, (int) ($byType[$type] ?? 0)) + 1;
         $stats['byType'] = $byType;
     }
+    // Per-file counts double as per-version stats (filenames carry versions).
+    if ($file !== '') {
+        $byFile = is_array($stats['byFile'] ?? null) ? $stats['byFile'] : [];
+        $byFile[$file] = max(0, (int) ($byFile[$file] ?? 0)) + 1;
+        $stats['byFile'] = $byFile;
+    }
+    // Daily history for graphs, capped at ~400 days.
+    $today = gmdate('Y-m-d');
+    $history = is_array($stats['history'] ?? null) ? $stats['history'] : [];
+    $day = is_array($history[$today] ?? null) ? $history[$today] : ['total' => 0, 'byType' => []];
+    $day['total'] = max(0, (int) ($day['total'] ?? 0)) + 1;
+    if ($type !== null) {
+        $day['byType'][$type] = max(0, (int) ($day['byType'][$type] ?? 0)) + 1;
+    }
+    $history[$today] = $day;
+    if (count($history) > 400) {
+        ksort($history);
+        $history = array_slice($history, -400, null, true);
+    }
+    $stats['history'] = $history;
     $stats['updated'] = gmdate('c');
     file_put_contents(STATS_FILE, json_encode($stats, JSON_PRETTY_PRINT), LOCK_EX);
 }
@@ -97,7 +117,7 @@ if ($type !== '') {
         fail(404, 'no builds available for this type yet');
     }
 
-    recordDownload($type);
+    recordDownload($type, $latest);
     redirectToRelease($type . '/' . $latest);
 }
 
@@ -114,5 +134,6 @@ if ($path === false || !str_starts_with($path, $releasesRoot . DIRECTORY_SEPARAT
     fail(404, 'file not found');
 }
 
-recordDownload(explode('/', $file)[0]);
+[$fileType, $fileName] = explode('/', $file, 2);
+recordDownload($fileType, $fileName);
 redirectToRelease($file);

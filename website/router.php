@@ -43,14 +43,16 @@ if ($uri === '/') {
 }
 
 // Direct .php request → strip extension (matches the production 301)
+$query = (string) ($_SERVER['QUERY_STRING'] ?? '');
+$suffix = $query !== '' ? '?' . $query : '';
 if (str_ends_with($uri, '.php') && is_file($file)) {
-    header('Location: ' . substr($uri, 0, -4), true, 301);
+    header('Location: ' . substr($uri, 0, -4) . $suffix, true, 301);
     return true;
 }
 
 // Legacy .html request → strip extension
 if (str_ends_with($uri, '.html')) {
-    header('Location: ' . substr($uri, 0, -5), true, 301);
+    header('Location: ' . substr($uri, 0, -5) . $suffix, true, 301);
     return true;
 }
 

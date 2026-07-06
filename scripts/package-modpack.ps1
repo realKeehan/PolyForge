@@ -29,14 +29,17 @@ param(
     [string]$Loader = '',
     [string]$LoaderVersion = '',
 
-    # Minecraft folders to include when present in SourceDir.
-    # TODO: finalize defaults from the test-machine pack structures.
+    # Minecraft folders to include when present in SourceDir. Defaults are
+    # based on real profile analysis - user data (saves, journeymap,
+    # essential, emotes, logs, screenshots, ...) is intentionally absent.
     [string[]]$IncludeFolders = @(
         'mods', 'config', 'resourcepacks', 'shaderpacks',
         'datapacks', 'scripts', 'defaultconfigs', 'kubejs'
     ),
     # Additional folders beyond the defaults (e.g. 'journeymap').
     [string[]]$ExtraFolders = @(),
+    # Root files packs commonly ship (default settings / server list).
+    [string[]]$IncludeRootFiles = @('options.txt', 'servers.dat'),
 
     [string]$OutDir = ''
 )
@@ -126,6 +129,15 @@ foreach ($folder in $foundFolders) {
     $items = Get-ChildItem (Join-Path $overrides $folder) -Recurse -File
     $fileCount += @($items).Count
     $totalBytes += (@($items) | Measure-Object Length -Sum).Sum
+}
+foreach ($rootFile in $IncludeRootFiles) {
+    $srcFile = Join-Path $SourceDir $rootFile
+    if (Test-Path $srcFile -PathType Leaf) {
+        Copy-Item $srcFile -Destination $overrides
+        $fileCount++
+        $totalBytes += (Get-Item $srcFile).Length
+        Write-Host "  root file: $rootFile" -ForegroundColor DarkGray
+    }
 }
 
 # ── pack-manifest.json ───────────────────────────

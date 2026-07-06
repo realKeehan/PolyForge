@@ -73,7 +73,8 @@ if ($slot['count'] > MAX_ATTEMPTS) {
 }
 
 // ── Verify ───────────────────────────────────────
-$packs = require __DIR__ . '/packs.data.php';
+require __DIR__ . '/packs-registry.php';
+$packs = loadPackRegistry();
 $pack = $packs[$packId] ?? null;
 
 if ($pack === null) {

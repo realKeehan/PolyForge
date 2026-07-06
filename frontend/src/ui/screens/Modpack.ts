@@ -1,6 +1,6 @@
 import type { Store } from '../../app/state';
-import { Step, type RemotePack } from '../../app/types';
-import { verifyPackAccess } from '../../app/ipc';
+import { LOCAL_PACK_ID, Step, type RemotePack } from '../../app/types';
+import { inspectPolyPack, selectPackFile, verifyPackAccess } from '../../app/ipc';
 import { createSocialLinks } from '../components/social';
 
 const MODPACK_ICON = `
@@ -159,7 +159,7 @@ export function renderModpack(store: Store): HTMLElement {
 
   const activate = (modpackId: string) => {
     // Re-clicking the current pack should not wipe a typed password
-    if (currentPack?.id === modpackId) return;
+    if (currentPack?.id === modpackId && store.getState().selectedModpack === modpackId) return;
 
     buttons.forEach((button) => {
       button.classList.toggle('is-active', button.dataset.modpack === modpackId);
@@ -171,6 +171,8 @@ export function renderModpack(store: Store): HTMLElement {
     passwordUnlocked = false;
     if (currentPack) {
       showPasswordField(currentPack);
+    } else {
+      passwordField.hidden = true;
     }
   };
 
@@ -193,6 +195,49 @@ export function renderModpack(store: Store): HTMLElement {
     buttons.push(button);
     list.appendChild(button);
   });
+
+  // ── Local pack (manual profile mode) ──────────
+  // Lets the user load a .polypack.zip from disk instead of a hosted pack.
+  const localPack = store.getState().localPack;
+  const localBtn = document.createElement('button');
+  localBtn.type = 'button';
+  localBtn.className = 'radio-item radio-item--card radio-item--has-bg';
+  localBtn.dataset.modpack = LOCAL_PACK_ID;
+  const localLabel = localPack
+    ? `${localPack.name} <span style="color:var(--text-muted, #888);font-size:.78em">v${localPack.version} · ${localPack.modCount} mods · local file</span>`
+    : `Load local pack&hellip; <span style="color:var(--text-muted, #888);font-size:.78em">(.polypack.zip)</span>`;
+  localBtn.innerHTML = `
+    ${radioDot()}
+    <span class="radio-item__body">
+      <span class="radio-item__label">${localLabel}</span>
+    </span>
+  `;
+  if (selected === LOCAL_PACK_ID && localPack) {
+    localBtn.classList.add('is-active');
+  }
+  localBtn.addEventListener('click', async () => {
+    // Already loaded → just select it; otherwise open the file picker.
+    if (store.getState().localPack && store.getState().selectedModpack === LOCAL_PACK_ID) return;
+    if (!store.getState().localPack) {
+      const path = await selectPackFile();
+      if (!path) return;
+      try {
+        const info = await inspectPolyPack(path);
+        store.setModpack(LOCAL_PACK_ID);
+        store.setLocalPack(info); // triggers re-render showing the pack
+        return;
+      } catch (error) {
+        console.error('Failed to read pack', error);
+        passwordError.textContent = 'That file is not a valid PolyForge pack.';
+        passwordError.hidden = false;
+        passwordField.hidden = false;
+        return;
+      }
+    }
+    activate(LOCAL_PACK_ID);
+  });
+  buttons.push(localBtn);
+  list.appendChild(localBtn);
 
   // Show password field if the initially selected pack requires it
   if (currentPack?.requiresPassword) {

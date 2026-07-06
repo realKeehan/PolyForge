@@ -16,3 +16,8 @@ frontend/wailsjs/
 website/api/tetris-scores.json
 website/api/pack-access-state.json
 website/api/stats-data.json
+website/api/packs-data.json
+website/api/admin-state.json
+website/api/manifest-history.json
+website/packs/*.zip
+website/packs/*.json

@@ -102,9 +102,29 @@ What the installer generates from this (all TODO, pending real structures):
 3. Downloads only what changed (full zip for now; delta later), replaces
    managed mods, leaves user files alone.
 
+## What ships vs. what never ships
+
+Based on analysis of a real Modrinth/Theseus profile
+(`Modrinth/profiles/<name>` is a full .minecraft-style instance dir):
+
+| Ships in overrides/ | Never ships (user data / caches) |
+|---------------------|----------------------------------|
+| `mods/` | `saves/`, `screenshots/`, `logs/`, `crash-reports/` |
+| `config/`, `defaultconfigs/` | `journeymap/` (map cache, thousands of files) |
+| `resourcepacks/`, `shaderpacks/` | `essential/`, `emotes/` (mod caches) |
+| `datapacks/`, `scripts/`, `kubejs/` | `.fabric/`, `debug/`, `downloads/`, `schematics/` |
+| root: `options.txt`, `servers.dat` | root: `usercache.json`, `ops.json`, `whitelist.json`, `hotbar.nbt`, `hs_err_*.log`, `replay_*.log`, `command_history.txt` |
+
+Both packagers (the PowerShell script and the admin panel's online tool)
+apply this filter automatically.
+
+Mod filenames in the wild are too inconsistent for reliable parsing
+(`entity_texture_features_26.1-fabric-7.1.jar`, `Gamma-Utils-3.0.0+mc26.1.jar`),
+so the online packager reads `fabric.mod.json` / `quilt.mod.json` /
+`META-INF/mods.toml` from inside each jar; the filename split is only the
+fallback (and the PowerShell script's current method).
+
 ## Open items (waiting on test-machine pack structures)
 
-- Default folder locations per launcher (instances dir, profiles dir).
-- Exact launcher file schemas + required fields.
-- Which minecraft folders beyond the defaults should ship in overrides.
-- Jar metadata extraction (fabric.mod.json / mods.toml).
+- Default install locations per launcher (instances dir, profiles dir).
+- Exact launcher file schemas + required fields for generation.
