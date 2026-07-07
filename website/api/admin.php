@@ -16,6 +16,7 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/php-compat.php';
 require __DIR__ . '/packs-registry.php';
 
 const RELEASES_DIR   = __DIR__ . '/../releases';
@@ -35,13 +36,28 @@ $config = require __DIR__ . '/admin-config.php';
 
 header('Cache-Control: no-store');
 
-function respond(int $status, array $body): never
+// No `: never` return type here: the host runs PHP 7.4, where that 8.1-only
+// syntax is a parse error and turns every request into a blank 500. This
+// function still exits; the missing type is only a static hint.
+function respond(int $status, array $body)
 {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($body);
     exit;
 }
+
+// Surface real errors as JSON instead of a bare 500, so the admin panel can
+// show what actually went wrong (session path, permissions, PHP version, ...).
+set_exception_handler(function (Throwable $e) {
+    respond(500, ['error' => 'server error: ' . $e->getMessage()]);
+});
+register_shutdown_function(function () {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        respond(500, ['error' => 'fatal: ' . $e['message']]);
+    }
+});
 
 function loadJson(string $path, array $fallback = []): array
 {
@@ -88,7 +104,7 @@ if ($isPost && ($_SERVER['HTTP_X_POLYFORGE_ADMIN'] ?? '') !== '1') {
 
 $body = [];
 if ($isPost && str_starts_with((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json')) {
-    $decoded = json_decode((string) file_get_contents('php://input', length: 1 << 20), true);
+    $decoded = json_decode((string) file_get_contents('php://input', false, null, 0, 1 << 20), true);
     if (is_array($decoded)) {
         $body = $decoded;
     }
@@ -182,7 +198,7 @@ case 'release-type-create': {
         respond(400, ['error' => 'invalid type name']);
     }
     $dir = RELEASES_DIR . '/' . $type;
-    if (!is_dir($dir) && !mkdir($dir, 0o755, true)) {
+    if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
         respond(500, ['error' => 'could not create folder']);
     }
     respond(200, ['ok' => true]);
@@ -208,6 +224,8 @@ case 'release-upload': {
     if (!move_uploaded_file($up['tmp_name'], $dest)) {
         respond(500, ['error' => 'could not store file']);
     }
+    // Refresh the checksum manifest so hashes are always current for this type.
+    writeReleaseSums(RELEASES_DIR . '/' . $type);
     respond(200, ['ok' => true, 'sha256' => hash_file('sha256', $dest)]);
 }
 
@@ -223,6 +241,8 @@ case 'release-delete': {
         respond(404, ['error' => 'file not found']);
     }
     unlink($path);
+    // Keep the checksum manifest in sync after a build is removed.
+    writeReleaseSums(RELEASES_DIR . '/' . $type);
     respond(200, ['ok' => true]);
 }
 
@@ -377,7 +397,7 @@ case 'pack-build': {
     $prefix = $prefix ? $prefix . '/' : '';
 
     if (!is_dir(PACKS_DIR)) {
-        mkdir(PACKS_DIR, 0o755, true);
+        mkdir(PACKS_DIR, 0755, true);
     }
     $outZipPath = PACKS_DIR . "/$id-$version.pack.tmp.zip";
     @unlink($outZipPath);
@@ -505,6 +525,35 @@ default:
 }
 
 // ── Helpers ──────────────────────────────────────
+
+/**
+ * (Re)generates SHA256SUMS.txt for a release type folder so download hashes
+ * stay current automatically on every upload/delete. Standard coreutils
+ * format (`<hex>␠␠<filename>`, one per line); doc files — including the sums
+ * file itself — are skipped, matching how download.php picks the latest build.
+ */
+function writeReleaseSums(string $typeDir): void
+{
+    if (!is_dir($typeDir)) {
+        return;
+    }
+    $lines = [];
+    foreach (scandir($typeDir) ?: [] as $f) {
+        $p = $typeDir . DIRECTORY_SEPARATOR . $f;
+        if ($f[0] === '.' || !is_file($p)) {
+            continue;
+        }
+        if (in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), DOC_EXTENSIONS, true)) {
+            continue; // hashes/readmes are not builds
+        }
+        $hash = hash_file('sha256', $p);
+        if ($hash !== false) {
+            $lines[] = $hash . '  ' . $f;
+        }
+    }
+    sort($lines);
+    file_put_contents($typeDir . '/SHA256SUMS.txt', $lines ? implode("\n", $lines) . "\n" : '', LOCK_EX);
+}
 
 /**
  * Builds a mod entry from a jar: filename heuristic first, then refined by

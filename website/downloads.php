@@ -24,14 +24,15 @@ require __DIR__ . '/partials/header.php';
           <p>Recommended for most users. No installation or setup required - just download and run.</p>
           <div class="dl-options">
             <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true">
-              <span class="dl-label">.exe</span>
+              <span class="dl-label">.exe (Installer)</span>
               <span class="dl-meta">windows/amd64 - Recommended</span>
             </a>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true"><span class="dl-label">.exe</span><span class="dl-meta">windows/arm64</span></a>
-            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true" style="opacity:.7"><span class="dl-label">.jar</span><span class="dl-meta">Experimental</span></a>
+            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true"><span class="dl-label">.exe (Portable)</span><span class="dl-meta">windows/amd64</span></a>
+            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true"><span class="dl-label">.exe (UPX-compressed)</span><span class="dl-meta">windows/amd64</span></a>
+            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true"><span class="dl-label">.zip (Portable archive)</span><span class="dl-meta">windows/amd64</span></a>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -44,7 +45,7 @@ require __DIR__ . '/partials/header.php';
             </div>
             <div class="dl-hash">
               <span class="dl-hash-label">SHA256</span>
-              <span>Hashes will be published with each release.</span>
+              <span>Published in SHA256SUMS.txt with each release.</span>
             </div>
           </div>
           <!-- Info bubble hint -->
@@ -71,13 +72,10 @@ require __DIR__ . '/partials/header.php';
             <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
               <span class="dl-label">.dmg (Disk Image)</span><span class="dl-meta">darwin/universal</span>
             </a>
-            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.7;pointer-events:none">
-              <span class="dl-label">.jar</span><span class="dl-meta">Experimental</span>
-            </a>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.pkg Installer</span><span class="dl-meta">darwin/universal</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.zip (Portable)</span><span class="dl-meta">darwin/universal</span></a>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -90,7 +88,7 @@ require __DIR__ . '/partials/header.php';
             </div>
             <div class="dl-hash">
               <span class="dl-hash-label">SHA256</span>
-              <span>Hashes will be published with each release.</span>
+              <span>Published in SHA256SUMS.txt with each release.</span>
             </div>
           </div>
           <!-- Info bubble hint -->
@@ -112,29 +110,21 @@ require __DIR__ . '/partials/header.php';
           <p>Broader OS discovery presets are planned. Check back for expanded Linux support.</p>
           <div class="dl-options">
             <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
-              <span class="dl-label">ELF Binary</span><span class="dl-meta">linux/amd64</span>
+              <span class="dl-label">.AppImage</span><span class="dl-meta">linux/amd64 - Recommended</span>
             </a>
             <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
               <span class="dl-label">.deb (Debian/Ubuntu)</span><span class="dl-meta">linux/amd64</span>
             </a>
-            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.7;pointer-events:none">
-              <span class="dl-label">.jar</span><span class="dl-meta">Experimental</span>
+            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
+              <span class="dl-label">.rpm (Fedora/RHEL)</span><span class="dl-meta">linux/amd64</span>
             </a>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">ELF Binary</span><span class="dl-meta">linux/arm64</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.rpm (Fedora/RHEL)</span><span class="dl-meta">linux/amd64</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.AppImage</span><span class="dl-meta">linux/amd64</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.AppImage</span><span class="dl-meta">linux/arm64</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Flatpak</span><span class="dl-meta">Planned</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Snap</span><span class="dl-meta">Planned</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Nix / Flake</span><span class="dl-meta">NixOS</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR</span><span class="dl-meta">Arch</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR (bin)</span><span class="dl-meta">Arch</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">EBuild</span><span class="dl-meta">Gentoo</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.deb</span><span class="dl-meta">linux/arm64</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.rpm</span><span class="dl-meta">linux/arm64</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.tar.gz (Portable)</span><span class="dl-meta">linux/amd64</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Flatpak</span><span class="dl-meta">Community</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Snap</span><span class="dl-meta">Community</span></a>
+            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR</span><span class="dl-meta">Community</span></a>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -147,7 +137,7 @@ require __DIR__ . '/partials/header.php';
             </div>
             <div class="dl-hash">
               <span class="dl-hash-label">SHA256</span>
-              <span>Hashes will be published with each release.</span>
+              <span>Published in SHA256SUMS.txt with each release.</span>
             </div>
           </div>
           <!-- Info bubble hint -->

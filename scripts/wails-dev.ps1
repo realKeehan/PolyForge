@@ -98,7 +98,9 @@ Ensure-Command -CommandName 'npm'
 # node_modules present so vite can resolve imports.
 if (-not $SkipFrontend) {
   Write-Host "Installing frontend dependencies..." -ForegroundColor Cyan
-  Push-Location (Join-Path $PSScriptRoot '..' 'frontend')
+  # Nested Join-Path: the 3-argument form is PowerShell 6+ only and throws
+  # "positional parameter ... 'frontend'" under Windows PowerShell 5.1.
+  Push-Location (Join-Path (Join-Path $PSScriptRoot '..') 'frontend')
   try {
     & npm ci
     if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }

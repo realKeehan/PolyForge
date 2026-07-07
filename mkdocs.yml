@@ -1,0 +1,72 @@
+site_name: PolyForge
+site_description: "Keehan's Universal Modpack Installer — one workflow, many launchers."
+site_url: https://docs.polyforge.dev/
+repo_url: https://github.com/realKeehan/PolyForge
+repo_name: realKeehan/PolyForge
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; Keehan
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.sections
+    - toc.follow
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Building from source: building.md
+  - Supported launchers: launchers.md
+  - Modpack format: modpack-format.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/realKeehan/PolyForge
+    - icon: fontawesome/solid/globe
+      link: https://polyforge.dev

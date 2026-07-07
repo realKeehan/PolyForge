@@ -12,6 +12,8 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/php-compat.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
@@ -49,7 +51,7 @@ function topScores(array $scores, int $limit): array
     return array_slice($scores, 0, $limit);
 }
 
-function respond(int $status, array $body): never
+function respond(int $status, array $body) // exits; no `: never` (PHP 7.4 host)
 {
     http_response_code($status);
     echo json_encode($body);
@@ -69,7 +71,7 @@ if ($method !== 'POST') {
 
 // ── Submission ───────────────────────────────────
 
-$raw = file_get_contents('php://input', length: 4096);
+$raw = file_get_contents('php://input', false, null, 0, 4096);
 $body = json_decode($raw === false ? '' : $raw, true);
 if (!is_array($body)) {
     respond(400, ['error' => 'invalid JSON body']);

@@ -9,6 +9,8 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/api/php-compat.php'; // str_* shims for PHP 7.4 dev servers
+
 // Dev-server only — if this ever executes under Apache, pretend it isn't here.
 if (PHP_SAPI !== 'cli-server') {
     http_response_code(404);

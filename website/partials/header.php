@@ -96,8 +96,6 @@ function pf_nav(array $links, string $activeSlug): void
   </script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-
   <!-- Animated dot background -->
   <div class="bg" aria-hidden="true">
     <canvas class="dot-canvas" id="dotCanvas"></canvas>

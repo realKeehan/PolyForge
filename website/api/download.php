@@ -20,11 +20,13 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/php-compat.php';
+
 const STATS_FILE   = __DIR__ . '/stats-data.json';
 const RELEASES_DIR = __DIR__ . '/../releases';
 const DOC_EXTENSIONS = ['md', 'txt', 'json', 'html'];
 
-function fail(int $status, string $message): never
+function fail(int $status, string $message) // exits; no `: never` (PHP 7.4 host)
 {
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
@@ -71,7 +73,7 @@ function recordDownload(?string $type, string $file = ''): void
     file_put_contents(STATS_FILE, json_encode($stats, JSON_PRETTY_PRINT), LOCK_EX);
 }
 
-function redirectToRelease(string $relative): never
+function redirectToRelease(string $relative) // exits; no `: never` (PHP 7.4 host)
 {
     $encoded = implode('/', array_map('rawurlencode', explode('/', $relative)));
     header('Cache-Control: no-store');

@@ -16,6 +16,8 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/php-compat.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
@@ -23,7 +25,7 @@ const STATE_FILE   = __DIR__ . '/pack-access-state.json';
 const MAX_ATTEMPTS = 10;     // per IP...
 const WINDOW_S     = 300;    // ...per 5 minutes
 
-function respond(int $status, array $body): never
+function respond(int $status, array $body) // exits; no `: never` (PHP 7.4 host)
 {
     http_response_code($status);
     echo json_encode($body);
@@ -34,7 +36,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     respond(405, ['granted' => false, 'error' => 'method not allowed']);
 }
 
-$raw = file_get_contents('php://input', length: 4096);
+$raw = file_get_contents('php://input', false, null, 0, 4096);
 $body = json_decode($raw === false ? '' : $raw, true);
 if (!is_array($body)) {
     respond(400, ['granted' => false, 'error' => 'invalid JSON body']);
