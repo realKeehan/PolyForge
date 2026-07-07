@@ -1,0 +1,43 @@
+# Builds the MkDocs site and deploys it to GitHub Pages (gh-pages branch).
+# First-time setup: in the repo Settings → Pages, set the source to the
+# "gh-pages" branch (created automatically by the first successful run).
+
+name: Docs
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          key: mkdocs-${{ hashFiles('requirements-docs.txt') }}
+          path: ~/.cache/pip
+
+      - name: Install MkDocs
+        run: pip install -r requirements-docs.txt
+
+      - name: Build and deploy
+        run: mkdocs gh-deploy --force --clean --verbose

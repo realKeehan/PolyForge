@@ -85,7 +85,7 @@ if not errorlevel 2 set "BFLAGS=%BFLAGS% -SkipFrontend"
 :appbuildrun
 echo.
 echo   Launching: wails-build.ps1%BFLAGS%
-start "PolyForge-AppBuild" %PS% -NoExit -ExecutionPolicy Bypass -File "%ROOT%scripts\wails-build.ps1"%BFLAGS%
+start "PolyForge-AppBuild" %PS% -NoExit -ExecutionPolicy Bypass -File "%ROOT%scripts\wails-build.ps1" %BFLAGS%
 timeout /t 2 >nul
 goto menu
 

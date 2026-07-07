@@ -12,6 +12,9 @@ frontend/wailsjs/
 *.log
 .DS_Store
 
+# MkDocs build output
+site/
+
 # PolyTris leaderboard data (created at runtime)
 website/api/tetris-scores.json
 website/api/pack-access-state.json
