@@ -46,6 +46,40 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# ── Braille loader (3x3 loading animation) ───────
+# A little braille cell that spins while the slow steps run (hashing, zipping).
+# Frames are built from code points so the source stays pure ASCII — PowerShell
+# 5.1 reads a BOM-less .ps1 as ANSI and would otherwise mangle literal braille
+# glyphs. The eight dots of a braille cell trace the ring of a 3x3 grid, lit a
+# few at a time to read as rotation. Swap $SpinnerFrames for a different look.
+try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false) } catch {}
+$script:SpinnerFrames   = @(0x280B, 0x2819, 0x2839, 0x2838, 0x283C, 0x2834, 0x2826, 0x2827, 0x2807, 0x280F) | ForEach-Object { [char]$_ }
+$script:SpinnerIndex    = 0
+$script:SpinnerLastTick = -1000
+
+function Update-Spinner {
+    param([string]$Label)
+    # Silent when piped to a file/CI (no console to animate); throttled to a
+    # steady ~14 fps so the spin speed is independent of how fast work arrives.
+    if ([Console]::IsOutputRedirected) { return }
+    $now = [Environment]::TickCount
+    if (($now - $script:SpinnerLastTick) -lt 70) { return }
+    $script:SpinnerLastTick = $now
+    if ($Label.Length -gt 52) { $Label = $Label.Substring(0, 49) + '...' }
+    $frame = $script:SpinnerFrames[$script:SpinnerIndex % $script:SpinnerFrames.Count]
+    $script:SpinnerIndex++
+    Write-Host ("`r{0} {1}" -f $frame, $Label).PadRight(70) -NoNewline -ForegroundColor Cyan
+}
+
+function Complete-Spinner {
+    param([string]$Label)
+    $script:SpinnerIndex = 0
+    $script:SpinnerLastTick = -1000
+    if ([Console]::IsOutputRedirected) { Write-Host $Label -ForegroundColor Green; return }
+    # Overwrite the spinner line with a green check + label, then break the line.
+    Write-Host ("`r{0} {1}" -f ([char]0x2713), $Label).PadRight(70) -ForegroundColor Green
+}
+
 if (-not (Test-Path $SourceDir -PathType Container)) {
     Write-Error "Source folder not found: $SourceDir"
     exit 1
@@ -104,7 +138,11 @@ Write-Host "Including folders: $($foundFolders -join ', ')" -ForegroundColor Cya
 $mods = @()
 $modsDir = Join-Path $SourceDir 'mods'
 if (Test-Path $modsDir -PathType Container) {
-    foreach ($jar in (Get-ChildItem $modsDir -Filter '*.jar' -File | Sort-Object Name)) {
+    $jars = @(Get-ChildItem $modsDir -Filter '*.jar' -File | Sort-Object Name)
+    $n = 0
+    foreach ($jar in $jars) {
+        $n++
+        Update-Spinner "Hashing mods ($n/$($jars.Count)): $($jar.Name)"
         $base = [IO.Path]::GetFileNameWithoutExtension($jar.Name)
         $name = $base
         $version = ''
@@ -112,7 +150,6 @@ if (Test-Path $modsDir -PathType Container) {
             $name = $matches[1]
             $version = $matches[2]
         }
-        Write-Host "  mod: $name $version" -ForegroundColor DarkGray
         $mods += [ordered]@{
             file    = $jar.Name
             name    = $name
@@ -120,6 +157,7 @@ if (Test-Path $modsDir -PathType Container) {
             sha256  = (Get-FileHash $jar.FullName -Algorithm SHA256).Hash.ToLower()
         }
     }
+    if ($jars.Count -gt 0) { Complete-Spinner "Hashed $($jars.Count) mods" }
 }
 Write-Host "Found $($mods.Count) mods" -ForegroundColor Cyan
 
@@ -152,7 +190,11 @@ foreach ($rootFile in $IncludeRootFiles) {
 # are relative to overrides/ with forward slashes so they match the archive.
 $overridesPrefix = (Resolve-Path $overrides).Path.TrimEnd('\') + '\'
 $fileEntries = @()
-foreach ($item in (Get-ChildItem $overrides -Recurse -File | Sort-Object FullName)) {
+$allFiles = @(Get-ChildItem $overrides -Recurse -File | Sort-Object FullName)
+$n = 0
+foreach ($item in $allFiles) {
+    $n++
+    Update-Spinner "Hashing files ($n/$($allFiles.Count))"
     $rel = $item.FullName.Substring($overridesPrefix.Length) -replace '\\', '/'
     $fileEntries += [ordered]@{
         path   = $rel
@@ -160,7 +202,7 @@ foreach ($item in (Get-ChildItem $overrides -Recurse -File | Sort-Object FullNam
         size   = $item.Length
     }
 }
-Write-Host "Hashed $($fileEntries.Count) files for integrity verification" -ForegroundColor Cyan
+Complete-Spinner "Hashed $($fileEntries.Count) files for integrity verification"
 
 # ── pack-manifest.json ───────────────────────────
 $manifest = [ordered]@{
@@ -220,19 +262,39 @@ $launchers = [ordered]@{
 # READER side is the cost: the app would need a pure-Go xz codec
 # (github.com/ulikunitz/xz, ~+284 KB) and a new slime flags byte. See the
 # LZMA note in internal/kumi/slime.go before changing this.
-$tmpZip = Join-Path $OutDir "$PackId-$PackVersion.polypack.zip"
-if (Test-Path $tmpZip) { Remove-Item $tmpZip -Force }
-
-Push-Location $staging
+# The intermediate zip is built in TEMP, never in $OutDir, so the output folder
+# only ever ends up with the .polypack and its manifest — no stray .zip is left
+# behind (on success or failure).
+$tmpZip  = Join-Path ([IO.Path]::GetTempPath()) "polypack-$PackId-$PackVersion-$(Get-Random).zip"
+$zLogOut = [IO.Path]::GetTempFileName()
+$zLogErr = [IO.Path]::GetTempFileName()
 try {
-    & $sevenZip a -tzip -mx=9 $tmpZip *
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "7-Zip exited with code $LASTEXITCODE"
-        exit $LASTEXITCODE
+    # Run 7-Zip as a child process and spin the braille loader while it works.
+    # Quote the (temp) output path for spaces; '*' is passed literally so 7-Zip
+    # expands it against -WorkingDirectory ($staging).
+    $proc = Start-Process -FilePath $sevenZip `
+        -ArgumentList ('a -tzip -mx=9 "{0}" *' -f $tmpZip) `
+        -WorkingDirectory $staging -NoNewWindow -PassThru `
+        -RedirectStandardOutput $zLogOut -RedirectStandardError $zLogErr
+    # Touch .Handle so the object keeps the process handle — otherwise
+    # Start-Process -PassThru leaves .ExitCode null once the process exits.
+    $null = $proc.Handle
+    while (-not $proc.HasExited) {
+        Update-Spinner 'Compressing pack...'
+        Start-Sleep -Milliseconds 80
     }
+    $proc.WaitForExit()
+    if ($proc.ExitCode -ne 0) {
+        Complete-Spinner 'Compression failed'
+        $detail = ((Get-Content $zLogErr -Raw -ErrorAction SilentlyContinue), (Get-Content $zLogOut -Raw -ErrorAction SilentlyContinue)) -join "`n"
+        Remove-Item $tmpZip -Force -ErrorAction SilentlyContinue
+        Write-Error "7-Zip exited with code $($proc.ExitCode)`n$detail"
+        exit 1
+    }
+    Complete-Spinner 'Compressed pack'
 } finally {
-    Pop-Location
     Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item $zLogOut, $zLogErr -Force -ErrorAction SilentlyContinue
 }
 
 # Wrap the zip into a .polypack — PolyForge's branded, obfuscated container.
@@ -241,15 +303,17 @@ try {
 . (Join-Path $PSScriptRoot 'slime-lib.ps1')
 $outPack = Join-Path $OutDir "$PackId-$PackVersion.polypack"
 try {
+    Update-Spinner 'Wrapping into .polypack...'
     ConvertTo-Slime -InputPath $tmpZip -OutputPath $outPack
+    Complete-Spinner 'Wrapped .polypack'
 } catch {
-    # Never leave a half-finished .polypack or a confusing .polypack.zip behind.
+    # Never leave a half-finished .polypack or the stray temp .zip behind.
     Remove-Item $outPack -Force -ErrorAction SilentlyContinue
     Remove-Item $tmpZip  -Force -ErrorAction SilentlyContinue
     Write-Error "Failed to wrap the pack into .polypack: $_"
     exit 1
 }
-Remove-Item $tmpZip -Force
+Remove-Item $tmpZip -Force -ErrorAction SilentlyContinue
 
 # Standalone manifest for hosted update checks (no pack download needed).
 $manifestOut = Join-Path $OutDir "$PackId-$PackVersion.manifest.json"
