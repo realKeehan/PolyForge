@@ -46,38 +46,57 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# ── Braille loader (3x3 loading animation) ───────
-# A little braille cell that spins while the slow steps run (hashing, zipping).
-# Frames are built from code points so the source stays pure ASCII — PowerShell
-# 5.1 reads a BOM-less .ps1 as ANSI and would otherwise mangle literal braille
-# glyphs. The eight dots of a braille cell trace the ring of a 3x3 grid, lit a
-# few at a time to read as rotation. Swap $SpinnerFrames for a different look.
+# ── 3x3 braille dot-matrix loader ────────────────
+# A little 3x3 grid of dots that spins while the slow steps run (hashing,
+# zipping). It's drawn as three braille cells, each showing one column's three
+# stacked dots (braille dots 1/2/3), so together they read as a 3-wide x 3-tall
+# matrix on a single line. Every dot is lit except one "gap" that rotates around
+# the eight outer cells (centre stays lit), which reads as rotation. Chars are
+# built from code points so the source stays pure ASCII — PowerShell 5.1 reads a
+# BOM-less .ps1 as ANSI and would otherwise mangle literal braille glyphs.
 try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false) } catch {}
-$script:SpinnerFrames   = @(0x280B, 0x2819, 0x2839, 0x2838, 0x283C, 0x2834, 0x2826, 0x2827, 0x2807, 0x280F) | ForEach-Object { [char]$_ }
-$script:SpinnerIndex    = 0
+# Outer cells in clockwise order (each @(row, col), 0-based); the gap walks this.
+$script:Spin3Ring       = @(@(0, 0), @(0, 1), @(0, 2), @(1, 2), @(2, 2), @(2, 1), @(2, 0), @(1, 0))
+$script:Spin3Frame      = 0
 $script:SpinnerLastTick = -1000
+
+# Renders the 3x3 grid for a frame as three braille characters (one per column).
+function Get-Spin3Grid {
+    param([int]$Frame)
+    $gap = $script:Spin3Ring[$Frame % $script:Spin3Ring.Count]
+    $rowBit = @(0x01, 0x02, 0x04)   # grid row 0/1/2 -> braille dots 1/2/3 (left column)
+    $grid = ''
+    for ($c = 0; $c -lt 3; $c++) {
+        $v = 0
+        for ($r = 0; $r -lt 3; $r++) {
+            if (-not ($r -eq $gap[0] -and $c -eq $gap[1])) { $v = $v -bor $rowBit[$r] }
+        }
+        $grid += [char](0x2800 + $v)
+    }
+    return $grid
+}
 
 function Update-Spinner {
     param([string]$Label)
-    # Silent when piped to a file/CI (no console to animate); throttled to a
-    # steady ~14 fps so the spin speed is independent of how fast work arrives.
+    # Silent when piped to a file/CI (no console to animate); throttled so the
+    # spin speed is steady regardless of how fast the work arrives.
     if ([Console]::IsOutputRedirected) { return }
     $now = [Environment]::TickCount
-    if (($now - $script:SpinnerLastTick) -lt 70) { return }
+    if (($now - $script:SpinnerLastTick) -lt 90) { return }
     $script:SpinnerLastTick = $now
-    if ($Label.Length -gt 52) { $Label = $Label.Substring(0, 49) + '...' }
-    $frame = $script:SpinnerFrames[$script:SpinnerIndex % $script:SpinnerFrames.Count]
-    $script:SpinnerIndex++
-    Write-Host ("`r{0} {1}" -f $frame, $Label).PadRight(70) -NoNewline -ForegroundColor Cyan
+    if ($Label.Length -gt 50) { $Label = $Label.Substring(0, 47) + '...' }
+    $grid = Get-Spin3Grid -Frame $script:Spin3Frame
+    $script:Spin3Frame++
+    Write-Host ("`r{0}  {1}" -f $grid, $Label).PadRight(70) -NoNewline -ForegroundColor Cyan
 }
 
 function Complete-Spinner {
     param([string]$Label)
-    $script:SpinnerIndex = 0
+    $script:Spin3Frame      = 0
     $script:SpinnerLastTick = -1000
     if ([Console]::IsOutputRedirected) { Write-Host $Label -ForegroundColor Green; return }
-    # Overwrite the spinner line with a green check + label, then break the line.
-    Write-Host ("`r{0} {1}" -f ([char]0x2713), $Label).PadRight(70) -ForegroundColor Green
+    # Overwrite the grid with a green check + label, then break the line.
+    Write-Host ("`r{0}  {1}" -f ([char]0x2713), $Label).PadRight(70) -ForegroundColor Green
 }
 
 if (-not (Test-Path $SourceDir -PathType Container)) {
