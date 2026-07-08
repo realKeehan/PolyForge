@@ -50,10 +50,16 @@ if (-not (Test-Path $SourceDir -PathType Container)) {
     Write-Error "Source folder not found: $SourceDir"
     exit 1
 }
-if ($PackId -notmatch '^[a-z0-9-]+$') {
-    Write-Error "PackId must be lowercase letters, digits, and hyphens (got '$PackId')"
+# Normalize the id: fold to lowercase and turn spaces into hyphens so casual
+# input ("Turtel SMP") just works, but reject any other symbol so a bad id is
+# caught here instead of silently breaking the hosted download URL later.
+$normalizedId = $PackId.Trim().ToLowerInvariant() -replace '\s+', '-' -replace '-+', '-'
+$normalizedId = $normalizedId.Trim('-')
+if ($normalizedId -notmatch '^[a-z0-9-]+$') {
+    Write-Error "PackId may only contain letters, numbers, and hyphens (spaces become hyphens; other symbols are rejected) - got '$PackId'."
     exit 1
 }
+$PackId = $normalizedId
 
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $OutDir) { $OutDir = Join-Path $root 'build\packs' }
@@ -140,6 +146,22 @@ foreach ($rootFile in $IncludeRootFiles) {
     }
 }
 
+# ── Per-file checksums (drive integrity verification) ─
+# Hash every staged file so the installer can verify each one against the
+# manifest and detect corruption, tampering, or a truncated download. Paths
+# are relative to overrides/ with forward slashes so they match the archive.
+$overridesPrefix = (Resolve-Path $overrides).Path.TrimEnd('\') + '\'
+$fileEntries = @()
+foreach ($item in (Get-ChildItem $overrides -Recurse -File | Sort-Object FullName)) {
+    $rel = $item.FullName.Substring($overridesPrefix.Length) -replace '\\', '/'
+    $fileEntries += [ordered]@{
+        path   = $rel
+        sha256 = (Get-FileHash $item.FullName -Algorithm SHA256).Hash.ToLower()
+        size   = $item.Length
+    }
+}
+Write-Host "Hashed $($fileEntries.Count) files for integrity verification" -ForegroundColor Cyan
+
 # ── pack-manifest.json ───────────────────────────
 $manifest = [ordered]@{
     schemaVersion = 1
@@ -154,6 +176,7 @@ $manifest = [ordered]@{
         folders    = $foundFolders
         fileCount  = $fileCount
         totalBytes = $totalBytes
+        files      = $fileEntries
     }
 }
 # WriteAllText writes UTF-8 without BOM - strict JSON parsers (incl. Go's)
@@ -217,7 +240,15 @@ try {
 # packager applies: magic header + XOR keystream. Obfuscation, not crypto.
 . (Join-Path $PSScriptRoot 'slime-lib.ps1')
 $outPack = Join-Path $OutDir "$PackId-$PackVersion.polypack"
-ConvertTo-Slime -InputPath $tmpZip -OutputPath $outPack
+try {
+    ConvertTo-Slime -InputPath $tmpZip -OutputPath $outPack
+} catch {
+    # Never leave a half-finished .polypack or a confusing .polypack.zip behind.
+    Remove-Item $outPack -Force -ErrorAction SilentlyContinue
+    Remove-Item $tmpZip  -Force -ErrorAction SilentlyContinue
+    Write-Error "Failed to wrap the pack into .polypack: $_"
+    exit 1
+}
 Remove-Item $tmpZip -Force
 
 # Standalone manifest for hosted update checks (no pack download needed).

@@ -4,8 +4,11 @@
 # cPanel File Manager, right-click -> Extract into public_html, and it
 # overwrites the deployed files in place.
 #
-# Runtime data files (leaderboard scores, rate-limit state) are excluded so
-# a deploy never clobbers live data. Windows PowerShell 5.1 compatible.
+# Runtime + admin-managed state files are excluded so a deploy never clobbers
+# live data. That includes the content manifest (app version control, modpack
+# overrides / self-destruct marks, disabled options, option overrides), its
+# history, and the pack registry — all edited on the live server through the
+# admin panel, never from the repo. Windows PowerShell 5.1 compatible.
 
 $ErrorActionPreference = 'Stop'
 
@@ -36,6 +39,18 @@ if (-not (Test-Path $webDir)) {
     Write-Error "Website folder not found: $webDir"
     exit 1
 }
+
+# ── Refresh downloadable tool copies ─────────────
+# The site serves copies of the packager scripts (repo-root scripts/ is not part
+# of the deploy). Refresh them here so the download on the admin Packager tab
+# always matches the source of truth.
+$toolsDir = Join-Path $webDir 'tools'
+if (-not (Test-Path $toolsDir)) { New-Item -ItemType Directory -Path $toolsDir | Out-Null }
+foreach ($tool in @('package-modpack.ps1', 'slime-lib.ps1')) {
+    $src = Join-Path $PSScriptRoot $tool
+    if (Test-Path $src) { Copy-Item $src (Join-Path $toolsDir $tool) -Force }
+    else { Write-Warning "Packager tool not found, skipping: $src" }
+}
 if (-not (Test-Path $outDir)) {
     New-Item -ItemType Directory -Path $outDir | Out-Null
 }
@@ -52,6 +67,10 @@ try {
         '-xr!tetris-scores.json' `
         '-xr!pack-access-state.json' `
         '-xr!stats-data.json' `
+        '-xr!manifest.json' `
+        '-xr!manifest-history.json' `
+        '-xr!packs-data.json' `
+        '-xr!admin-state.json' `
         '-x!router.php'
     if ($LASTEXITCODE -ne 0) {
         Write-Error "7-Zip exited with code $LASTEXITCODE"
