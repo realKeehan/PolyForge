@@ -50,10 +50,10 @@ $ErrorActionPreference = 'Stop'
 # A little 3x3 grid of dots that spins while the slow steps run (hashing,
 # zipping). It's drawn as three braille cells, each showing one column's three
 # stacked dots (braille dots 1/2/3), so together they read as a 3-wide x 3-tall
-# matrix on a single line. Every dot is lit except one "gap" that rotates around
-# the eight outer cells (centre stays lit), which reads as rotation. Chars are
-# built from code points so the source stays pure ASCII — PowerShell 5.1 reads a
-# BOM-less .ps1 as ANSI and would otherwise mangle literal braille glyphs.
+# matrix on a single line. The eight outer cells are lit (centre stays empty)
+# except one "gap" that rotates around the ring, which reads as rotation. Chars
+# are built from code points so the source stays pure ASCII — PowerShell 5.1
+# reads a BOM-less .ps1 as ANSI and would otherwise mangle literal braille glyphs.
 try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false) } catch {}
 # Outer cells in clockwise order (each @(row, col), 0-based); the gap walks this.
 $script:Spin3Ring       = @(@(0, 0), @(0, 1), @(0, 2), @(1, 2), @(2, 2), @(2, 1), @(2, 0), @(1, 0))
@@ -69,7 +69,9 @@ function Get-Spin3Grid {
     for ($c = 0; $c -lt 3; $c++) {
         $v = 0
         for ($r = 0; $r -lt 3; $r++) {
-            if (-not ($r -eq $gap[0] -and $c -eq $gap[1])) { $v = $v -bor $rowBit[$r] }
+            $isCentre = ($r -eq 1 -and $c -eq 1)               # hollow centre
+            $isGap    = ($r -eq $gap[0] -and $c -eq $gap[1])   # the rotating hole
+            if (-not $isCentre -and -not $isGap) { $v = $v -bor $rowBit[$r] }
         }
         $grid += [char](0x2800 + $v)
     }
