@@ -10,7 +10,8 @@
  *   login, logout, session
  *   releases-list, release-upload, release-delete, release-type-create
  *   manifest-get, manifest-save, manifest-history
- *   packs-list, pack-save-meta, pack-delete, pack-build (online packager)
+ *   packs-list, pack-save-meta, pack-selfdestruct-save, pack-delete,
+ *     pack-build (online packager)
  *   stats
  */
 
@@ -285,39 +286,164 @@ case 'manifest-history': {
 }
 
 // ── Packs ────────────────────────────────────────
+// Auto-discovers packs from the packs/ folder: each <id>-<ver>.manifest.json is
+// the source of truth for identity + mod list. The registry supplies editable
+// metadata (password, download URL), the public manifest supplies self-destruct
+// marks (removeMods), and stats supply per-pack download counts.
 case 'packs-list': {
     $registry = loadPackRegistry();
+    $manifest = loadJson(MANIFEST_FILE);
+    $stats    = loadJson(STATS_FILE);
+    $byPack   = is_array($stats['byPack'] ?? null) ? $stats['byPack'] : [];
+
+    $manifestPacks = [];
+    foreach (($manifest['modpacks'] ?? []) as $mp) {
+        if (is_array($mp) && isset($mp['id'])) {
+            $manifestPacks[(string) $mp['id']] = $mp;
+        }
+    }
+
+    $discovered = [];
     $hosted = [];
     if (is_dir(PACKS_DIR)) {
         foreach (scandir(PACKS_DIR) as $f) {
             $p = PACKS_DIR . '/' . $f;
-            if ($f[0] !== '.' && is_file($p) && !str_ends_with($f, '.md')) {
-                $hosted[] = ['name' => $f, 'size' => filesize($p), 'mtime' => gmdate('c', filemtime($p))];
+            if ($f[0] === '.' || !is_file($p) || str_ends_with($f, '.md')) {
+                continue;
             }
+            $hosted[] = ['name' => $f, 'size' => filesize($p), 'mtime' => gmdate('c', filemtime($p))];
+            if (!str_ends_with($f, '.manifest.json')) {
+                continue;
+            }
+            $pm = json_decode((string) file_get_contents($p), true);
+            if (!is_array($pm) || !isset($pm['id'])) {
+                continue;
+            }
+            $pid = (string) $pm['id'];
+            $mods = [];
+            foreach (($pm['mods'] ?? []) as $mod) {
+                if (is_array($mod) && isset($mod['file'])) {
+                    $mods[] = ['file' => (string) $mod['file'], 'name' => (string) ($mod['name'] ?? $mod['file'])];
+                }
+            }
+            $packFile = $pid . '-' . ($pm['version'] ?? '') . '.polypack';
+            $discovered[$pid] = [
+                'name'    => (string) ($pm['name'] ?? $pid),
+                'version' => (string) ($pm['version'] ?? ''),
+                'file'    => is_file(PACKS_DIR . '/' . $packFile) ? $packFile : null,
+                'mods'    => $mods,
+            ];
         }
     }
-    // Never leak password hashes to the browser.
-    $safe = [];
-    foreach ($registry as $id => $meta) {
-        $safe[$id] = [
-            'name'             => $meta['name'] ?? $id,
-            'requiresPassword' => !empty($meta['requiresPassword']),
-            'hasPassword'      => !empty($meta['passwordHash']),
-            'downloadUrl'      => $meta['downloadUrl'] ?? null,
+
+    $ids = array_unique(array_merge(array_keys($registry), array_keys($discovered), array_keys($manifestPacks)));
+    sort($ids);
+    $packs = [];
+    foreach ($ids as $id) {
+        $reg  = is_array($registry[$id] ?? null) ? $registry[$id] : [];
+        $disc = $discovered[$id] ?? [];
+        $mp   = $manifestPacks[$id] ?? [];
+        $packs[] = [
+            'id'               => $id,
+            'name'             => $disc['name'] ?? ($reg['name'] ?? ($mp['name'] ?? $id)),
+            'version'          => $disc['version'] ?? '',
+            'file'             => $disc['file'] ?? null,
+            'inFolder'         => isset($discovered[$id]),
+            'inManifest'       => isset($manifestPacks[$id]),
+            'requiresPassword' => !empty($reg['requiresPassword']),
+            'hasPassword'      => !empty($reg['passwordHash']),
+            // Fall back to the hosted file so a pack dropped straight into
+            // packs/ (no registry URL) still shows its real download link —
+            // the same URL pack-access derives and hands to the app.
+            'downloadUrl'      => ($reg['downloadUrl'] ?? null) ?: (!empty($disc['file']) ? '/packs/' . $disc['file'] : null),
+            'mods'             => $disc['mods'] ?? [],
+            'removeMods'       => array_values($mp['removeMods'] ?? []),
+            'downloads'        => (int) ($byPack[$id] ?? 0),
         ];
     }
-    respond(200, ['registry' => $safe, 'hosted' => $hosted]);
+    respond(200, ['packs' => $packs, 'hosted' => $hosted]);
+}
+
+// Arms/updates the "self-destruct" mod removal list for a pack. Marks live in
+// the public manifest's modpacks[] entry (removeMods); the app deletes those
+// files from existing installs on next launch. Disarming clears the list.
+case 'pack-selfdestruct-save': {
+    $id = normalizePackId((string) ($body['id'] ?? ''));
+    if (!$isPost || !preg_match('#^[a-z0-9-]+$#', $id)) {
+        respond(400, ['error' => 'invalid pack id']);
+    }
+    $removeMods = [];
+    if (!empty($body['armed']) && is_array($body['removeMods'] ?? null)) {
+        foreach ($body['removeMods'] as $f) {
+            $f = basename((string) $f); // filename only — never a path
+            if ($f !== '' && $f !== '.' && $f !== '..') {
+                $removeMods[] = $f;
+            }
+        }
+        $removeMods = array_values(array_unique($removeMods));
+    }
+
+    $manifest = loadJson(MANIFEST_FILE);
+    if ((int) ($manifest['schemaVersion'] ?? 0) < 1) {
+        $manifest['schemaVersion'] = 1;
+    }
+    $modpacks = is_array($manifest['modpacks'] ?? null) ? $manifest['modpacks'] : [];
+    $found = false;
+    foreach ($modpacks as &$mp) {
+        if (is_array($mp) && (string) ($mp['id'] ?? '') === $id) {
+            if ($removeMods) {
+                $mp['removeMods'] = $removeMods;
+            } else {
+                unset($mp['removeMods']);
+            }
+            $found = true;
+            break;
+        }
+    }
+    unset($mp);
+    if (!$found) {
+        $reg = loadPackRegistry();
+        $new = ['id' => $id, 'name' => $reg[$id]['name'] ?? $id];
+        if (!empty($reg[$id]['requiresPassword'])) {
+            $new['requiresPassword'] = true;
+        }
+        if ($removeMods) {
+            $new['removeMods'] = $removeMods;
+        }
+        $modpacks[] = $new;
+    }
+    $manifest['modpacks'] = array_values($modpacks);
+    $manifest['updated'] = gmdate('c');
+
+    // Snapshot for history/rollback, mirroring manifest-save.
+    $history = loadJson(HISTORY_FILE, ['entries' => []]);
+    $history['entries'][] = ['saved' => gmdate('c'), 'manifest' => loadJson(MANIFEST_FILE)];
+    $history['entries'] = array_slice($history['entries'], -100);
+    saveJson(HISTORY_FILE, $history);
+
+    if (!saveJson(MANIFEST_FILE, $manifest)) {
+        respond(500, ['error' => 'could not write manifest']);
+    }
+    respond(200, ['ok' => true, 'armed' => (bool) ($removeMods !== []), 'removeMods' => $removeMods]);
 }
 
 case 'pack-save-meta': {
-    $id = (string) ($body['id'] ?? '');
+    $id = normalizePackId((string) ($body['id'] ?? ''));
     if (!$isPost || !preg_match('#^[a-z0-9-]+$#', $id)) {
-        respond(400, ['error' => 'invalid pack id (lowercase, digits, hyphens)']);
+        respond(400, ['error' => 'invalid pack id — letters, numbers, and hyphens only (spaces become hyphens; other symbols are rejected)']);
     }
     $registry = loadPackRegistry();
     $entry = $registry[$id] ?? ['name' => $id, 'requiresPassword' => false, 'passwordHash' => null, 'downloadUrl' => null];
     if (array_key_exists('name', $body)) {
-        $entry['name'] = (string) $body['name'];
+        $name = trim((string) $body['name']);
+        if ($name !== '') {
+            $entry['name'] = $name;
+        }
+    }
+    // Never persist a blank name — fall back to the discovered pack manifest
+    // (locally-packed uploads carry the real name there) and finally the id.
+    if (empty($entry['name'])) {
+        $entry['name'] = discoveredPackName($id) ?: $id;
     }
     if (array_key_exists('requiresPassword', $body)) {
         $entry['requiresPassword'] = (bool) $body['requiresPassword'];
@@ -330,11 +456,24 @@ case 'pack-save-meta': {
     }
     $registry[$id] = $entry;
     savePackRegistry($registry);
+
+    // Mirror identity into the PUBLIC manifest so the running app actually sees
+    // name/visibility edits — it only reads manifest.json, never the registry.
+    // downloadUrl stays registry-only (the app resolves it through pack-access;
+    // RemotePack has no url field).
+    $set = ['name' => (string) $entry['name']];
+    $unset = [];
+    if (!empty($entry['requiresPassword'])) {
+        $set['requiresPassword'] = true;
+    } else {
+        $unset[] = 'requiresPassword';
+    }
+    upsertManifestPack($id, $set, $unset);
     respond(200, ['ok' => true]);
 }
 
 case 'pack-delete': {
-    $id = (string) ($body['id'] ?? '');
+    $id = normalizePackId((string) ($body['id'] ?? ''));
     if (!$isPost || !preg_match('#^[a-z0-9-]+$#', $id)) {
         respond(400, ['error' => 'invalid pack id']);
     }
@@ -363,14 +502,20 @@ case 'pack-build': {
     if (!class_exists('ZipArchive')) {
         respond(501, ['error' => 'PHP zip extension is not enabled on this server - use scripts/package-modpack.ps1 locally instead']);
     }
-    $id      = (string) ($_POST['id'] ?? '');
+    // Fold the id to lowercase and turn spaces into hyphens so casual input
+    // ("Turtel SMP") just works; other symbols still fail loudly below so the
+    // packer knows to fix them before it ships.
+    $id      = normalizePackId((string) ($_POST['id'] ?? ''));
     $name    = (string) ($_POST['name'] ?? '');
     $version = (string) ($_POST['version'] ?? '');
     $mc      = (string) ($_POST['minecraft'] ?? '');
     $loader  = (string) ($_POST['loader'] ?? '');
     $loaderV = (string) ($_POST['loaderVersion'] ?? '');
-    if (!preg_match('#^[a-z0-9-]+$#', $id) || $name === '' || !preg_match('#^[\w.+-]+$#', $version)) {
-        respond(400, ['error' => 'id, name and version are required (id: lowercase/digits/hyphens)']);
+    if (!preg_match('#^[a-z0-9-]+$#', $id)) {
+        respond(400, ['error' => 'pack id may only contain letters, numbers, and hyphens — no spaces or symbols (letters are lowercased automatically)']);
+    }
+    if ($name === '' || !preg_match('#^[\w.+-]+$#', $version)) {
+        respond(400, ['error' => 'name and version are required (version: letters, numbers, . + -)']);
     }
     $up = $_FILES['source'] ?? null;
     if (!$up || $up['error'] !== UPLOAD_ERR_OK) {
@@ -407,6 +552,7 @@ case 'pack-build': {
     }
 
     $mods = [];
+    $files = [];
     $folders = [];
     $fileCount = 0;
     $totalBytes = 0;
@@ -434,6 +580,9 @@ case 'pack-build': {
         $out->addFromString('overrides/' . $rel, $data);
         $fileCount++;
         $totalBytes += strlen($data);
+        // Per-file checksum so the installer can verify every file against the
+        // manifest (corruption / tampering / truncated download detection).
+        $files[] = ['path' => $rel, 'sha256' => hash('sha256', $data), 'size' => strlen($data)];
         if ($isPackFolder && !in_array($parts[0], $folders, true)) {
             $folders[] = $parts[0];
         }
@@ -461,7 +610,7 @@ case 'pack-build': {
         'loader'        => ['type' => $loader, 'version' => $loaderV],
         'created'       => gmdate('c'),
         'mods'          => $mods,
-        'overrides'     => ['folders' => $folders, 'fileCount' => $fileCount, 'totalBytes' => $totalBytes],
+        'overrides'     => ['folders' => $folders, 'fileCount' => $fileCount, 'totalBytes' => $totalBytes, 'files' => $files],
     ];
     // Launcher-agnostic info fields for every supported launcher, so one
     // pack installs everywhere (the installer generates each launcher's
@@ -504,6 +653,10 @@ case 'pack-build': {
     $registry[$id] = $entry;
     savePackRegistry($registry);
 
+    // Publish it to the app's manifest too, so a freshly built pack shows up
+    // (with the right name) on the next launch without a second manual step.
+    upsertManifestPack($id, ['name' => $name]);
+
     respond(200, [
         'ok'       => true,
         'pack'     => "/packs/$id-$version.polypack",
@@ -525,6 +678,69 @@ default:
 }
 
 // ── Helpers ──────────────────────────────────────
+
+/**
+ * Upserts a pack's identity into the PUBLIC manifest's modpacks[] list — the
+ * only pack source the app reads at launch. $set fields are written onto the
+ * entry (created if missing); $unset keys are removed. A pre-change snapshot is
+ * recorded first, mirroring manifest-save / pack-selfdestruct-save. Throws on a
+ * write failure (surfaced as a JSON 500 by the global exception handler).
+ */
+function upsertManifestPack(string $id, array $set, array $unset = []): void
+{
+    $manifest = loadJson(MANIFEST_FILE);
+    if ((int) ($manifest['schemaVersion'] ?? 0) < 1) {
+        $manifest['schemaVersion'] = 1;
+    }
+    $modpacks = is_array($manifest['modpacks'] ?? null) ? $manifest['modpacks'] : [];
+    $found = false;
+    foreach ($modpacks as &$mp) {
+        if (is_array($mp) && (string) ($mp['id'] ?? '') === $id) {
+            foreach ($set as $k => $v) {
+                $mp[$k] = $v;
+            }
+            foreach ($unset as $k) {
+                unset($mp[$k]);
+            }
+            $found = true;
+            break;
+        }
+    }
+    unset($mp);
+    if (!$found) {
+        $modpacks[] = array_merge(['id' => $id], $set);
+    }
+    $manifest['modpacks'] = array_values($modpacks);
+    $manifest['updated'] = gmdate('c');
+
+    $history = loadJson(HISTORY_FILE, ['entries' => []]);
+    $history['entries'][] = ['saved' => gmdate('c'), 'manifest' => loadJson(MANIFEST_FILE)];
+    $history['entries'] = array_slice($history['entries'], -100);
+    saveJson(HISTORY_FILE, $history);
+
+    if (!saveJson(MANIFEST_FILE, $manifest)) {
+        throw new RuntimeException('could not write manifest');
+    }
+}
+
+/**
+ * Best-effort display name for a pack read from its discovered manifest in
+ * packs/ (<id>-<version>.manifest.json), so locally-packed uploads keep their
+ * real name instead of collapsing to the id. Empty string if none is found.
+ */
+function discoveredPackName(string $id): string
+{
+    if (!is_dir(PACKS_DIR)) {
+        return '';
+    }
+    foreach (glob(PACKS_DIR . '/' . $id . '-*.manifest.json') ?: [] as $f) {
+        $pm = json_decode((string) file_get_contents($f), true);
+        if (is_array($pm) && (string) ($pm['id'] ?? '') === $id && !empty($pm['name'])) {
+            return (string) $pm['name'];
+        }
+    }
+    return '';
+}
 
 /**
  * (Re)generates SHA256SUMS.txt for a release type folder so download hashes

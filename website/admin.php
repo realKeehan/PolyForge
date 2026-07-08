@@ -46,6 +46,19 @@
     .adm-badge--latest { background: rgba(55,210,156,.15); color: var(--pf-success); }
     .adm-badge--doc { background: rgba(255,255,255,.08); color: var(--text-muted); }
     .adm-badge--lock { background: rgba(143,0,255,.15); color: var(--pf-purple); }
+    .adm-badge--dl { background: rgba(143,0,255,.12); color: var(--pf-purple); }
+    .adm-badge--armed { background: rgba(255,92,143,.18); color: var(--pf-danger); margin-left: 6px; }
+    .pack-card { border: 1px solid var(--border-2); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: var(--surface-2); }
+    .pack-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .pack-head-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pack-meta { margin: 6px 0 2px; }
+    .pack-edit { margin-top: 10px; border-top: 1px solid var(--border-2); padding-top: 10px; }
+    .sd-block { margin-top: 8px; border-top: 1px solid var(--border-2); padding-top: 8px; }
+    .sd-block summary { cursor: pointer; font-size: .8rem; color: var(--text); }
+    .sd-arm { display: flex; gap: 8px; align-items: flex-start; text-transform: none; letter-spacing: 0; font-size: .78rem; margin: 10px 0; color: var(--text-2); }
+    .sd-arm input, .sd-mod input { width: auto; margin-top: 2px; }
+    .sd-mods { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; padding: 8px; background: var(--surface-3); border-radius: 8px; }
+    .sd-mod { display: flex; gap: 8px; align-items: center; text-transform: none; letter-spacing: 0; font-size: .74rem; margin: 0; }
     .adm-msg { margin-top: 10px; font-size: .8rem; padding: 8px 12px; border-radius: 8px; display: none; }
     .adm-msg.ok { display: block; background: rgba(55,210,156,.12); color: var(--pf-success); }
     .adm-msg.err { display: block; background: rgba(255,92,143,.12); color: var(--pf-danger); }
@@ -62,6 +75,14 @@
     .adm-inline { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
     .adm-inline > * { margin-top: 0 !important; }
     .adm-small { font-size: .72rem; color: var(--text-muted); }
+    .adm details.adm-help { margin-top: 10px; }
+    .adm details.adm-help summary { cursor: pointer; font-size: .78rem; color: var(--pf-purple); }
+    .adm-example {
+      margin: 10px 0 6px; padding: 12px 14px; border-radius: 8px;
+      background: var(--surface-3); border: 1px solid var(--border-2);
+      font-family: "JetBrains Mono", monospace; font-size: .72rem; line-height: 1.5;
+      white-space: pre; overflow-x: auto; color: var(--text);
+    }
     #loginView { max-width: 380px; margin: 12vh auto 0; }
     [hidden] { display: none !important; }
   </style>
@@ -108,6 +129,10 @@
           <div class="adm-bars" id="typeBars"></div>
         </div>
         <div class="adm-card">
+          <h2 class="adm-section-title">Modpack downloads</h2>
+          <div class="adm-bars" id="packBars"></div>
+        </div>
+        <div class="adm-card">
           <h2 class="adm-section-title">By file (per version)</h2>
           <table><thead><tr><th>File</th><th style="text-align:right">Downloads</th></tr></thead>
           <tbody id="fileRows"></tbody></table>
@@ -152,6 +177,27 @@
           <h2 class="adm-section-title">Full manifest (packs, option overrides, visibility)</h2>
           <p class="adm-small">The app fetches this on every launch. <code>disabledOptions</code> hides
           launchers, <code>optionOverrides</code> renames them, <code>modpacks</code> is the pack list.</p>
+          <details class="adm-help">
+            <summary>Examples: optionOverrides &amp; disabledOptions</summary>
+            <pre class="adm-example">"optionOverrides": [
+  {
+    "id": "vanilla",
+    "title": "Vanilla (Turtel SMP)",
+    "description": "Install into the official Minecraft launcher."
+  },
+  { "id": "modrinth", "title": "Modrinth App" }
+],
+"disabledOptions": ["technic", "bakaxl", "qwertz"]</pre>
+            <p class="adm-small"><b>optionOverrides</b> — array of <code>{ "id", "title"?, "description"? }</code>.
+            Only the fields you include are changed; omit <code>title</code>/<code>description</code> to keep
+            the built-in text. <b>disabledOptions</b> — array of the same ids to hide from the installer menu.
+            Both accept <code>[]</code> (empty) to change nothing.</p>
+            <p class="adm-small">Valid ids (the launcher/installer options): <code>vanilla</code>,
+            <code>multimc</code>, <code>curseforge</code>, <code>modrinth</code>, <code>gdlauncher</code>,
+            <code>atlauncher</code>, <code>prismlauncher</code>, <code>bakaxl</code>, <code>feather</code>,
+            <code>technic</code>, <code>polymc</code>, <code>sklauncher</code>, <code>freesm</code>,
+            <code>elyprism</code>, <code>shatteredprism</code>, <code>qwertz</code>.</p>
+          </details>
           <textarea id="mRaw" spellcheck="false"></textarea>
           <button class="adm-btn" id="mSaveBtn" type="button">Save manifest</button>
           <div class="adm-msg" id="mMsg"></div>
@@ -166,10 +212,13 @@
       <!-- Packs -->
       <section data-panel="packs" hidden>
         <div class="adm-card">
-          <h2 class="adm-section-title">Pack registry</h2>
-          <table><thead><tr><th>ID</th><th>Name</th><th>Password</th><th>Download URL</th><th></th></tr></thead>
-          <tbody id="packRows"></tbody></table>
-          <h2 class="adm-section-title" style="margin-top:20px">Add / edit pack</h2>
+          <h2 class="adm-section-title">Pack registry <span class="adm-small">— read automatically from the packs/ folder</span></h2>
+          <div id="packList"></div>
+          <h2 class="adm-section-title" style="margin-top:20px">Pre-register a pack</h2>
+          <p class="adm-small">Packs listed above have an inline <b>Edit</b> button — use it to change their
+          name, password or URL. This form is only for pre-registering a pack that isn't hosted yet; the ID
+          must match the pack's id. Saving here (or above) updates the public manifest automatically, so the
+          app picks it up on next launch.</p>
           <div class="adm-row">
             <div><label>Pack ID</label><input type="text" id="pkId" placeholder="turtel-smp" /></div>
             <div><label>Name</label><input type="text" id="pkName" /></div>
@@ -197,11 +246,12 @@
       <section data-panel="packager" hidden>
         <div class="adm-card">
           <h2 class="adm-section-title">Online modpack packager</h2>
-          <p class="adm-small">Zip your profile folder (the one containing <code>mods/</code>,
-          <code>config/</code>, ...) and upload it. Only pack-worthy folders are kept
-          (mods, config, resourcepacks, shaderpacks, datapacks, defaultconfigs, scripts, kubejs
-          + options.txt / servers.dat); saves, logs, journeymap and other user data are dropped
-          automatically. Mod names/versions are read from inside the jars.</p>
+          <p class="adm-small">Point it at your profile folder (the one containing <code>mods/</code>,
+          <code>config/</code>, ...) — pick the folder directly, or upload a zip of it. Only pack-worthy
+          folders are kept (mods, config, resourcepacks, shaderpacks, datapacks, defaultconfigs, scripts,
+          kubejs + options.txt / servers.dat); saves, logs, journeymap and other user data are dropped
+          automatically. When you pick a folder, the pack-worthy files are zipped in your browser first,
+          so only those get uploaded. Mod names/versions are read from inside the jars.</p>
           <div class="adm-row">
             <div><label>Pack ID</label><input type="text" id="bId" placeholder="barebones-s5" /></div>
             <div><label>Name</label><input type="text" id="bName" placeholder="Barebones Season 5" /></div>
@@ -217,13 +267,27 @@
             </div>
             <div><label>Loader version</label><input type="text" id="bLoaderV" /></div>
           </div>
-          <label>Source zip</label>
-          <input type="file" id="bZip" accept=".zip" />
+          <div class="adm-row">
+            <div><label>Source folder</label><input type="file" id="bFolder" webkitdirectory directory multiple /></div>
+            <div><label>…or a source zip</label><input type="file" id="bZip" accept=".zip" /></div>
+          </div>
           <button class="adm-btn" id="bBuildBtn" type="button">Build pack</button>
           <div class="adm-msg" id="bMsg"></div>
           <p class="adm-small">Large packs may exceed the host's upload limit — use
-          <code>scripts/package-modpack.ps1</code> locally for those and upload the result
+          the local packager script below for those and upload the result
           under Hosted pack files.</p>
+        </div>
+        <div class="adm-card">
+          <h2 class="adm-section-title">Local packager script</h2>
+          <p class="adm-small">Run this on your machine to build a <code>.polypack</code> with no
+          upload limit:<br>
+          <code>pwsh package-modpack.ps1 -SourceDir &lt;profile&gt; -PackId &lt;id&gt; -PackName "&lt;name&gt;" -PackVersion 1.0.0</code><br>
+          Download <b>both</b> files into the <b>same folder</b> —
+          <code>package-modpack.ps1</code> dot-sources <code>slime-lib.ps1</code> at runtime.</p>
+          <div class="adm-inline">
+            <a class="adm-btn" href="/tools/package-modpack.ps1" download>Download package-modpack.ps1</a>
+            <a class="adm-btn adm-btn--ghost" href="/tools/slime-lib.ps1" download>Download slime-lib.ps1</a>
+          </div>
         </div>
       </section>
     </div>
@@ -260,6 +324,9 @@
       }
       const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
       const fmtSize = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.round(b / 1024) + " KB";
+      // Canonical pack id: lowercase, spaces -> hyphens, collapsed, trimmed —
+      // mirrors normalizePackId() on the server so the UI and API agree.
+      const normId = (s) => s.trim().toLowerCase().replace(/\s+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 
       // ── Auth ───────────────────────────────────
       async function checkSession() {
@@ -315,6 +382,13 @@
           <div class="adm-bar"><span class="mono">${esc(t)}</span>
             <div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(v / maxType * 100).toFixed(1)}%"></div></div>
             <b style="text-align:right">${v.toLocaleString()}</b></div>`).join("") || '<p class="adm-small">No downloads yet.</p>';
+
+        const byPack = stats.byPack || {};
+        const maxPack = Math.max(1, ...Object.values(byPack));
+        $("#packBars").innerHTML = Object.entries(byPack).sort((a, b) => b[1] - a[1]).map(([t, v]) => `
+          <div class="adm-bar"><span class="mono">${esc(t)}</span>
+            <div class="adm-bar-track"><div class="adm-bar-fill" style="width:${(v / maxPack * 100).toFixed(1)}%"></div></div>
+            <b style="text-align:right">${v.toLocaleString()}</b></div>`).join("") || '<p class="adm-small">No modpack downloads yet.</p>';
 
         $("#fileRows").innerHTML = Object.entries(byFile).sort((a, b) => b[1] - a[1]).map(([f, v]) =>
           `<tr><td class="mono">${esc(f)}</td><td style="text-align:right">${v.toLocaleString()}</td></tr>`).join("") ||
@@ -451,62 +525,223 @@
 
       // ── Packs ──────────────────────────────────
       async function loadPacks() {
-        const { registry, hosted } = await call("packs-list");
-        $("#packRows").innerHTML = Object.entries(registry).map(([id, p]) => `<tr>
-          <td class="mono">${esc(id)}</td>
-          <td>${esc(p.name)}</td>
-          <td>${p.requiresPassword ? `<span class="adm-badge adm-badge--lock">${p.hasPassword ? "SET" : "MISSING"}</span>` : '<span class="adm-small">open</span>'}</td>
-          <td class="mono adm-small">${esc(p.downloadUrl || "-")}</td>
-          <td><button class="adm-btn adm-btn--danger" style="margin:0;padding:4px 10px;font-size:.7rem"
-            data-pack-del="${esc(id)}" type="button">Delete</button></td>
-        </tr>`).join("") || '<tr><td colspan="5" class="adm-small">No packs registered.</td></tr>';
+        const { packs, hosted } = await call("packs-list");
+        $("#packList").innerHTML = packs.length
+          ? packs.map(renderPackCard).join("")
+          : '<p class="adm-small">No packs yet — build one in the Packager tab, or drop a .polypack + .manifest.json into packs/.</p>';
         $("#hostedRows").innerHTML = hosted.map(f => `<tr>
           <td class="mono">${esc(f.name)}</td><td>${fmtSize(f.size)}</td>
           <td>${esc(f.mtime.slice(0, 16).replace("T", " "))}</td></tr>`).join("") ||
           '<tr><td colspan="3" class="adm-small">No hosted pack files.</td></tr>';
-        $("#packRows").querySelectorAll("[data-pack-del]").forEach(btn => btn.addEventListener("click", async () => {
-          if (!confirm(`Remove pack "${btn.dataset.packDel}" from the registry (and its hosted files)?`)) return;
-          try {
-            await call("pack-delete", { json: { id: btn.dataset.packDel, deleteFiles: true } });
-            loadPacks();
-          } catch (e) { msg($("#pkMsg"), e.message, false); }
-        }));
+        wirePackCards();
+      }
+
+      function renderPackCard(p) {
+        const removeSet = new Set(p.removeMods || []);
+        const armed = removeSet.size > 0;
+        const pw = p.requiresPassword
+          ? `<span class="adm-badge adm-badge--lock">${p.hasPassword ? "PASSWORD SET" : "PASSWORD MISSING"}</span>`
+          : '<span class="adm-small">open</span>';
+        const src = [p.inFolder ? "folder" : null, p.inManifest ? "manifest" : null].filter(Boolean).join(" + ") || "registry only";
+        const mods = p.mods || [];
+        const modRows = mods.length
+          ? mods.map(m => `<label class="sd-mod"><input type="checkbox" data-sd-mod value="${esc(m.file)}" ${removeSet.has(m.file) ? "checked" : ""} ${armed ? "" : "disabled"} /><span class="mono">${esc(m.file)}</span></label>`).join("")
+          : '<p class="adm-small">No mod list yet — upload this pack\'s .manifest.json to the packs/ folder.</p>';
+        return `<div class="pack-card" data-pack="${esc(p.id)}">
+          <div class="pack-head">
+            <div><b class="mono">${esc(p.id)}</b> ${esc(p.name)} ${p.version ? `<span class="adm-small">v${esc(p.version)}</span>` : ""}</div>
+            <div class="pack-head-right">
+              <span class="adm-badge adm-badge--dl">${(p.downloads || 0).toLocaleString()} downloads</span>
+              ${pw}
+              <button class="adm-btn adm-btn--ghost pack-edit-toggle" style="margin:0;padding:4px 10px;font-size:.7rem" type="button">Edit</button>
+              <button class="adm-btn adm-btn--danger pack-del" style="margin:0;padding:4px 10px;font-size:.7rem" type="button">Delete</button>
+            </div>
+          </div>
+          <div class="adm-small pack-meta">in: ${esc(src)}${p.file ? ` &middot; <span class="mono">${esc(p.file)}</span>` : ""}${p.downloadUrl ? ` &middot; url: <span class="mono">${esc(p.downloadUrl)}</span>` : ""}</div>
+          <div class="pack-edit" hidden>
+            <div class="adm-row">
+              <div><label>Name</label><input type="text" class="pe-name" value="${esc(p.name)}" /></div>
+              <div><label>Download URL (blank = none)</label><input type="text" class="pe-url" value="${esc(p.downloadUrl || "")}" /></div>
+            </div>
+            <div class="adm-row">
+              <div><label>Set password (blank = keep)</label><input type="text" class="pe-pass" placeholder="${p.hasPassword ? "password set — blank keeps it" : "no password set"}" /></div>
+              <div style="display:flex;align-items:flex-end">
+                <label style="margin:0;display:flex;gap:6px;align-items:center;text-transform:none">
+                  <input type="checkbox" class="pe-req" style="width:auto" ${p.requiresPassword ? "checked" : ""} /> Requires password
+                </label>
+              </div>
+            </div>
+            <button class="adm-btn pe-save" type="button">Save changes</button>
+            <div class="adm-msg pe-msg"></div>
+          </div>
+          <details class="sd-block">
+            <summary>&#128163; Self-destruct — remove proprietary mods on next launch ${armed ? `<span class="adm-badge adm-badge--armed">ARMED &middot; ${removeSet.size}</span>` : ""}</summary>
+            <label class="sd-arm"><input type="checkbox" data-sd-arm ${armed ? "checked" : ""} /> Arm self-destruct — the checked mods are deleted from every install of this pack the next time the app runs.</label>
+            <div class="sd-mods">${modRows}</div>
+            <button class="adm-btn sd-save" type="button">Save self-destruct</button>
+            <div class="adm-msg sd-msg"></div>
+          </details>
+        </div>`;
+      }
+
+      function wirePackCards() {
+        $("#packList").querySelectorAll(".pack-card").forEach(card => {
+          const id = card.dataset.pack;
+          const arm = card.querySelector("[data-sd-arm]");
+          const modBoxes = () => [...card.querySelectorAll("[data-sd-mod]")];
+          arm.addEventListener("change", () => modBoxes().forEach(m => { m.disabled = !arm.checked; }));
+
+          // Inline metadata edit — pre-filled from the card, saved straight to
+          // the registry AND the public manifest (the app reads the manifest).
+          const editForm = card.querySelector(".pack-edit");
+          card.querySelector(".pack-edit-toggle").addEventListener("click", () => { editForm.hidden = !editForm.hidden; });
+          card.querySelector(".pe-save").addEventListener("click", async () => {
+            const peMsg = card.querySelector(".pe-msg");
+            try {
+              await call("pack-save-meta", { json: {
+                id,
+                name: card.querySelector(".pe-name").value.trim(),
+                requiresPassword: card.querySelector(".pe-req").checked,
+                password: card.querySelector(".pe-pass").value,
+                downloadUrl: card.querySelector(".pe-url").value.trim(),
+              } });
+              msg(peMsg, "Saved — manifest updated; apps pick it up on next launch.", true);
+              loadPacks();
+            } catch (e) { msg(peMsg, e.message, false); }
+          });
+          card.querySelector(".pack-del").addEventListener("click", async () => {
+            if (!confirm(`Remove pack "${id}" from the registry (and its hosted files)?`)) return;
+            try { await call("pack-delete", { json: { id, deleteFiles: true } }); loadPacks(); }
+            catch (e) { msg($("#pkMsg"), e.message, false); }
+          });
+          card.querySelector(".sd-save").addEventListener("click", async () => {
+            const removeMods = modBoxes().filter(m => m.checked).map(m => m.value);
+            const sdMsg = card.querySelector(".sd-msg");
+            if (arm.checked && removeMods.length &&
+                !confirm(`Arm self-destruct for "${id}"?\n\nThese mods will be DELETED from every existing install of this pack the next time the app runs:\n\n${removeMods.join("\n")}`)) return;
+            try {
+              const r = await call("pack-selfdestruct-save", { json: { id, armed: arm.checked, removeMods } });
+              msg(sdMsg, r.armed ? `Armed — ${r.removeMods.length} mod(s) removed on next launch.` : "Disarmed — nothing will be removed.", true);
+              loadPacks();
+            } catch (e) { msg(sdMsg, e.message, false); }
+          });
+        });
       }
       $("#pkSaveBtn").addEventListener("click", async () => {
         try {
           await call("pack-save-meta", { json: {
-            id: $("#pkId").value.trim(),
+            id: normId($("#pkId").value),
             name: $("#pkName").value.trim(),
             requiresPassword: $("#pkReq").checked,
             password: $("#pkPass").value,
             downloadUrl: $("#pkUrl").value.trim(),
           } });
-          msg($("#pkMsg"), "Pack saved. Remember to add it to the manifest modpacks list too.", true);
+          msg($("#pkMsg"), "Pack saved — manifest updated automatically.", true);
           $("#pkPass").value = "";
           loadPacks();
         } catch (e) { msg($("#pkMsg"), e.message, false); }
       });
 
       // ── Packager ───────────────────────────────
+      // A folder pick and a zip upload feed the same server endpoint: a folder is
+      // filtered to pack-worthy files and zipped in the browser (below), so only
+      // those bytes upload and the server sees an ordinary source zip either way.
+      const PACK_FOLDERS = ["mods", "config", "resourcepacks", "shaderpacks", "datapacks", "defaultconfigs", "scripts", "kubejs"];
+      const PACK_ROOT_FILES = ["options.txt", "servers.dat"];
+
+      const CRC_TABLE = (() => {
+        const t = new Uint32Array(256);
+        for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
+        return t;
+      })();
+      const crc32 = (b) => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = (c >>> 8) ^ CRC_TABLE[(c ^ b[i]) & 0xFF]; return (c ^ 0xFFFFFFFF) >>> 0; };
+      // Little-endian record builder: fields are [byteWidth, value] pairs.
+      const zrec = (fields) => {
+        let len = 0; for (const [n] of fields) len += n;
+        const b = new Uint8Array(len), dv = new DataView(b.buffer); let p = 0;
+        for (const [n, v] of fields) { if (n === 2) dv.setUint16(p, v, true); else dv.setUint32(p, v >>> 0, true); p += n; }
+        return b;
+      };
+      // Minimal store-only (no compression) ZIP writer — enough for ZipArchive to
+      // read on the server, which recompresses into the .polypack anyway. Avoids
+      // pulling in any external zip library (the site ships zero third-party JS).
+      function buildStoreZip(entries) {
+        const enc = new TextEncoder(), parts = [], central = []; let offset = 0;
+        const push = (a) => { parts.push(a); offset += a.length; };
+        const D = 0x0021, T = 0; // DOS 1980-01-01 00:00 — a valid, fixed timestamp
+        for (const e of entries) {
+          const name = enc.encode(e.name), data = e.data, crc = crc32(data), off = offset;
+          push(zrec([[4, 0x04034b50], [2, 20], [2, 0], [2, 0], [2, T], [2, D], [4, crc], [4, data.length], [4, data.length], [2, name.length], [2, 0]]));
+          push(name); push(data);
+          central.push({ name, size: data.length, crc, off });
+        }
+        const cdStart = offset; let cdSize = 0; const cd = [];
+        for (const c of central) {
+          const h = zrec([[4, 0x02014b50], [2, 20], [2, 20], [2, 0], [2, 0], [2, T], [2, D], [4, c.crc], [4, c.size], [4, c.size], [2, c.name.length], [2, 0], [2, 0], [2, 0], [2, 0], [4, 0], [4, c.off]]);
+          cd.push(h, c.name); cdSize += h.length + c.name.length;
+        }
+        const eocd = zrec([[4, 0x06054b50], [2, 0], [2, 0], [2, central.length], [2, central.length], [4, cdSize], [4, cdStart], [2, 0]]);
+        return new Blob([...parts, ...cd, eocd], { type: "application/zip" });
+      }
+      // Turns a picked profile folder into a source zip: strips the top folder the
+      // browser prepends, keeps only pack-worthy paths, and zips them. null = the
+      // folder held nothing shippable.
+      async function zipProfileFolder(fileList) {
+        const picked = [];
+        for (const f of fileList) {
+          const rel = (f.webkitRelativePath || f.name).split("/").slice(1).join("/");
+          if (!rel || rel.includes("..")) continue;
+          const parts = rel.split("/");
+          const keep = (parts.length > 1 && PACK_FOLDERS.includes(parts[0])) ||
+                       (parts.length === 1 && PACK_ROOT_FILES.includes(parts[0]));
+          if (keep) picked.push({ rel, file: f });
+        }
+        if (!picked.length) return null;
+        const entries = [];
+        for (const { rel, file } of picked) entries.push({ name: rel, data: new Uint8Array(await file.arrayBuffer()) });
+        return buildStoreZip(entries);
+      }
+
       $("#bBuildBtn").addEventListener("click", async () => {
+        const folderFiles = [...($("#bFolder").files || [])];
         const zip = $("#bZip").files[0];
-        if (!zip) { msg($("#bMsg"), "Choose the source zip first.", false); return; }
+        if (!folderFiles.length && !zip) { msg($("#bMsg"), "Pick your profile folder (or a zip of it) first.", false); return; }
+
         const form = new FormData();
-        form.append("id", $("#bId").value.trim());
+        form.append("id", normId($("#bId").value));
         form.append("name", $("#bName").value.trim());
         form.append("version", $("#bVer").value.trim());
         form.append("minecraft", $("#bMc").value.trim());
         form.append("loader", $("#bLoader").value);
         form.append("loaderVersion", $("#bLoaderV").value.trim());
-        form.append("source", zip);
         $("#bBuildBtn").disabled = true;
-        msg($("#bMsg"), "Building… (large zips take a while)", true);
         try {
+          let source = zip;
+          if (folderFiles.length) {
+            msg($("#bMsg"), "Packing folder in your browser…", true);
+            source = await zipProfileFolder(folderFiles);
+            if (!source) { msg($("#bMsg"), "No pack-worthy folders (mods/, config/, …) found in that folder.", false); return; }
+          }
+          form.append("source", source, "source.zip");
+          msg($("#bMsg"), "Building… (large packs take a while)", true);
           const r = await call("pack-build", { form });
           msg($("#bMsg"), `Built ${r.pack} — ${r.mods} mods, ${r.files} files (${fmtSize(r.bytes)}). Folders: ${r.folders.join(", ")}`, true);
           loadPacks();
         } catch (e) { msg($("#bMsg"), e.message, false); }
         finally { $("#bBuildBtn").disabled = false; }
+      });
+
+      // Pack ids are always lowercase with spaces as hyphens — fold as the user
+      // types so what they see matches what gets saved. Both transforms are 1:1
+      // on length, so the caret stays put (full collapse/trim happens on send via
+      // normId, and the server normalizes + rejects other symbols authoritatively).
+      ["#pkId", "#bId"].forEach(sel => {
+        const el = $(sel);
+        if (el) el.addEventListener("input", () => {
+          const start = el.selectionStart;
+          el.value = el.value.toLowerCase().replace(/\s/g, "-");
+          if (start !== null) el.setSelectionRange(start, start);
+        });
       });
 
       checkSession();

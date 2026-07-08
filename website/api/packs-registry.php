@@ -41,3 +41,18 @@ function savePackRegistry(array $registry): bool
         LOCK_EX
     ) !== false;
 }
+
+/**
+ * Canonicalizes a human-entered pack id: lowercased, surrounding whitespace
+ * trimmed, internal whitespace folded to hyphens ("Turtel SMP" -> "turtel-smp"),
+ * repeated hyphens collapsed, and stray leading/trailing hyphens dropped. Any
+ * character still outside [a-z0-9-] (e.g. "_", "!") is left in place so the
+ * caller's charset check rejects it and the packer learns to fix it.
+ */
+function normalizePackId(string $raw): string
+{
+    $id = strtolower(trim($raw));
+    $id = preg_replace('/\s+/', '-', $id);
+    $id = preg_replace('/-+/', '-', $id);
+    return trim($id, '-');
+}
