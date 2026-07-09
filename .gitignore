@@ -26,3 +26,6 @@ website/packs/*.zip
 website/packs/*.polypack
 website/packs/*.json
 launcher-trees-*/
+
+# Local reference/scratch material (not a project artifact)
+TemporaryDetectRef/
