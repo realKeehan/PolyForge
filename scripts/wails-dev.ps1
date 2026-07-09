@@ -93,6 +93,13 @@ Ensure-Command -CommandName 'wails'
 Ensure-Command -CommandName 'node'
 Ensure-Command -CommandName 'npm'
 
+# A bare `npm` resolves to Node's npm.ps1 shim first, whose arg reconstruction
+# is broken when invoked with `&` from inside a script (Windows PowerShell 5.1):
+# it slices `npm ci` down to `pm ci`, so npm dies with `Unknown command: "pm"`.
+# Resolve npm.cmd directly to bypass the shim.
+$npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+$npm = if ($npmCmd) { $npmCmd.Source } else { 'npm' }
+
 # ── Frontend dependencies ─────────────────────────
 # Wails dev mode handles the frontend dev server itself, but we need
 # node_modules present so vite can resolve imports.
@@ -102,7 +109,7 @@ if (-not $SkipFrontend) {
   # "positional parameter ... 'frontend'" under Windows PowerShell 5.1.
   Push-Location (Join-Path (Join-Path $PSScriptRoot '..') 'frontend')
   try {
-    & npm ci
+    & $npm ci
     if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
   }
   finally {

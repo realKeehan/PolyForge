@@ -3,6 +3,8 @@ package kumi
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -55,11 +57,23 @@ type PackMod struct {
 	SHA256  string `json:"sha256,omitempty"`
 }
 
-// PackOverrides summarizes the overrides/ payload.
+// PackOverrides summarizes the overrides/ payload. Files lists every shipped
+// file with its checksum so an install can be verified byte-for-byte against
+// the manifest (and, later, updated file-by-file).
 type PackOverrides struct {
-	Folders    []string `json:"folders"`
-	FileCount  int      `json:"fileCount"`
-	TotalBytes int64    `json:"totalBytes"`
+	Folders    []string   `json:"folders"`
+	FileCount  int        `json:"fileCount"`
+	TotalBytes int64      `json:"totalBytes"`
+	Files      []PackFile `json:"files,omitempty"`
+}
+
+// PackFile is one shipped file: its path relative to overrides/ (forward
+// slashes), the SHA-256 of its contents, and its size. This is the authority
+// for integrity verification and file-level delta updates.
+type PackFile struct {
+	Path   string `json:"path"`
+	SHA256 string `json:"sha256"`
+	Size   int64  `json:"size,omitempty"`
 }
 
 // LaunchersFile carries per-launcher info fields. The installer turns these
@@ -219,17 +233,98 @@ func readZipPackManifest(reader *zip.Reader) (*PackManifest, error) {
 	return nil, fmt.Errorf("not a PolyForge pack: pack-manifest.json missing")
 }
 
-// installLocalPack extracts a pack's overrides/ into targetDir and writes
-// the manifest copy used for future update diffs. Returns counts for logs.
-func installLocalPack(packPath, targetDir string) (files int, manifest *PackManifest, err error) {
+// ── Integrity verification ───────────────────────
+//
+// Every file a pack ships is listed in overrides.files with its SHA-256, so an
+// install can be checked byte-for-byte against the manifest. This catches
+// corruption, tampering, and incomplete/truncated downloads before they cause
+// problems in-game. Packs built before per-file hashes existed simply have an
+// empty Files list, and verification is skipped (Total == 0).
+
+// IntegrityIssue is one file that failed verification.
+type IntegrityIssue struct {
+	Path   string `json:"path"`
+	Reason string `json:"reason"` // "hash mismatch", "wrong size", "missing", "unreadable"
+}
+
+// IntegrityReport is the outcome of verifying an install against a manifest.
+type IntegrityReport struct {
+	Checked int              `json:"checked"` // files that matched their manifest hash
+	Total   int              `json:"total"`   // files the manifest declares
+	Issues  []IntegrityIssue `json:"issues,omitempty"`
+}
+
+// OK reports whether every declared file verified. A report with no declared
+// files (older pack format) is trivially OK.
+func (r IntegrityReport) OK() bool { return len(r.Issues) == 0 }
+
+// verifyFilesOnDisk re-hashes each declared file under dir and compares it to
+// the manifest. Missing, truncated, or altered files are reported.
+func verifyFilesOnDisk(dir string, files []PackFile) IntegrityReport {
+	report := IntegrityReport{Total: len(files)}
+	for _, pf := range files {
+		path := filepath.Join(dir, filepath.FromSlash(pf.Path))
+		sum, size, err := hashFile(path)
+		if err != nil {
+			report.Issues = append(report.Issues, IntegrityIssue{Path: pf.Path, Reason: "missing"})
+			continue
+		}
+		switch {
+		case !strings.EqualFold(sum, pf.SHA256):
+			report.Issues = append(report.Issues, IntegrityIssue{Path: pf.Path, Reason: "hash mismatch"})
+		case pf.Size != 0 && size != pf.Size:
+			report.Issues = append(report.Issues, IntegrityIssue{Path: pf.Path, Reason: "wrong size"})
+		default:
+			report.Checked++
+		}
+	}
+	return report
+}
+
+// hashFile returns the hex SHA-256 and byte size of a file.
+func hashFile(path string) (string, int64, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", 0, err
+	}
+	defer f.Close()
+	h := sha256.New()
+	n, err := io.Copy(h, f)
+	if err != nil {
+		return "", 0, err
+	}
+	return hex.EncodeToString(h.Sum(nil)), n, nil
+}
+
+// VerifyInstalledPack re-checks an existing install against the manifest copy
+// (.polyforge-pack.json) left at install time. Powers a "verify / repair" pass
+// and the pre-flight check before an update.
+func VerifyInstalledPack(installDir string) (*PackManifest, IntegrityReport, error) {
+	data, err := os.ReadFile(filepath.Join(filepath.Clean(installDir), ".polyforge-pack.json"))
+	if err != nil {
+		return nil, IntegrityReport{}, fmt.Errorf("no installed pack manifest here: %w", err)
+	}
+	manifest, err := ParsePackManifest(data)
+	if err != nil {
+		return nil, IntegrityReport{}, err
+	}
+	return manifest, verifyFilesOnDisk(filepath.Clean(installDir), manifest.Overrides.Files), nil
+}
+
+// ── Local pack install (manual profile mode) ─────
+
+// installLocalPack extracts a pack's overrides/ into targetDir, writes the
+// manifest copy used for future update diffs, and verifies every extracted
+// file against the manifest's checksums. Returns counts + an integrity report.
+func installLocalPack(packPath, targetDir string) (files int, manifest *PackManifest, report IntegrityReport, err error) {
 	reader, err := openPackReader(packPath)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, IntegrityReport{}, err
 	}
 
 	manifest, err = readZipPackManifest(reader)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, IntegrityReport{}, err
 	}
 
 	cleanTarget := filepath.Clean(targetDir)
@@ -244,22 +339,22 @@ func installLocalPack(packPath, targetDir string) (files int, manifest *PackMani
 			continue
 		}
 		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-			return files, manifest, err
+			return files, manifest, IntegrityReport{}, err
 		}
 		rc, err := f.Open()
 		if err != nil {
-			return files, manifest, err
+			return files, manifest, IntegrityReport{}, err
 		}
 		out, err := os.Create(dest)
 		if err != nil {
 			rc.Close()
-			return files, manifest, err
+			return files, manifest, IntegrityReport{}, err
 		}
 		_, copyErr := io.Copy(out, rc)
 		rc.Close()
 		out.Close()
 		if copyErr != nil {
-			return files, manifest, copyErr
+			return files, manifest, IntegrityReport{}, copyErr
 		}
 		files++
 	}
@@ -268,7 +363,10 @@ func installLocalPack(packPath, targetDir string) (files int, manifest *PackMani
 	if data, jsonErr := json.MarshalIndent(manifest, "", "  "); jsonErr == nil {
 		_ = os.WriteFile(filepath.Join(cleanTarget, ".polyforge-pack.json"), data, 0o644)
 	}
-	return files, manifest, nil
+
+	// Verify what actually landed on disk against the manifest's checksums.
+	report = verifyFilesOnDisk(cleanTarget, manifest.Overrides.Files)
+	return files, manifest, report, nil
 }
 
 // ── Dynamic per-launcher generation (scaffold) ───

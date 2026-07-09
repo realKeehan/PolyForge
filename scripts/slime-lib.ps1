@@ -7,6 +7,11 @@
 # key = SHA-256("PolyForge-Slime-v1")   (32 bytes)
 #
 # This is obfuscation for branding/format-obscurity, NOT encryption.
+#
+# The transform is streamed in fixed-size chunks so multi-GB packs (Distant
+# Horizons LODs, uncompressed resource packs, ...) don't blow up memory or hit
+# .NET's ~2 GB single-array limit — the reason a large pack could previously
+# fail the wrap step and leave a stray ".polypack.zip" behind.
 
 function Get-SlimeKey {
     $sha = [Security.Cryptography.SHA256]::Create()
@@ -17,14 +22,38 @@ function Get-SlimeKey {
     }
 }
 
-function Invoke-SlimeTransform {
-    param([byte[]]$Bytes)
+# The keystream key[i % 32] XOR (i & 0xFF) repeats every 256 bytes (LCM of the
+# 32-byte key and the 256-value counter), so one 256-byte period is the whole
+# pad. XORing against it reproduces the per-byte formula exactly.
+function Get-SlimePad {
     $key = Get-SlimeKey
-    $out = New-Object byte[] $Bytes.Length
-    for ($i = 0; $i -lt $Bytes.Length; $i++) {
-        $out[$i] = $Bytes[$i] -bxor $key[$i % 32] -bxor ($i -band 0xFF)
+    $pad = New-Object byte[] 256
+    for ($i = 0; $i -lt 256; $i++) {
+        $pad[$i] = $key[$i % 32] -bxor $i
     }
-    return $out
+    return $pad
+}
+
+$script:SlimeHeader = [byte[]]@(0x53, 0x4C, 0x49, 0x4D, 0x45, 0x01, 0x00, 0x00) # "SLIME" v1
+
+# XOR a stream against the repeating slime pad. Symmetric — same call both
+# encodes and decodes. $startPos is the global byte offset of the first byte
+# read from $In (the header is not part of the transform, so payload starts 0).
+function Invoke-SlimeStream {
+    param(
+        [Parameter(Mandatory)][IO.Stream]$In,
+        [Parameter(Mandatory)][IO.Stream]$Out
+    )
+    $pad = Get-SlimePad
+    $buf = New-Object byte[] (1 -shl 20) # 1 MiB chunks
+    $pos = 0                             # global index mod 256
+    while (($read = $In.Read($buf, 0, $buf.Length)) -gt 0) {
+        for ($j = 0; $j -lt $read; $j++) {
+            $buf[$j] = $buf[$j] -bxor $pad[$pos]
+            $pos = ($pos + 1) -band 0xFF
+        }
+        $Out.Write($buf, 0, $read)
+    }
 }
 
 function ConvertTo-Slime {
@@ -32,13 +61,14 @@ function ConvertTo-Slime {
         [Parameter(Mandatory)][string]$InputPath,
         [Parameter(Mandatory)][string]$OutputPath
     )
-    $zip = [IO.File]::ReadAllBytes($InputPath)
-    $payload = Invoke-SlimeTransform -Bytes $zip
-    $header = [byte[]]@(0x53, 0x4C, 0x49, 0x4D, 0x45, 0x01, 0x00, 0x00) # "SLIME" v1
-    $out = New-Object byte[] ($header.Length + $payload.Length)
-    [Array]::Copy($header, 0, $out, 0, $header.Length)
-    [Array]::Copy($payload, 0, $out, $header.Length, $payload.Length)
-    [IO.File]::WriteAllBytes($OutputPath, $out)
+    $in = [IO.File]::OpenRead($InputPath)
+    try {
+        $out = [IO.File]::Create($OutputPath)
+        try {
+            $out.Write($script:SlimeHeader, 0, $script:SlimeHeader.Length)
+            Invoke-SlimeStream -In $in -Out $out
+        } finally { $out.Dispose() }
+    } finally { $in.Dispose() }
 }
 
 function ConvertFrom-Slime {
@@ -46,11 +76,16 @@ function ConvertFrom-Slime {
         [Parameter(Mandatory)][string]$InputPath,
         [Parameter(Mandatory)][string]$OutputPath
     )
-    $data = [IO.File]::ReadAllBytes($InputPath)
-    if ($data.Length -lt 8 -or $data[0] -ne 0x53 -or $data[1] -ne 0x4C -or $data[2] -ne 0x49 -or $data[3] -ne 0x4D -or $data[4] -ne 0x45) {
-        throw "Not a .slime file (bad magic): $InputPath"
-    }
-    $payload = New-Object byte[] ($data.Length - 8)
-    [Array]::Copy($data, 8, $payload, 0, $payload.Length)
-    [IO.File]::WriteAllBytes($OutputPath, (Invoke-SlimeTransform -Bytes $payload))
+    $in = [IO.File]::OpenRead($InputPath)
+    try {
+        $magic = New-Object byte[] 8
+        $got = $in.Read($magic, 0, 8)
+        if ($got -lt 8 -or $magic[0] -ne 0x53 -or $magic[1] -ne 0x4C -or $magic[2] -ne 0x49 -or $magic[3] -ne 0x4D -or $magic[4] -ne 0x45) {
+            throw "Not a .polypack/.slime file (bad magic): $InputPath"
+        }
+        $out = [IO.File]::Create($OutputPath)
+        try {
+            Invoke-SlimeStream -In $in -Out $out
+        } finally { $out.Dispose() }
+    } finally { $in.Dispose() }
 }

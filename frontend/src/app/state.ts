@@ -103,7 +103,14 @@ export class Store {
 
   setModpack(modpack: string) {
     if (this.state.selectedModpack === modpack) return;
-    this.state = { ...this.state, selectedModpack: modpack };
+    // Switching packs invalidates any previously resolved download URL.
+    this.state = { ...this.state, selectedModpack: modpack, selectedPackUrl: undefined, selectedPackName: undefined };
+    this.emit();
+  }
+
+  /** Records the resolved hosted-pack download URL (and name) for install. */
+  setPackDownload(url: string | undefined, name?: string) {
+    this.state = { ...this.state, selectedPackUrl: url, selectedPackName: name };
     this.emit();
   }
 

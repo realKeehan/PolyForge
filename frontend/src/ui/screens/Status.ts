@@ -2,6 +2,7 @@ import { Quit } from '@wailsapp/runtime';
 import type { Store } from '../../app/state';
 import { Step } from '../../app/types';
 import { createSocialLinks } from '../components/social';
+import { renderInstallProgress } from '../../app/installStream';
 
 const STATUS_ICON = `
   <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
@@ -100,6 +101,11 @@ export function renderStatus(store: Store): HTMLElement {
 
   logPanel.append(logContent, copyWrap);
 
+  // Live install progress bar (hidden until an install is running/finished).
+  const progress = document.createElement('div');
+  progress.className = 'install-progress';
+  renderInstallProgress(progress);
+
   const footer = document.createElement('footer');
   footer.className = 'screen-footer';
   const social = createSocialLinks();
@@ -119,7 +125,7 @@ export function renderStatus(store: Store): HTMLElement {
   actions.append(backButton, closeButton);
   footer.append(social, actions);
 
-  container.append(header, logPanel, footer);
+  container.append(header, logPanel, progress, footer);
 
   // Auto-scroll log panel to bottom
   requestAnimationFrame(() => {

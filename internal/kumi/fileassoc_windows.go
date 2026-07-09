@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
 
@@ -43,7 +44,23 @@ func setupFileAssociation() string {
 		return "First-run: file association partially set (" + err.Error() + ")."
 	}
 
+	// Tell the shell associations changed so Explorer refreshes cached icons
+	// immediately instead of after a reboot / icon-cache rebuild.
+	notifyShellAssocChanged()
+
 	return "First-run: registered .polypack packs to open in PolyForge."
+}
+
+// notifyShellAssocChanged raises SHCNE_ASSOCCHANGED so Explorer drops its
+// cached .polypack icon and shows the freshly registered one right away.
+func notifyShellAssocChanged() {
+	const (
+		SHCNE_ASSOCCHANGED = 0x08000000
+		SHCNF_IDLIST       = 0x0000
+	)
+	shell32 := windows.NewLazySystemDLL("shell32.dll")
+	proc := shell32.NewProc("SHChangeNotify")
+	_, _, _ = proc.Call(uintptr(SHCNE_ASSOCCHANGED), uintptr(SHCNF_IDLIST), 0, 0)
 }
 
 // writePackIcon generates the .polypack file-type icon and writes it next to

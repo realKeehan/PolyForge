@@ -281,6 +281,9 @@ export function renderModpack(store: Store): HTMLElement {
         const result = await verifyPackAccess(currentPack.id, value);
         if (result.granted) {
           granted = true;
+          // Capture the download URL revealed on success; the password is not
+          // retained, so this is the only chance to grab it for the installer.
+          store.setPackDownload(result.url, currentPack.name);
         } else if (result.offline && currentPack.passwordHash) {
           // Server unreachable: fall back to the locally cached hash
           granted = (await sha256(value)) === currentPack.passwordHash;

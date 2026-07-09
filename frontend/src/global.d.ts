@@ -1,4 +1,4 @@
-import type { ActionResult, ExecutionPayload, OptionDescriptor, PackAccessResult, PolyPackInfo, RemoteContentResult } from './app/types';
+import type { ActionResult, ExecutionPayload, OptionDescriptor, PackAccessResult, PolyPackInfo, RemoteContentResult, UpdateSelfResult } from './app/types';
 
 
 export interface ModrinthCloneRequest {
@@ -46,6 +46,7 @@ declare global {
           GetMenuOptions(): Promise<OptionDescriptor[]>;
           GetRemoteContent(): Promise<RemoteContentResult>;
           VerifyPackAccess(packID: string, password: string): Promise<PackAccessResult>;
+          UpdateSelf(): Promise<UpdateSelfResult>;
           SelectPackFile(): Promise<string>;
           InspectPolyPack(path: string): Promise<PolyPackInfo>;
           LaunchedPackPath(): Promise<string>;

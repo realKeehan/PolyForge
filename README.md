@@ -102,8 +102,13 @@ pwsh scripts/wails-build.ps1
 # Build with UPX compression
 pwsh scripts/wails-build.ps1 -UPX
 
-# Build with future obfuscation flag (warns, no-op until Wails 3)
+# Build with garble obfuscation (forwards -obfuscated to wails; needs garble on PATH).
+# Note: -Obfuscated is THIS SCRIPT's flag. Calling `wails build` directly uses the
+# lowercase wails flags instead: `wails build -obfuscated -upx`.
 pwsh scripts/wails-build.ps1 -Obfuscated
+
+# Combine flags (UPX + obfuscation)
+pwsh scripts/wails-build.ps1 -UPX -Obfuscated
 
 # Build with NSIS installer output
 pwsh scripts/wails-build.ps1 -nsis
@@ -166,6 +171,8 @@ The updater architecture separates binary updates from content updates:
 ### Obfuscation
 
 The `-Obfuscated` build flag passes `-obfuscated` to `wails build`, garbling bound method names for distribution builds. Install garble first: `go install mvdan.cc/garble@latest`. Interactive flag selection (UPX, NSIS, obfuscation, trimpath, WebView2 embedding, debug) is available through `dev-menu.bat` → "Build app release".
+
+> ⚠️ **Obfuscation currently breaks the app.** The frontend calls bindings by their real names (`window.go.app.App.GetMenuOptions`, …). `-obfuscated` garbles those names, so an obfuscated build fails on launch with `[ERROR] Unable to load installer options from backend. Please restart the application.` Build **without** `-Obfuscated` until the frontend is switched to the generated, obfuscation-aware `wailsjs` wrappers. If you hit that error, you almost certainly built with obfuscation on — rebuild without it.
 
 ## Distribution formats
 

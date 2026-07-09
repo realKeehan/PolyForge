@@ -59,16 +59,23 @@ func markFirstRunDone() {
 	_ = os.WriteFile(path, []byte("done"), 0o644)
 }
 
-// RunFirstRunSetup performs the one-time setup if it has not run yet.
-// Safe to call on every startup; it is a no-op after the first success.
-// Returns a human-readable note about what happened (for logs / UI), or "".
+// RunFirstRunSetup registers the .polypack association and returns a
+// human-readable note on the first run (for logs / UI), or "" afterwards.
+//
+// The registration itself runs on EVERY startup, not just the first: it is
+// idempotent (it only rewrites per-user registry values and regenerates the
+// icon), and re-running it self-heals a stale association — e.g. after the exe
+// is renamed/moved (release builds are versioned, so the path changes) or when
+// an earlier run registered against a broken build. Only the first run is
+// announced so we don't spam the log every launch.
 func RunFirstRunSetup() string {
-	if !NeedsFirstRunSetup() {
-		return ""
-	}
+	first := NeedsFirstRunSetup()
 	note := setupFileAssociation() // platform-specific (see fileassoc_*.go)
-	markFirstRunDone()
-	return note
+	if first {
+		markFirstRunDone()
+		return note
+	}
+	return ""
 }
 
 // LaunchedPackPath returns a .polypack/.zip path passed on the command line

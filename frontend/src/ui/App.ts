@@ -2,7 +2,7 @@ import { APP_VERSION } from '../app/constants';
 import { Quit, WindowMinimise } from '@wailsapp/runtime';
 import { createStore } from '../app/state';
 import { Step, type OptionDescriptor, type RemoteContentResult } from '../app/types';
-import { fetchMenuOptions, fetchRemoteContent, inspectPolyPack, launchedPackPath } from '../app/ipc';
+import { fetchMenuOptions, fetchRemoteContent, inspectPolyPack, launchedPackPath, updateSelf } from '../app/ipc';
 import { LOCAL_PACK_ID } from '../app/types';
 import { renderLoading } from './screens/Loading';
 import { renderStartup } from './screens/Startup';
@@ -115,14 +115,22 @@ function showUpdateDialog(shell: HTMLElement, remote: RemoteContentResult) {
       </p>
       ${app.notes ? `<p class="update-dialog__notes">${escapeHtml(app.notes)}</p>` : ''}
       <div class="update-dialog__actions">
-        <button type="button" class="btn btn--primary" data-action="download">Get update</button>
+        <button type="button" class="btn btn--primary" data-action="self-update">Update now</button>
         ${remote.mandatory ? '' : '<button type="button" class="btn btn--ghost" data-action="later">Later</button>'}
       </div>
+      <p class="update-dialog__status" data-role="status" role="status" aria-live="polite" hidden></p>
+      <p class="update-dialog__manual">
+        or <button type="button" class="update-dialog__link" data-action="download">download it manually</button>
+      </p>
     </div>
   `;
 
-  const downloadBtn = overlay.querySelector('[data-action="download"]') as HTMLButtonElement;
-  downloadBtn.addEventListener('click', () => {
+  const selfBtn = overlay.querySelector('[data-action="self-update"]') as HTMLButtonElement;
+  const laterBtn = overlay.querySelector('[data-action="later"]') as HTMLButtonElement | null;
+  const manualBtn = overlay.querySelector('[data-action="download"]') as HTMLButtonElement;
+  const statusEl = overlay.querySelector('[data-role="status"]') as HTMLElement;
+
+  const openManualDownload = () => {
     const url = app.downloadUrl || 'https://polyforge.dev/downloads';
     const runtimeApi = (window as unknown as { runtime?: { BrowserOpenURL?: (u: string) => void } }).runtime;
     if (runtimeApi?.BrowserOpenURL) {
@@ -130,10 +138,38 @@ function showUpdateDialog(shell: HTMLElement, remote: RemoteContentResult) {
     } else {
       window.open(url, '_blank');
     }
-  });
+  };
 
-  const laterBtn = overlay.querySelector('[data-action="later"]');
+  const setStatus = (text: string, isError = false) => {
+    statusEl.hidden = false;
+    statusEl.textContent = text;
+    statusEl.classList.toggle('update-dialog__status--error', isError);
+  };
+
+  manualBtn.addEventListener('click', openManualDownload);
   laterBtn?.addEventListener('click', () => overlay.remove());
+
+  selfBtn.addEventListener('click', async () => {
+    selfBtn.disabled = true;
+    if (laterBtn) laterBtn.disabled = true;
+    setStatus('Downloading and verifying the update…');
+    try {
+      const result = await updateSelf();
+      if (result.applied) {
+        // The backend relaunches the updated app and quits this one shortly.
+        setStatus(`Update installed${result.version ? ` (v${escapeHtml(result.version)})` : ''} — restarting…`);
+        manualBtn.disabled = true;
+      } else {
+        setStatus(result.error || 'Update failed. You can download it manually instead.', true);
+        selfBtn.disabled = false;
+        if (laterBtn) laterBtn.disabled = false;
+      }
+    } catch {
+      setStatus('Update failed. You can download it manually instead.', true);
+      selfBtn.disabled = false;
+      if (laterBtn) laterBtn.disabled = false;
+    }
+  });
 
   shell.appendChild(overlay);
 }

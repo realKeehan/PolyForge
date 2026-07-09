@@ -69,7 +69,10 @@ choice /C YN /N /M "   [-UPX]          Compress binary with UPX?        [Y/N]: "
 if not errorlevel 2 set "BFLAGS=%BFLAGS% -UPX"
 choice /C YN /N /M "   [-nsis]         Build NSIS installer?            [Y/N]: "
 if not errorlevel 2 set "BFLAGS=%BFLAGS% -nsis"
-choice /C YN /N /M "   [-Obfuscated]   Garble bound methods? (garble)   [Y/N]: "
+echo   [-Obfuscated]   WARNING: breaks the app - garbles the backend method
+echo                   names the UI calls, so the build fails with "Unable to
+echo                   load installer options from backend". Leave this N.
+choice /C YN /N /M "   [-Obfuscated]   Garble bound methods anyway?     [Y/N]: "
 if not errorlevel 2 set "BFLAGS=%BFLAGS% -Obfuscated"
 choice /C YN /N /M "   [-clean]        Clean bin dir before build?      [Y/N]: "
 if not errorlevel 2 set "BFLAGS=%BFLAGS% -clean"
