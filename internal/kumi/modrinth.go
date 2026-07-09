@@ -20,7 +20,8 @@ func (s *Service) CloneModrinthProfile(request ModrinthCloneRequest) (*ActionRes
 		request.NewName = request.NewPath
 	}
 
-	db, err := sql.Open("sqlite3", request.DBPath)
+	// The glebarez pure-Go driver registers as "sqlite" (not "sqlite3").
+	db, err := sql.Open("sqlite", request.DBPath)
 	if err != nil {
 		result.Error(fmt.Sprintf("failed to open database: %v", err))
 		result.Success = false

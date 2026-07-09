@@ -10,6 +10,9 @@ type OptionDescriptor struct {
 	PathLabel    string `json:"pathLabel,omitempty"`
 	DetectedPath string `json:"detectedPath,omitempty"`
 	Found        bool   `json:"found"`
+	// Info is reference text shown behind an ⓘ icon on the launcher row
+	// (e.g. where Modrinth actually keeps its profiles). May be multi-line.
+	Info string `json:"info,omitempty"`
 }
 
 type ExecutionPayload struct {

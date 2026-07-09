@@ -51,6 +51,9 @@ func userAgent() string {
 type Service struct {
 	ctx    context.Context
 	client *http.Client
+	// emitFn streams live install events to the UI; nil = no streaming (tests,
+	// bare `go run`). Wired by the app layer via SetEmitter. See stream.go.
+	emitFn func(event string, data ...interface{})
 }
 
 func NewService() *Service {
@@ -99,6 +102,11 @@ func (s *Service) Options() []OptionDescriptor {
 		if detected != "" {
 			options[i].DetectedPath = detected
 			options[i].Found = true
+		}
+		// Modrinth keeps profiles under the custom_dir set in its app.db —
+		// surface the resolved location behind the row's info icon.
+		if options[i].ID == "modrinth" {
+			options[i].Info = modrinthProfilesInfo()
 		}
 	}
 	s.detectByExecutable(options)
@@ -356,16 +364,11 @@ func (s *Service) installFromLocalPack(payload ExecutionPayload) (*ActionResult,
 		return result, nil
 	}
 
-	result.Info(fmt.Sprintf("Installing local pack from %s", packPath))
-	files, manifest, err := installLocalPack(packPath, target)
-	if err != nil {
-		result.Error(fmt.Sprintf("pack install failed: %v", err))
+	s.logStep(result, "info", fmt.Sprintf("Installing local pack from %s", packPath))
+	if !s.extractAndVerifyPack(result, packPath, target) {
 		result.Success = false
 		return result, nil
 	}
-	result.Info(fmt.Sprintf("Extracted %d files to %s", files, target))
-	result.Info(fmt.Sprintf("Installed %s v%s (%d mods)", manifest.Name, manifest.Version, len(manifest.Mods)))
-	result.Warning("Launcher profile generation is not wired up yet - add the instance to your launcher manually.")
 	result.Success = true
 	return result, nil
 }
@@ -439,6 +442,8 @@ func (s *Service) Execute(optionID string, payload ExecutionPayload) (*ActionRes
 		return s.installManual(payload.Path)
 	case "localpack":
 		return s.installFromLocalPack(payload)
+	case "hostedpack":
+		return s.installHostedPack(payload)
 	case "about":
 		return s.aboutMessage(), nil
 	case "cake":
