@@ -1,7 +1,79 @@
-import { browseForDirectory, runInstaller } from '../../app/ipc';
+import { EventsOn } from '@wailsapp/runtime';
+import { browseForDirectory, runInstaller, verifyPackAccess } from '../../app/ipc';
 import type { Store } from '../../app/state';
-import { LOCAL_PACK_ID, Step, type OptionDescriptor } from '../../app/types';
+import { LOCAL_PACK_ID, Step, type ExecutionPayload, type LogEntry, type OptionDescriptor, type RemotePack } from '../../app/types';
 import { createSocialLinks } from '../components/social';
+import {
+  beginInstallProgress,
+  clearInstallProgress,
+  finishInstallProgress,
+  updateInstallProgress,
+} from '../../app/installStream';
+
+// One streamed install update from the Go backend (see kumi InstallEvent).
+interface InstallEvent {
+  kind: 'log' | 'progress';
+  level?: string;
+  message?: string;
+  percent?: number;
+  label?: string;
+  indeterminate?: boolean;
+}
+
+// Resolves the hosted download URL for a website pack. Password packs captured
+// it when they were unlocked on the Modpack screen; open packs resolve it now
+// (empty password) since the server only reveals the URL on a granted request.
+// A returned URL means "download + install this .polypack"; undefined means the
+// pack has no hosted file and should fall back to the legacy launcher installer.
+async function resolveHostedUrl(store: Store, pack: RemotePack): Promise<string | undefined> {
+  const stored = store.getState().selectedPackUrl;
+  if (stored) return stored;
+  if (pack.requiresPassword) return undefined;
+  try {
+    const res = await verifyPackAccess(pack.id, '');
+    return res.granted ? res.url : undefined;
+  } catch (error) {
+    console.error('Could not resolve hosted pack URL', error);
+    return undefined;
+  }
+}
+
+// Runs an install that streams live log lines + progress from the backend. The
+// status screen is shown immediately so the log fills in as it happens, and the
+// progress bar (driven directly, off the store) tracks the download/extract.
+async function runStreamingInstall(
+  store: Store,
+  opts: { mode: 'hostedpack' | 'localpack'; payload: ExecutionPayload; label: string },
+): Promise<void> {
+  store.clearLogs();
+  clearInstallProgress();
+  store.setStep(Step.Status);
+  beginInstallProgress(opts.label);
+
+  const off = EventsOn('install:event', (ev: InstallEvent) => {
+    if (!ev) return;
+    if (ev.kind === 'log') {
+      store.appendLogs([{ level: (ev.level as LogEntry['level']) || 'info', message: ev.message ?? '' }]);
+    } else if (ev.kind === 'progress') {
+      updateInstallProgress({ percent: ev.percent, label: ev.label, indeterminate: ev.indeterminate });
+    }
+  });
+
+  try {
+    const result = await runInstaller(opts.mode, opts.payload);
+    // Log lines already streamed into the store during the run; only record the
+    // final outcome so we don't double up the messages.
+    store.setResult(result);
+    finishInstallProgress(result.success);
+  } catch (error) {
+    console.error('Streaming install failed', error);
+    store.appendLogs([{ level: 'error', message: 'Something went wrong while installing. Check the logs above.' }]);
+    store.setResult(null);
+    finishInstallProgress(false);
+  } finally {
+    off();
+  }
+}
 
 const LAUNCHER_ICON = `
   <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
@@ -14,6 +86,8 @@ const LAUNCHER_ICON = `
 `;
 
 const FOLDER_ICON = `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5a2 2 0 012-2h3.172a2 2 0 011.414.586l1.828 1.828A2 2 0 0012.828 6H15a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+
+const INFO_ICON = `<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.25" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="6.4" r="0.9" fill="currentColor"/></svg>`;
 
 // Test dummy launcher option
 const TEST_DUMMY: OptionDescriptor = {
@@ -216,12 +290,12 @@ export function renderInstaller(store: Store): HTMLElement {
       ? ''
       : restoredPath || (isFound ? displayPath : 'Not Found');
 
-    // The browse control is a span[role=button] because interactive content
-    // cannot be nested inside the row's <button> in valid HTML.
+    // The browse/info controls are span[role=button] because interactive
+    // content cannot be nested inside the row's <button> in valid HTML.
     button.innerHTML = `
       ${radioDot()}
       <span class="radio-item__body">
-        <span class="radio-item__label">${escapeHtml(option.title)}</span>
+        <span class="radio-item__label">${escapeHtml(option.title)}${option.info ? `<span role="button" tabindex="0" class="radio-item__info" data-info-for="${option.id}" aria-label="Info for ${escapeHtml(option.title)}" title="Info">${INFO_ICON}</span>` : ''}</span>
         ${pathText ? `<span class="radio-item__path" data-path-for="${option.id}">${escapeHtml(pathText)}</span>` : ''}
       </span>
       ${!isSpecial ? `<span role="button" tabindex="0" class="radio-item__browse" data-browse-for="${option.id}" aria-label="Browse for ${escapeHtml(option.title)}" title="Browse">${FOLDER_ICON}</span>` : ''}
@@ -233,10 +307,41 @@ export function renderInstaller(store: Store): HTMLElement {
 
     // Main click selects the option
     button.addEventListener('click', (e) => {
-      // Don't select if the browse button was clicked
-      if ((e.target as HTMLElement).closest('.radio-item__browse')) return;
+      // Don't select if the browse/info controls (or the info popover) were clicked
+      if ((e.target as HTMLElement).closest('.radio-item__browse, .radio-item__info, .radio-item__info-pop')) return;
       selectOption(option);
     });
+
+    // Info control — toggles a small popover with reference text (e.g. the
+    // Modrinth profiles folder resolved from app.db).
+    const infoBtn = button.querySelector(`[data-info-for="${option.id}"]`) as HTMLSpanElement | null;
+    if (infoBtn && option.info) {
+      const pop = document.createElement('span');
+      pop.className = 'radio-item__info-pop';
+      pop.textContent = option.info;
+      pop.hidden = true;
+      button.appendChild(pop);
+
+      const toggleInfo = (e: Event) => {
+        e.stopPropagation();
+        pop.hidden = !pop.hidden;
+      };
+      infoBtn.addEventListener('click', toggleInfo);
+      infoBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleInfo(e);
+        }
+      });
+      // Keep the popover open when clicking its text (so the path can be
+      // selected/copied) but let Escape dismiss it from anywhere in the row.
+      pop.addEventListener('click', (e) => e.stopPropagation());
+      button.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !pop.hidden) {
+          pop.hidden = true;
+        }
+      });
+    }
 
     // Browse control (span[role=button]) — handle both click and keyboard
     const browseBtn = button.querySelector(`[data-browse-for="${option.id}"]`) as HTMLSpanElement | null;
@@ -295,6 +400,7 @@ export function renderInstaller(store: Store): HTMLElement {
     // Handle test dummy launcher
     if (option.id === TEST_DUMMY.id) {
       store.clearLogs();
+      clearInstallProgress();
       store.appendLogs(DUMMY_LOG_MESSAGES);
       store.setResult({ success: true, messages: DUMMY_LOG_MESSAGES });
       store.setStep(Step.Status);
@@ -306,15 +412,37 @@ export function renderInstaller(store: Store): HTMLElement {
     const localPack = store.getState().localPack;
     const isLocalPack = store.getState().selectedModpack === LOCAL_PACK_ID && !!localPack;
 
-    // Determine path
+    // A website pack the app should download and install (rather than the
+    // launcher's hardcoded zip). Only packs the remote manifest listed qualify.
+    const remotePack = (store.getState().modpacks ?? []).find(
+      (p) => p.id === store.getState().selectedModpack,
+    );
+    const isRemotePack = !!remotePack && store.getState().selectedModpack !== LOCAL_PACK_ID;
+
+    // Resolve the hosted download URL first: its presence is what tells a
+    // downloadable .polypack apart from a legacy launcher-zip pack (Turtel SMP).
+    let packUrl: string | undefined;
+    if (isRemotePack) {
+      const prevLabel = runButton.textContent;
+      runButton.disabled = true;
+      runButton.textContent = 'Preparing…';
+      packUrl = await resolveHostedUrl(store, remotePack!);
+      runButton.disabled = false;
+      runButton.textContent = prevLabel ?? 'Install';
+    }
+    const isHostedPack = isRemotePack && !!packUrl;
+
+    // Determine path. Hosted/local packs install into the chosen directory, so
+    // they need one; legacy launcher installs keep their own path rules.
     const overridden = overriddenPaths.get(option.id);
     const effectivePath = overridden || option.detectedPath || '';
-    const needsPath = isLocalPack || option.requiresPath || option.id === 'custom' || option.id === 'manual';
+    const packNeedsPath = isLocalPack || isHostedPack;
+    const needsPath = packNeedsPath || option.requiresPath || option.id === 'custom' || option.id === 'manual';
 
     if (needsPath) {
       if (!effectivePath) {
-        setError(isLocalPack
-          ? 'Please choose the directory to extract the pack into.'
+        setError(packNeedsPath
+          ? 'Please choose the directory to install the pack into.'
           : 'Please choose a directory for this launcher.');
         return;
       }
@@ -324,14 +452,37 @@ export function renderInstaller(store: Store): HTMLElement {
     }
 
     setError(null);
+
+    // Hosted + local pack installs stream live; run them on the status screen
+    // with a progress bar instead of the blocking overlay.
+    if (isHostedPack) {
+      await runStreamingInstall(store, {
+        mode: 'hostedpack',
+        payload: {
+          path: store.getState().selectedPath,
+          extra: { packUrl: packUrl!, packId: remotePack!.id, packName: remotePack!.name },
+        },
+        label: `Downloading ${remotePack!.name}…`,
+      });
+      return;
+    }
+    if (isLocalPack) {
+      await runStreamingInstall(store, {
+        mode: 'localpack',
+        payload: { path: store.getState().selectedPath, extra: { packPath: localPack!.path } },
+        label: `Installing ${localPack!.name}…`,
+      });
+      return;
+    }
+
+    // Legacy launcher install: logs are delivered all at once when it finishes.
     store.clearLogs();
+    clearInstallProgress();
     store.setBusy(true);
 
     try {
-      const payload = isLocalPack
-        ? { path: store.getState().selectedPath, extra: { packPath: localPack!.path } }
-        : needsPath ? { path: store.getState().selectedPath } : {};
-      const result = await runInstaller(isLocalPack ? 'localpack' : option.id, payload);
+      const payload = needsPath ? { path: store.getState().selectedPath } : {};
+      const result = await runInstaller(option.id, payload);
       store.appendLogs(result.messages);
       store.setResult(result);
       store.setStep(Step.Status);

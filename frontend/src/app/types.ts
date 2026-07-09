@@ -6,6 +6,8 @@ export interface OptionDescriptor {
   pathLabel?: string;
   detectedPath?: string;
   found?: boolean;
+  /** Reference text shown behind an ⓘ icon on the row (may be multi-line). */
+  info?: string;
 }
 
 export interface ExecutionPayload {
@@ -46,6 +48,8 @@ export interface RemotePack {
   description?: string;
   requiresPassword?: boolean;
   passwordHash?: string;
+  /** Mod filenames the app self-destructs from an existing install next launch. */
+  removeMods?: string[];
 }
 
 export interface RemoteOptionOverride {
@@ -87,6 +91,13 @@ export interface PackAccessResult {
   offline: boolean;
 }
 
+/** Outcome of an in-app self-update (download + verify + swap the binary). */
+export interface UpdateSelfResult {
+  applied: boolean;
+  version?: string;
+  error?: string;
+}
+
 /** Summary of a user-selected local .polypack (manual profile mode). */
 export interface PolyPackInfo {
   path: string;
@@ -109,6 +120,10 @@ export interface AppState {
   localPack?: PolyPackInfo;
   selectedMode?: Mode;
   selectedModpack?: string;
+  /** Resolved download URL for the selected hosted pack (empty for legacy/launcher-ZIP packs). */
+  selectedPackUrl?: string;
+  /** Display name of the selected hosted pack, used in download progress labels. */
+  selectedPackName?: string;
   selectedInstaller?: OptionDescriptor;
   selectedPath?: string;
   logs: LogEntry[];

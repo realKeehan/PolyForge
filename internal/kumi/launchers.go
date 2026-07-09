@@ -6,8 +6,13 @@ import (
 	"polyforge/internal/kumi/install"
 )
 
+// Install-time candidate lists get discovery applied (cache → shortcuts →
+// bounded scan, see detect.go) for launchers that are commonly portable and
+// keep their instances next to the executable. The plain candidate functions
+// stay cheap because startup detection probes all of them.
+
 func (s *Service) installMultiMC(explicitRoot string) (*ActionResult, error) {
-	candidates := multiMCCandidates(explicitRoot)
+	candidates := withExeDiscovery("multimc", multiMCCandidates(explicitRoot))
 	return install.MultiMC(s.installDependencies(), candidates, multimcZipURL)
 }
 
@@ -28,19 +33,23 @@ func (s *Service) installModrinth() (*ActionResult, error) {
 }
 
 func (s *Service) installGDLauncher(explicitRoot string) (*ActionResult, error) {
-	return install.GDLauncher(s.installDependencies(), gdLauncherCandidates(explicitRoot), "", emptyZipWarning)
+	candidates := withDirDiscovery("gdlauncher", gdLauncherCandidates(explicitRoot))
+	return install.GDLauncher(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
 func (s *Service) installATLauncher(explicitRoot string) (*ActionResult, error) {
-	return install.ATLauncher(s.installDependencies(), atLauncherCandidates(explicitRoot), "", emptyZipWarning)
+	candidates := withDirDiscovery("atlauncher", atLauncherCandidates(explicitRoot))
+	return install.ATLauncher(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
 func (s *Service) installPrismLauncher(explicitRoot string) (*ActionResult, error) {
-	return install.PrismLauncher(s.installDependencies(), prismLauncherCandidates(explicitRoot), "", emptyZipWarning)
+	candidates := withDirDiscovery("prismlauncher", prismLauncherCandidates(explicitRoot))
+	return install.PrismLauncher(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
 func (s *Service) installBakaXL(explicitRoot string) (*ActionResult, error) {
-	return install.BakaXL(s.installDependencies(), bakaXLCandidates(explicitRoot), "", emptyZipWarning)
+	candidates := withDirDiscovery("bakaxl", bakaXLCandidates(explicitRoot))
+	return install.BakaXL(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
 func (s *Service) installFeather(explicitRoot string) (*ActionResult, error) {
@@ -52,7 +61,8 @@ func (s *Service) installTechnic(explicitRoot string) (*ActionResult, error) {
 }
 
 func (s *Service) installPolyMC(explicitRoot string) (*ActionResult, error) {
-	return install.PolyMC(s.installDependencies(), polyMCCandidates(explicitRoot), "", emptyZipWarning)
+	candidates := withDirDiscovery("polymc", polyMCCandidates(explicitRoot))
+	return install.PolyMC(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
 func (s *Service) installSKLauncher(explicitRoot string) (*ActionResult, error) {
@@ -76,7 +86,8 @@ func (s *Service) installQWERTZ(explicitRoot string) (*ActionResult, error) {
 }
 
 func (s *Service) installFjord(explicitRoot string) (*ActionResult, error) {
-	return install.Fjord(s.installDependencies(), fjordCandidates(explicitRoot), "", emptyZipWarning)
+	candidates := withDirDiscovery("fjord", fjordCandidates(explicitRoot))
+	return install.Fjord(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
 func (s *Service) installHMCL(explicitRoot string) (*ActionResult, error) {
@@ -84,7 +95,8 @@ func (s *Service) installHMCL(explicitRoot string) (*ActionResult, error) {
 }
 
 func (s *Service) installUltimMC(explicitRoot string) (*ActionResult, error) {
-	return install.UltimMC(s.installDependencies(), ultimMCCandidates(explicitRoot), "", emptyZipWarning)
+	candidates := withDirDiscovery("ultimmc", ultimMCCandidates(explicitRoot))
+	return install.UltimMC(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
 func (s *Service) installPolymerium(explicitRoot string) (*ActionResult, error) {
@@ -92,5 +104,6 @@ func (s *Service) installPolymerium(explicitRoot string) (*ActionResult, error) 
 }
 
 func (s *Service) installXMCL(explicitRoot string) (*ActionResult, error) {
-	return install.XMCL(s.installDependencies(), xmclCandidates(explicitRoot), "", emptyZipWarning)
+	candidates := withDirDiscovery("xmcl", xmclCandidates(explicitRoot))
+	return install.XMCL(s.installDependencies(), candidates, "", emptyZipWarning)
 }
