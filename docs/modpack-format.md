@@ -78,7 +78,11 @@ downloading the full pack.
   "overrides": {
     "folders": ["mods", "config"],
     "fileCount": 123,
-    "totalBytes": 456789
+    "totalBytes": 456789,
+    "files": [
+      { "path": "mods/sodium-fabric-0.5.3.jar", "sha256": "…", "size": 456789 },
+      { "path": "config/sodium.properties", "sha256": "…", "size": 42 }
+    ]
   }
 }
 ```
@@ -86,7 +90,19 @@ downloading the full pack.
 **The `mods` array is the only thing used for update decisions.** The
 installer compares the installed manifest against the hosted one and
 computes added / removed / version-changed mods (see `ComparePackMods` in
-`internal/kumi/packformat.go`). `sha256` doubles as integrity verification.
+`internal/kumi/packformat.go`).
+
+### `overrides.files` — per-file integrity
+
+`overrides.files` lists **every** file the pack ships (path relative to
+`overrides/`, forward slashes) with its SHA-256 and size. Both packagers emit
+it; the installer re-hashes each extracted file against this list and refuses
+the install if anything is wrong (`VerifyInstalledPack` /
+`verifyFilesOnDisk` in `internal/kumi/packformat.go`). This catches
+**corruption, tampering, and truncated/incomplete downloads before they cause
+problems in-game.** Packs built before this field existed simply omit it and
+verification is skipped (backward compatible). This same per-file hash list is
+the foundation for file-level delta updates (below).
 
 Mod `name`/`version` are currently derived from the jar filename
 (best-effort). TODO: read `fabric.mod.json` / `META-INF/mods.toml` from
@@ -129,13 +145,35 @@ schemas are captured. Rough plan per family:
 | CurseForge | `minecraftinstance.json` |
 | others | TBD from `dump-launcher-trees.ps1` output |
 
-## Update flow (planned)
+## Update flow
 
 1. App fetches the hosted `<id>-<latest>.manifest.json` (URL comes from the
    remote content manifest / pack-access endpoint).
-2. Compares `mods` against the locally installed manifest copy.
-3. Downloads only what changed (full zip for now; delta later), replaces
-   managed mods, leaves user files alone.
+2. Diffs the latest `overrides.files` against the locally installed manifest
+   copy (`.polyforge-pack.json`) **by path + sha256**:
+   - unchanged (same path + hash) → left on disk, never re-downloaded,
+   - changed / added → fetched and written,
+   - removed → deleted.
+   User files (not listed in the manifest) are never touched.
+3. Every fetched file is hash-verified against the manifest before it is
+   swapped into place — the same integrity guarantee as a fresh install.
+
+### Delta updates (bandwidth)
+
+Because step 2 already knows exactly which files changed, an update only needs
+to *transfer* the changed ones. Two hosting models:
+
+- **File-level (recommended):** host each shipped file content-addressed by its
+  hash (`/packs/<id>/objects/<sha256>`). The client fetches only the objects it
+  doesn't already have; unchanged files (and files shared across versions or
+  packs) are free. Verification is automatic — the object *is* its hash.
+- **Whole-pack (today):** host the full `<id>-<version>.polypack`. The diff
+  still avoids rewriting unchanged files on disk, but the whole pack is
+  downloaded. Simplest to host; no per-object endpoint.
+
+Byte-level binary diffs (bsdiff/xdelta) are intentionally **not** used: pack
+payloads are mostly jars that change wholesale between versions, so file-level
+delta captures nearly all the savings without a pure-Go patch codec.
 
 ## What ships vs. what never ships
 

@@ -112,7 +112,7 @@ func TestInstallLocalSlimePack(t *testing.T) {
 
 	// Install.
 	target := filepath.Join(dir, "instance")
-	files, m, err := installLocalPack(packPath, target)
+	files, m, _, err := installLocalPack(packPath, target)
 	if err != nil {
 		t.Fatalf("installLocalPack: %v", err)
 	}

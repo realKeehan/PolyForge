@@ -21,6 +21,15 @@ RewriteRule ^partials(/|$) - [F,L]
   ForceType application/octet-stream
 </FilesMatch>
 
+# PowerShell tools (e.g. tools/package-modpack.ps1) are downloads, not text to
+# render inline — force a save dialog instead of showing the source.
+<FilesMatch "\.ps1$">
+  ForceType application/octet-stream
+  <IfModule mod_headers.c>
+    Header set Content-Disposition "attachment"
+  </IfModule>
+</FilesMatch>
+
 # /index, /index.html, /index.php → / (301 permanent)
 RewriteCond %{THE_REQUEST} \s/+index(?:\.(?:html|php))?[\s?] [NC]
 RewriteRule ^ / [R=301,L]

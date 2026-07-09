@@ -292,16 +292,8 @@ case 'manifest-history': {
 // marks (removeMods), and stats supply per-pack download counts.
 case 'packs-list': {
     $registry = loadPackRegistry();
-    $manifest = loadJson(MANIFEST_FILE);
     $stats    = loadJson(STATS_FILE);
     $byPack   = is_array($stats['byPack'] ?? null) ? $stats['byPack'] : [];
-
-    $manifestPacks = [];
-    foreach (($manifest['modpacks'] ?? []) as $mp) {
-        if (is_array($mp) && isset($mp['id'])) {
-            $manifestPacks[(string) $mp['id']] = $mp;
-        }
-    }
 
     $discovered = [];
     $hosted = [];
@@ -333,6 +325,21 @@ case 'packs-list': {
                 'file'    => is_file(PACKS_DIR . '/' . $packFile) ? $packFile : null,
                 'mods'    => $mods,
             ];
+        }
+    }
+
+    // Auto-publish any pack that is hosted on disk (built through the online
+    // packager, or packed locally and uploaded/dropped into packs/) but not yet
+    // listed in the public manifest, so it reaches the app on its next launch
+    // without the admin having to open and re-save it. Existing entries — and
+    // any admin edits to them — are left untouched.
+    reconcileManifestPacks($discovered, $registry);
+
+    $manifest = loadJson(MANIFEST_FILE);
+    $manifestPacks = [];
+    foreach (($manifest['modpacks'] ?? []) as $mp) {
+        if (is_array($mp) && isset($mp['id'])) {
+            $manifestPacks[(string) $mp['id']] = $mp;
         }
     }
 
@@ -713,6 +720,67 @@ function upsertManifestPack(string $id, array $set, array $unset = []): void
     $manifest['modpacks'] = array_values($modpacks);
     $manifest['updated'] = gmdate('c');
 
+    $history = loadJson(HISTORY_FILE, ['entries' => []]);
+    $history['entries'][] = ['saved' => gmdate('c'), 'manifest' => loadJson(MANIFEST_FILE)];
+    $history['entries'] = array_slice($history['entries'], -100);
+    saveJson(HISTORY_FILE, $history);
+
+    if (!saveJson(MANIFEST_FILE, $manifest)) {
+        throw new RuntimeException('could not write manifest');
+    }
+}
+
+/**
+ * Publishes hosted-but-unlisted packs into the PUBLIC manifest so a pack that
+ * was dropped into packs/ (or built locally and uploaded) reaches the app on
+ * its next launch without the admin having to open and re-save it. Only packs
+ * missing from modpacks[] are added — existing entries, and any admin edits to
+ * them, are left untouched. Writes the manifest at most once (with a single
+ * history snapshot) and only when something was actually added, so repeat calls
+ * — e.g. every time the admin opens the packs tab — are cheap no-ops.
+ *
+ * @param array $discovered pack-id => ['name' => ..., ...] from the packs/ scan
+ * @param array $registry   pack registry, consulted for requiresPassword
+ */
+function reconcileManifestPacks(array $discovered, array $registry): void
+{
+    if ($discovered === []) {
+        return;
+    }
+    $manifest = loadJson(MANIFEST_FILE);
+    $modpacks = is_array($manifest['modpacks'] ?? null) ? $manifest['modpacks'] : [];
+    $known = [];
+    foreach ($modpacks as $mp) {
+        if (is_array($mp) && isset($mp['id'])) {
+            $known[(string) $mp['id']] = true;
+        }
+    }
+
+    $added = false;
+    foreach ($discovered as $pid => $disc) {
+        $pid = (string) $pid;
+        if (isset($known[$pid])) {
+            continue;
+        }
+        $entry = ['id' => $pid, 'name' => (string) ($disc['name'] ?? $pid)];
+        if (!empty($registry[$pid]['requiresPassword'])) {
+            $entry['requiresPassword'] = true;
+        }
+        $modpacks[] = $entry;
+        $added = true;
+    }
+    if (!$added) {
+        return;
+    }
+
+    if ((int) ($manifest['schemaVersion'] ?? 0) < 1) {
+        $manifest['schemaVersion'] = 1;
+    }
+    $manifest['modpacks'] = array_values($modpacks);
+    $manifest['updated'] = gmdate('c');
+
+    // Snapshot the pre-change manifest for history/rollback, mirroring the
+    // other manifest writers.
     $history = loadJson(HISTORY_FILE, ['entries' => []]);
     $history['entries'][] = ['saved' => gmdate('c'), 'manifest' => loadJson(MANIFEST_FILE)];
     $history['entries'] = array_slice($history['entries'], -100);

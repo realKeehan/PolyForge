@@ -56,6 +56,10 @@ type RemotePack struct {
 	Description      string `json:"description,omitempty"`
 	RequiresPassword bool   `json:"requiresPassword,omitempty"`
 	PasswordHash     string `json:"passwordHash,omitempty"`
+	// RemoveMods lists mod filenames the app should delete from an existing
+	// install of this pack on next launch — the remote "self-destruct" for
+	// pulling proprietary mods after distribution. Empty = nothing to remove.
+	RemoveMods []string `json:"removeMods,omitempty"`
 }
 
 // RemoteOptionOverride patches the title/description of a built-in option.

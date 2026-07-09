@@ -3,6 +3,106 @@ $pageTitle       = 'Downloads - PolyForge';
 $pageDescription = 'Download PolyForge for Windows, Linux, and macOS.';
 $pageSlug        = 'downloads';
 $hideDownloadBtn = true; // this page is the download destination
+
+/**
+ * Newest build in releases/<type>/, or null when the folder is empty.
+ * Mirrors api/download.php: skips dotfiles and doc files (readmes/hashes),
+ * newest mtime wins (filename breaks ties).
+ */
+function pf_latest_build(string $type): ?array
+{
+    $docExt = ['md', 'txt', 'json', 'html'];
+    $dir = __DIR__ . '/releases/' . $type;
+    if (!is_dir($dir)) {
+        return null;
+    }
+    $latest = null;
+    $latestTime = -1;
+    foreach (scandir($dir) ?: [] as $entry) {
+        if ($entry === '' || $entry[0] === '.') {
+            continue;
+        }
+        $path = $dir . '/' . $entry;
+        if (!is_file($path)) {
+            continue;
+        }
+        if (in_array(strtolower(pathinfo($entry, PATHINFO_EXTENSION)), $docExt, true)) {
+            continue;
+        }
+        $mtime = (int) filemtime($path);
+        if ($mtime > $latestTime || ($mtime === $latestTime && strcmp($entry, (string) $latest) > 0)) {
+            $latest = $entry;
+            $latestTime = $mtime;
+        }
+    }
+    return $latest === null ? null : ['name' => $latest, 'size' => (int) filesize($dir . '/' . $latest)];
+}
+
+function pf_fmt_size(int $bytes): string
+{
+    return $bytes >= 1048576
+        ? round($bytes / 1048576, 1) . ' MB'
+        : max(1, (int) round($bytes / 1024)) . ' KB';
+}
+
+/**
+ * A platform download button that reflects releases/<type>/: a live link to
+ * the counting gateway (/api/download?type=...) when a build is present, or a
+ * disabled "coming soon" button when the folder is empty. Uploading a build to
+ * the folder activates the button automatically — no edit here needed.
+ */
+function pf_dl_button(string $type, string $label, string $meta, bool $recommended = false): string
+{
+    $build = pf_latest_build($type);
+    $labelHtml = htmlspecialchars($label, ENT_QUOTES);
+    if ($build !== null) {
+        $metaText = trim($meta . ($recommended ? ' - Recommended' : '') . ' - ' . pf_fmt_size($build['size']));
+        return '<a class="dl-btn" href="/api/download?type=' . rawurlencode($type) . '">'
+            . '<span class="dl-label">' . $labelHtml . '</span>'
+            . '<span class="dl-meta">' . htmlspecialchars($metaText, ENT_QUOTES) . '</span></a>';
+    }
+    $metaText = htmlspecialchars(trim($meta), ENT_QUOTES) . ' &middot; Coming soon';
+    return '<a class="dl-btn dl-btn--soon" href="#" title="Not available yet" aria-disabled="true">'
+        . '<span class="dl-label">' . $labelHtml . '</span>'
+        . '<span class="dl-meta">' . $metaText . '</span></a>';
+}
+
+/**
+ * SHA-256 of the latest build in releases/<type>/, read from the coreutils-style
+ * SHA256SUMS.txt the admin panel regenerates on every upload/delete. Returns
+ * null when there is no build or no recorded hash for it.
+ */
+function pf_sha256(string $type): ?array
+{
+    $build = pf_latest_build($type);
+    if ($build === null) {
+        return null;
+    }
+    $sumsFile = __DIR__ . '/releases/' . $type . '/SHA256SUMS.txt';
+    if (!is_file($sumsFile)) {
+        return null;
+    }
+    foreach (file($sumsFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+        // "<64-hex><2 spaces><filename>"
+        if (preg_match('/^([0-9a-f]{64})\s+(.+)$/i', $line, $m) && $m[2] === $build['name']) {
+            return ['file' => $build['name'], 'hash' => strtolower($m[1])];
+        }
+    }
+    return null;
+}
+
+/** Inner markup for a platform card's reveal-able SHA256 block. */
+function pf_hash_block(string $type): string
+{
+    $sha = pf_sha256($type);
+    if ($sha === null) {
+        return '<span class="dl-hash-label">SHA256</span>'
+            . '<span>Published in SHA256SUMS.txt with each release.</span>';
+    }
+    return '<span class="dl-hash-label">SHA256 &middot; ' . htmlspecialchars($sha['file'], ENT_QUOTES) . '</span>'
+        . '<span class="dl-hash-hex">' . $sha['hash'] . '</span>';
+}
+
 require __DIR__ . '/partials/header.php';
 ?>
 
@@ -23,16 +123,14 @@ require __DIR__ . '/partials/header.php';
           </h3>
           <p>Recommended for most users. No installation or setup required - just download and run.</p>
           <div class="dl-options">
-            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true">
-              <span class="dl-label">.exe (Installer)</span>
-              <span class="dl-meta">windows/amd64 - Recommended</span>
-            </a>
+            <?= pf_dl_button('windows', '.exe (Installer)', 'windows/amd64', true) ?>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true"><span class="dl-label">.exe (Portable)</span><span class="dl-meta">windows/amd64</span></a>
-            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true"><span class="dl-label">.exe (UPX-compressed)</span><span class="dl-meta">windows/amd64</span></a>
-            <a class="dl-btn" href="#" title="Download coming soon" aria-disabled="true"><span class="dl-label">.zip (Portable archive)</span><span class="dl-meta">windows/amd64</span></a>
+            <?= pf_dl_button('windows-portable', '.exe (Portable)', 'windows/amd64') ?>
+            <?= pf_dl_button('windows-upx', '.exe (UPX-compressed)', 'windows/amd64') ?>
+            <?= pf_dl_button('windows-zip', '.zip (Portable archive)', 'windows/amd64') ?>
+            <?= pf_dl_button('windows-arm64', '.exe (ARM64)', 'windows/arm64') ?>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -44,8 +142,7 @@ require __DIR__ . '/partials/header.php';
               <span class="dl-hash-hint">SHA256 Digest</span>
             </div>
             <div class="dl-hash">
-              <span class="dl-hash-label">SHA256</span>
-              <span>Published in SHA256SUMS.txt with each release.</span>
+              <?= pf_hash_block('windows') ?>
             </div>
           </div>
           <!-- Info bubble hint -->
@@ -66,16 +163,12 @@ require __DIR__ . '/partials/header.php';
           </h3>
           <p>macOS support is on the roadmap. Path heuristics for macOS installs are in progress.</p>
           <div class="dl-options">
-            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
-              <span class="dl-label">.app Bundle</span><span class="dl-meta">darwin/universal</span>
-            </a>
-            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
-              <span class="dl-label">.dmg (Disk Image)</span><span class="dl-meta">darwin/universal</span>
-            </a>
+            <?= pf_dl_button('macos', '.app Bundle', 'darwin/universal') ?>
+            <?= pf_dl_button('macos-dmg', '.dmg (Disk Image)', 'darwin/universal') ?>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.zip (Portable)</span><span class="dl-meta">darwin/universal</span></a>
+            <?= pf_dl_button('macos-zip', '.zip (Portable)', 'darwin/universal') ?>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -87,8 +180,7 @@ require __DIR__ . '/partials/header.php';
               <span class="dl-hash-hint">SHA256 Digest</span>
             </div>
             <div class="dl-hash">
-              <span class="dl-hash-label">SHA256</span>
-              <span>Published in SHA256SUMS.txt with each release.</span>
+              <?= pf_hash_block('macos') ?>
             </div>
           </div>
           <!-- Info bubble hint -->
@@ -109,22 +201,17 @@ require __DIR__ . '/partials/header.php';
           </h3>
           <p>Broader OS discovery presets are planned. Check back for expanded Linux support.</p>
           <div class="dl-options">
-            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
-              <span class="dl-label">.AppImage</span><span class="dl-meta">linux/amd64 - Recommended</span>
-            </a>
-            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
-              <span class="dl-label">.deb (Debian/Ubuntu)</span><span class="dl-meta">linux/amd64</span>
-            </a>
-            <a class="dl-btn" href="#" title="Coming soon" aria-disabled="true" style="opacity:.6;pointer-events:none">
-              <span class="dl-label">.rpm (Fedora/RHEL)</span><span class="dl-meta">linux/amd64</span>
-            </a>
+            <?= pf_dl_button('linux', '.AppImage', 'linux/amd64', true) ?>
+            <?= pf_dl_button('linux-deb', '.deb (Debian/Ubuntu)', 'linux/amd64') ?>
+            <?= pf_dl_button('linux-rpm', '.rpm (Fedora/RHEL)', 'linux/amd64') ?>
           </div>
           <button class="dl-more-toggle" type="button">Show all formats</button>
           <div class="dl-extra">
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">.tar.gz (Portable)</span><span class="dl-meta">linux/amd64</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Flatpak</span><span class="dl-meta">Community</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">Snap</span><span class="dl-meta">Community</span></a>
-            <a class="dl-btn" href="#" aria-disabled="true" style="opacity:.4;pointer-events:none"><span class="dl-label">AUR</span><span class="dl-meta">Community</span></a>
+            <?= pf_dl_button('linux-targz', '.tar.gz (Portable)', 'linux/amd64') ?>
+            <?= pf_dl_button('linux-arm64', '.AppImage (ARM64)', 'linux/arm64') ?>
+            <?= pf_dl_button('flatpak', 'Flatpak', 'Community') ?>
+            <?= pf_dl_button('snap', 'Snap', 'Community') ?>
+            <?= pf_dl_button('aur', 'AUR', 'Community') ?>
           </div>
           <!-- Eye-toggle hash -->
           <div class="dl-hash-wrapper">
@@ -136,8 +223,7 @@ require __DIR__ . '/partials/header.php';
               <span class="dl-hash-hint">SHA256 Digest</span>
             </div>
             <div class="dl-hash">
-              <span class="dl-hash-label">SHA256</span>
-              <span>Published in SHA256SUMS.txt with each release.</span>
+              <?= pf_hash_block('linux') ?>
             </div>
           </div>
           <!-- Info bubble hint -->

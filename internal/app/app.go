@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"polyforge/internal/kumi"
 
@@ -22,11 +23,26 @@ func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.kumi.SetContext(ctx)
 
+	// Stream live install events (log lines + progress) to the frontend. The
+	// kumi package stays Wails-free; this bridges its emitter to EventsEmit.
+	a.kumi.SetEmitter(func(event string, data ...interface{}) {
+		runtime.EventsEmit(ctx, event, data...)
+	})
+
 	// One-time preliminary setup (registers the .polypack file type, etc.).
 	kumi.CleanupOldBinary()
 	if note := kumi.RunFirstRunSetup(); note != "" {
 		runtime.LogInfo(ctx, note)
 	}
+
+	// Remote "self-destruct": pull any mods the manifest marks for removal from
+	// recorded installs. Runs in the background so a slow manifest fetch never
+	// delays the window appearing.
+	go func() {
+		if note := a.kumi.RunSelfDestruct(); note != "" {
+			runtime.LogInfo(ctx, note)
+		}
+	}()
 }
 
 // FirstRunNote runs first-run setup if needed and returns a note for the UI.
@@ -57,6 +73,26 @@ func (a *App) GetRemoteContent() kumi.RemoteContentResult {
 // VerifyPackAccess checks a modpack password against the website endpoint.
 func (a *App) VerifyPackAccess(packID, password string) kumi.PackAccessResult {
 	return a.kumi.VerifyPackAccess(packID, password)
+}
+
+// UpdateSelf downloads the latest build, verifies it, and swaps the running
+// binary in place. On success it relaunches the updated app and quits this
+// instance shortly after, giving the UI a moment to show "restarting…". On
+// failure it returns the error so the UI can fall back to a manual download.
+func (a *App) UpdateSelf() kumi.UpdateSelfResult {
+	res := a.kumi.PerformSelfUpdate()
+	if res.Applied {
+		go func() {
+			time.Sleep(900 * time.Millisecond)
+			if err := kumi.RelaunchSelf(); err != nil && a.ctx != nil {
+				runtime.LogError(a.ctx, "relaunch after update failed: "+err.Error())
+			}
+			if a.ctx != nil {
+				runtime.Quit(a.ctx)
+			}
+		}()
+	}
+	return res
 }
 
 func (a *App) Execute(optionID string, payload kumi.ExecutionPayload) (*kumi.ActionResult, error) {

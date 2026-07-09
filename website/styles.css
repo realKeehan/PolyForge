@@ -1009,6 +1009,8 @@ a.launcher:hover { text-decoration: none; }
   cursor: pointer;
 }
 .platform-card .dl-btn:hover { background: var(--surface-3); border-color: var(--border); }
+.platform-card .dl-btn[aria-disabled="true"] { opacity: .5; cursor: default; pointer-events: none; }
+.platform-card .dl-btn[aria-disabled="true"]:hover { background: var(--surface-2); border-color: var(--border-2); }
 .platform-card .dl-btn .dl-label { flex: 1; }
 .platform-card .dl-btn .dl-meta { color: var(--text-muted); font-size: .78rem; }
 .dl-extra {
@@ -1051,6 +1053,7 @@ a.launcher:hover { text-decoration: none; }
   display: block;
   margin-bottom: 2px;
 }
+.dl-hash-hex { display: block; color: var(--text); word-break: break-all; }
 
 /* ── Hint boxes ──────────────────────────────────── */
 .hint-box {
