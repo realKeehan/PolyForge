@@ -74,7 +74,7 @@ $launchers = [ordered]@{
     'technic'        = @( (Join-Path $APPDATA '.technic'), 'C:\.technic' )
     # Dawn = rebranded Feather: exe under %LOCALAPPDATA%\Dawn, profiles in
     # %APPDATA%\.dawn. Legacy Feather dirs kept for pre-rebrand installs.
-    'dawn'           = @( (Join-Path $APPDATA '.dawn'), (Join-Path $LOCAL 'Dawn'), (Join-Path $APPDATA 'feather'), (Join-Path $APPDATA 'FeatherClient'), (Join-Path $LOCALLOW 'Feather') )
+    'dawn'           = @( (Join-Path $APPDATA '.dawn'), (Join-Path $LOCAL 'Dawn'), (Join-Path $APPDATA 'Dawn'), (Join-Path $APPDATA 'feather'), (Join-Path $APPDATA 'FeatherClient'), (Join-Path $LOCALLOW 'Feather') )
     'bakaxl'         = @( (Join-Path $APPDATA 'BakaXL'), 'C:\BakaXL' )
     'sklauncher'     = @( (Join-Path $APPDATA 'SKLauncher'), (Join-Path $APPDATA '.sklauncher') )
     'freesm'         = @( (Join-Path $APPDATA 'FreesmLauncher'), (Join-Path $APPDATA 'freesmlauncher') )
