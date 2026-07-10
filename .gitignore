@@ -22,6 +22,11 @@ website/api/stats-data.json
 website/api/packs-data.json
 website/api/admin-state.json
 website/api/manifest-history.json
+website/api/security-data.json
+website/security-reports/
+# Holds the admin password hash + VirusTotal API key — never commit.
+# Copy admin-config.example.php to admin-config.php on new checkouts.
+website/api/admin-config.php
 website/packs/*.zip
 website/packs/*.polypack
 website/packs/*.json
