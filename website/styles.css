@@ -844,6 +844,7 @@ a.launcher:hover { text-decoration: none; }
 .scan-table th { color: var(--text-muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; }
 .scan-result--clean { color: var(--pf-success); }
 .scan-result--pending { color: var(--text-muted); }
+.scan-result--flagged { color: var(--pf-danger); }
 
 /* ── Filters (legacy chip style, kept for reference) ── */
 .filters { display: flex; gap: 8px; flex-wrap: wrap; }

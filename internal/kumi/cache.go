@@ -26,7 +26,7 @@ const (
 	LauncherGDLauncher LauncherID = "gdlauncher"
 	LauncherTechnic    LauncherID = "technic"
 	LauncherPolyMC     LauncherID = "polymc"
-	LauncherFeather    LauncherID = "feather"
+	LauncherDawn       LauncherID = "dawn" // formerly Feather
 	LauncherBakaXL     LauncherID = "bakaxl"
 	LauncherPolymerium LauncherID = "polymerium"
 	LauncherXMCL       LauncherID = "xmcl"

@@ -2,6 +2,26 @@
 $pageTitle       = 'Security - PolyForge';
 $pageDescription = 'PolyForge security scans, SHA256 hashes, and analysis provider results.';
 $pageSlug        = 'security';
+
+// Live analysis results recorded through the admin panel (automated VirusTotal
+// scans + manually added provider reports), newest check first.
+require __DIR__ . '/api/security-lib.php';
+$pfSecurityRows = securityEntries(securityLoad(__DIR__ . '/api/security-data.json'));
+
+/** Verdict → [css class, label] for the results table. */
+function pf_sec_verdict(string $verdict): array
+{
+    switch ($verdict) {
+        case 'clean':         return ['scan-result--clean', 'Clean'];
+        case 'flagged':       return ['scan-result--flagged', 'Flagged'];
+        case 'malicious':     return ['scan-result--flagged', 'Malicious'];
+        case 'suspicious':    return ['scan-result--flagged', 'Suspicious'];
+        case 'informational': return ['scan-result--pending', 'Informational'];
+        case 'pending':       return ['scan-result--pending', 'Pending'];
+        default:              return ['scan-result--pending', 'Unavailable'];
+    }
+}
+
 require __DIR__ . '/partials/header.php';
 ?>
 
@@ -37,6 +57,40 @@ require __DIR__ . '/partials/header.php';
         </article>
       </div>
     </section>
+
+    <!-- Latest analysis results (recorded via the admin panel) -->
+    <?php if ($pfSecurityRows !== []): ?>
+    <section class="container section" style="padding-top:12px">
+      <header class="section-head"><h2>Latest scan results</h2><p>Recorded analysis results across providers, most recently checked first.</p></header>
+      <div class="card" style="overflow-x:auto">
+        <table class="scan-table">
+          <thead><tr><th>Checked</th><th>Provider</th><th>File</th><th>Result</th><th>Detail</th><th>Report</th></tr></thead>
+          <tbody>
+          <?php foreach ($pfSecurityRows as $row):
+              [$vClass, $vLabel] = pf_sec_verdict((string) $row['verdict']);
+              $checked = $row['lastChecked'] !== '' ? substr($row['lastChecked'], 0, 10) : '-';
+              $links = [];
+              if ($row['url'] !== '') {
+                  $links[] = '<a href="' . htmlspecialchars($row['url'], ENT_QUOTES) . '" target="_blank" rel="noopener noreferrer">View report &rarr;</a>';
+              }
+              if ($row['reportFile'] !== '') {
+                  $links[] = '<a href="/' . htmlspecialchars($row['reportFile'], ENT_QUOTES) . '" target="_blank" rel="noopener noreferrer">Evidence</a>';
+              }
+          ?>
+            <tr>
+              <td class="mono muted"><?= htmlspecialchars($checked, ENT_QUOTES) ?></td>
+              <td><?= htmlspecialchars((string) $row['provider'], ENT_QUOTES) ?></td>
+              <td class="mono"><?= htmlspecialchars((string) ($row['file'] !== '' ? $row['file'] : '-'), ENT_QUOTES) ?></td>
+              <td class="<?= $vClass ?>"><?= $vLabel ?></td>
+              <td><?= htmlspecialchars((string) $row['detail'], ENT_QUOTES) ?></td>
+              <td><?= $links !== [] ? implode(' &middot; ', $links) : '<span class="muted">-</span>' ?></td>
+            </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <?php endif; ?>
 
     <!-- Scan providers -->
     <section class="container section" style="padding-top:12px">

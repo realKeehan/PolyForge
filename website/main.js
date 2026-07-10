@@ -30,12 +30,12 @@
     { name:"GDLauncher", status:"working", note:"A sleek launcher that emphasizes a friendly UI and integrated pack browsing/management.", url:"https://gdlauncher.com/" },
     { name:"Technic", status:"working", note:"One of the classic launcher platforms - known for legacy packs and older modpack history.", url:"https://www.technicpack.net/" },
     { name:"PolyMC", status:"working", note:"A Prism/MultiMC-family launcher - similar instance philosophy with community-driven tooling.", url:"https://polymc.org/" },
-    { name:"Feather", status:"working", note:"A performance-focused launcher often used for competitive play and client-side enhancements.", url:"https://feathermc.com/" },
+    { name:"Dawn", status:"working", note:"Formerly Feather - a performance-focused launcher often used for competitive play and client-side enhancements.", url:"https://dawn.gg/" },
     { name:"BakaXL", status:"working", note:"A launcher favored by some modded communities, especially in regions where it's widely adopted.", url:"https://www.bakaxl.com/" },
 
     // Planned
-    { name:"Polymerium", status:"planned", note:"A modern Minecraft launcher for Windows with a clean UI and modpack management capabilities.", url:"https://github.com/d3ara1n/Polymerium" },
-    { name:"X Minecraft Launcher", status:"planned", note:"An open-source Minecraft launcher supporting multiple accounts, modpacks, and resource management.", url:"https://github.com/Voxelum/x-minecraft-launcher" },
+    { name:"Polymerium", status:"planned", note:"A modern Minecraft launcher for Windows with a clean UI and modpack management capabilities.", url:"https://polymerium.dearain.dev/" },
+    { name:"X Minecraft Launcher", status:"planned", note:"An open-source Minecraft launcher supporting multiple accounts, modpacks, and resource management.", url:"https://xmcl.app/" },
     { name:"SK Launcher", status:"planned", note:"An all-in-one Minecraft hub with built-in modloaders, modpack support, and skin management.", url:"https://skmedix.pl/" },
     { name:"Freesm Launcher", status:"planned", note:"A Prism-based launcher that removes offline account restrictions and adds custom auth server support.", url:"https://freesmlauncher.org/" },
     { name:"PineconeMC", status:"planned", note:"Formerly ElyPrism - a Prism Launcher fork with Ely.by authentication integration for alternative account systems.", url:"https://elyprismlauncher.github.io/" },

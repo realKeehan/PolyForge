@@ -113,7 +113,7 @@ $data['scores'][] = [
     'score' => $score,
     'lines' => $lines,
     'level' => $level,
-    'date'  => gmdate('c'),
+    'date'  => date('c'),
 ];
 $data['scores'] = topScores($data['scores'], MAX_KEPT);
 

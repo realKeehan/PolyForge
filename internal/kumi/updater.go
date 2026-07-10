@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -33,23 +32,6 @@ var downloadGatewayBase = "https://polyforge.dev"
 // AppVersion is set at build time via -ldflags.
 var AppVersion = "dev"
 
-// ── Version manifest ─────────────────────────────
-// The app fetches this manifest on startup (or on demand) to check for
-// binary updates. Host it on your website or GitHub releases.
-//
-// Example manifest URL:
-//   https://polyforge.dev/update/manifest.json
-//   https://github.com/realKeehan/PolyForge/releases/latest/download/manifest.json
-
-// UpdateManifest describes the latest available binary release.
-type UpdateManifest struct {
-	Version   string        `json:"version"` // semver, e.g. "5.6.0"
-	Published time.Time     `json:"published"`
-	Assets    []UpdateAsset `json:"assets"`
-	Notes     string        `json:"notes"`              // changelog markdown
-	Password  string        `json:"password,omitempty"` // optional: required password for private builds
-}
-
 // UpdateAsset describes a single downloadable binary for a platform.
 type UpdateAsset struct {
 	OS       string `json:"os"`       // "windows", "linux", "darwin"
@@ -58,96 +40,6 @@ type UpdateAsset struct {
 	SHA256   string `json:"sha256"`   // hex-encoded SHA256 of the file
 	Size     int64  `json:"size"`     // bytes
 	Filename string `json:"filename"` // e.g. "PolyForge-5.6.0-windows-amd64.exe"
-}
-
-// ── Content manifest ─────────────────────────────
-// Modpack lists are fetched independently so new packs appear without
-// updating the binary. The app loads a cached copy on startup and
-// refreshes in the background.
-//
-// Example content URL:
-//   https://polyforge.dev/content/packs.json
-
-// ContentManifest lists available modpacks and options.
-type ContentManifest struct {
-	Version int         `json:"version"`
-	Updated time.Time   `json:"updated"`
-	Packs   []PackEntry `json:"packs"`
-}
-
-// PackEntry describes a modpack available for installation.
-type PackEntry struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Loader      string   `json:"loader"`       // "fabric", "forge", "neoforge", "quilt"
-	GameVersion string   `json:"game_version"` // "1.20.4"
-	DownloadURL string   `json:"download_url"`
-	SHA256      string   `json:"sha256"`
-	Tags        []string `json:"tags"`
-	// Password-protected packs require authentication before download.
-	RequiresAuth bool `json:"requires_auth,omitempty"`
-}
-
-// ── Update check ─────────────────────────────────
-
-// UpdateCheckResult describes the outcome of an update check.
-type UpdateCheckResult struct {
-	Available    bool
-	LatestVer    string
-	CurrentVer   string
-	Asset        *UpdateAsset // nil if no matching asset for this platform
-	ReleaseNotes string
-}
-
-// CheckForUpdate fetches the manifest and compares versions.
-// manifestURL should point to your hosted manifest.json.
-func CheckForUpdate(manifestURL string) (*UpdateCheckResult, error) {
-	manifest, err := fetchManifest(manifestURL)
-	if err != nil {
-		return nil, fmt.Errorf("update check failed: %w", err)
-	}
-
-	result := &UpdateCheckResult{
-		LatestVer:    manifest.Version,
-		CurrentVer:   AppVersion,
-		ReleaseNotes: manifest.Notes,
-	}
-
-	if manifest.Version == AppVersion || AppVersion == "dev" {
-		return result, nil
-	}
-
-	// Find matching asset for current OS/arch
-	for i := range manifest.Assets {
-		a := &manifest.Assets[i]
-		if a.OS == runtime.GOOS && a.Arch == runtime.GOARCH {
-			result.Available = true
-			result.Asset = a
-			break
-		}
-	}
-
-	return result, nil
-}
-
-func fetchManifest(url string) (*UpdateManifest, error) {
-	client := &http.Client{Timeout: 15 * time.Second}
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("manifest returned %d", resp.StatusCode)
-	}
-
-	var m UpdateManifest
-	if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
-		return nil, fmt.Errorf("invalid manifest: %w", err)
-	}
-	return &m, nil
 }
 
 // ── Download + verify ────────────────────────────
@@ -443,24 +335,3 @@ func CleanupOldBinary() {
 	_ = os.Remove(exe + ".old")
 }
 
-// ── Content manifest fetch ───────────────────────
-
-// FetchContentManifest downloads and parses the modpack content manifest.
-func FetchContentManifest(url string) (*ContentManifest, error) {
-	client := &http.Client{Timeout: 15 * time.Second}
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("content manifest returned %d", resp.StatusCode)
-	}
-
-	var m ContentManifest
-	if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
-		return nil, fmt.Errorf("invalid content manifest: %w", err)
-	}
-	return &m, nil
-}

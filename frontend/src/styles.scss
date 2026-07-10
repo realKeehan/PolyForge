@@ -847,12 +847,17 @@ body {
   border-radius: 999px;
 }
 
+/* One standard row size for every selection list (mode, modpack, launcher):
+   same padding, same min-height (fits the tallest content — a two-line
+   launcher row with its 30px trailing buttons), so rows line up across
+   screens instead of each list rolling its own dimensions. */
 .radio-item {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  padding: 0.7rem 1rem;
+  padding: 0.75rem 1rem;
+  min-height: 62px;
   border-radius: 8px;
   background: transparent;
   border: 1.5px solid transparent;
@@ -874,9 +879,8 @@ body {
   border-color: var(--kumi-purple);
 }
 
-.radio-item--card {
-  padding: 0.85rem 1rem;
-}
+/* --card (mode/modpack rows) and --launcher (installer rows) share the
+   standard .radio-item sizing; the modifiers only carry layout extras now. */
 
 .radio-dot {
   width: 18px;
@@ -914,7 +918,7 @@ body {
 }
 
 .radio-item__label {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
@@ -956,18 +960,11 @@ body {
 }
 
 /* ── Launcher row (installer screen) ───────────────── */
-
-.radio-item--launcher {
-  align-items: center;
-  padding: 0.6rem 0.75rem;
-}
+/* Sizing comes from the shared .radio-item standard; only the launcher-row
+   extras (path line, browse/info controls) live below. */
 
 .radio-item--launcher .radio-item__body {
   gap: 0.1rem;
-}
-
-.radio-item--launcher .radio-item__label {
-  font-size: 0.92rem;
 }
 
 .radio-item__path {

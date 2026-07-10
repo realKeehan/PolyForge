@@ -48,6 +48,10 @@
     .adm-badge--lock { background: rgba(143,0,255,.15); color: var(--pf-purple); }
     .adm-badge--dl { background: rgba(143,0,255,.12); color: var(--pf-purple); }
     .adm-badge--armed { background: rgba(255,92,143,.18); color: var(--pf-danger); margin-left: 6px; }
+    .adm-badge--ok { background: rgba(55,210,156,.15); color: var(--pf-success); }
+    .adm-badge--err { background: rgba(255,92,143,.18); color: var(--pf-danger); }
+    .adm-badge--warn { background: rgba(255,193,7,.15); color: #ffc107; }
+    .adm-btn--sm { margin: 0; padding: 4px 10px; font-size: .7rem; }
     .pack-card { border: 1px solid var(--border-2); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: var(--surface-2); }
     .pack-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
     .pack-head-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -115,6 +119,7 @@
         <button class="adm-tab" data-tab="manifest" type="button">Version &amp; Manifest</button>
         <button class="adm-tab" data-tab="packs" type="button">Packs</button>
         <button class="adm-tab" data-tab="packager" type="button">Packager</button>
+        <button class="adm-tab" data-tab="security" type="button">Security</button>
       </div>
 
       <!-- Stats -->
@@ -194,9 +199,10 @@
             Both accept <code>[]</code> (empty) to change nothing.</p>
             <p class="adm-small">Valid ids (the launcher/installer options): <code>vanilla</code>,
             <code>multimc</code>, <code>curseforge</code>, <code>modrinth</code>, <code>gdlauncher</code>,
-            <code>atlauncher</code>, <code>prismlauncher</code>, <code>bakaxl</code>, <code>feather</code>,
+            <code>atlauncher</code>, <code>prismlauncher</code>, <code>bakaxl</code>, <code>dawn</code>,
             <code>technic</code>, <code>polymc</code>, <code>sklauncher</code>, <code>freesm</code>,
-            <code>elyprism</code>, <code>shatteredprism</code>, <code>qwertz</code>.</p>
+            <code>elyprism</code>, <code>shatteredprism</code>, <code>qwertz</code>, <code>fjord</code>,
+            <code>hmcl</code>, <code>ultimmc</code>, <code>polymerium</code>, <code>xmcl</code>.</p>
           </details>
           <textarea id="mRaw" spellcheck="false"></textarea>
           <button class="adm-btn" id="mSaveBtn" type="button">Save manifest</button>
@@ -290,6 +296,55 @@
           </div>
         </div>
       </section>
+
+      <!-- Security -->
+      <section data-panel="security" hidden>
+        <div class="adm-card">
+          <h2 class="adm-section-title">Automated VirusTotal scan</h2>
+          <p class="adm-small">Looks up the newest build in each release type by its SHA-256 and records the
+          engine results below. VirusTotal's free tier is rate limited (~4/min), so a run scans up to
+          <b>16</b> builds and stops early if throttled — just run it again in a minute to finish. Results
+          also appear on the public <a href="/security" target="_blank" rel="noopener">security page</a>,
+          newest check first.</p>
+          <div class="adm-inline">
+            <button class="adm-btn" id="secScanBtn" type="button">Run VirusTotal scan</button>
+            <span class="adm-small" id="secKeyState"></span>
+          </div>
+          <div class="adm-msg" id="secScanMsg"></div>
+        </div>
+
+        <div class="adm-card">
+          <h2 class="adm-section-title">Add a manual analysis</h2>
+          <p class="adm-small">Record a result from another provider (Hybrid Analysis, ANY.RUN, Joe Sandbox, …).
+          Optionally attach a screenshot or report file as evidence. The "checked" date drives ordering.</p>
+          <div class="adm-row">
+            <div><label>Provider</label><input type="text" id="secProvider" placeholder="Hybrid Analysis" /></div>
+            <div><label>File (optional)</label><input type="text" id="secFile" placeholder="PolyForge-5.5.2-windows-amd64.exe" /></div>
+          </div>
+          <div class="adm-row">
+            <div><label>Verdict</label>
+              <select id="secVerdict">
+                <option value="clean">Clean</option>
+                <option value="informational">Informational</option>
+                <option value="suspicious">Suspicious</option>
+                <option value="malicious">Malicious</option>
+              </select>
+            </div>
+            <div><label>Checked date (blank = today)</label><input type="date" id="secDate" /></div>
+          </div>
+          <label>Report URL (optional)</label><input type="text" id="secUrl" placeholder="https://www.hybrid-analysis.com/sample/..." />
+          <label>Notes (optional)</label><input type="text" id="secNotes" placeholder="0 detections, clean behavioral report" />
+          <label>Evidence file (optional — screenshot/PDF)</label><input type="file" id="secReport" accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.txt,.html,.json" />
+          <button class="adm-btn" id="secAddBtn" type="button">Save analysis</button>
+          <div class="adm-msg" id="secAddMsg"></div>
+        </div>
+
+        <div class="adm-card">
+          <h2 class="adm-section-title">Analyses <span class="adm-small">— newest check first</span></h2>
+          <table><thead><tr><th>Checked</th><th>Provider</th><th>File</th><th>Verdict</th><th>Detail</th><th></th></tr></thead>
+          <tbody id="secRows"></tbody></table>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -300,6 +355,14 @@
       // Extensionless: .php URLs get 301-redirected, which would turn POSTs
       // into GETs. The rewrite rules serve api/admin.php for this path.
       const API = "/api/admin";
+
+      // Match the server's day bucketing (see APP_TIMEZONE in api/php-compat.php):
+      // stats history is keyed by the Pacific calendar date, so "today" must be
+      // resolved in the same zone or the tile reads the wrong (UTC) bucket in the
+      // evening. en-CA formats as YYYY-MM-DD, matching the server's date('Y-m-d').
+      const APP_TZ = "America/Los_Angeles";
+      const pacificDateKey = (d = new Date()) =>
+        new Intl.DateTimeFormat("en-CA", { timeZone: APP_TZ }).format(d);
 
       async function call(action, opts = {}) {
         const init = { method: opts.method || "GET", headers: { "X-PolyForge-Admin": "1" } };
@@ -338,7 +401,7 @@
       function show(authed) {
         $("#loginView").hidden = authed;
         $("#panelView").hidden = !authed;
-        if (authed) { loadStats(); loadReleases(); loadManifest(); loadPacks(); }
+        if (authed) { loadStats(); loadReleases(); loadManifest(); loadPacks(); loadSecurity(); }
       }
       $("#loginBtn").addEventListener("click", async () => {
         try {
@@ -368,7 +431,7 @@
 
         const days = Object.keys(history).sort();
         const last30 = days.slice(-30);
-        const todayKey = new Date().toISOString().slice(0, 10);
+        const todayKey = pacificDateKey();
         $("#statTiles").innerHTML = `
           <div class="adm-stat-tile"><b>${total.toLocaleString()}</b><span>Total downloads</span></div>
           <div class="adm-stat-tile"><b>${(history[todayKey]?.total || 0).toLocaleString()}</b><span>Today</span></div>
@@ -742,6 +805,114 @@
           el.value = el.value.toLowerCase().replace(/\s/g, "-");
           if (start !== null) el.setSelectionRange(start, start);
         });
+      });
+
+      // ── Security ───────────────────────────────
+      // Verdict → badge class; anything unknown renders as neutral text.
+      const SEC_VERDICT = {
+        clean:         ["ok",   "Clean"],
+        flagged:       ["err",  "Flagged"],
+        malicious:     ["err",  "Malicious"],
+        suspicious:    ["warn", "Suspicious"],
+        informational: ["",     "Info"],
+        pending:       ["",     "Pending"],
+        error:         ["warn", "Error"],
+      };
+
+      async function loadSecurity() {
+        const { entries, apiKeySet } = await call("security-list");
+        $("#secKeyState").textContent = apiKeySet ? "" : "No VirusTotal API key configured — scan disabled.";
+        $("#secScanBtn").disabled = !apiKeySet;
+
+        // Server returns newest-checked first already; render as-is.
+        $("#secRows").innerHTML = entries.map((r) => {
+          const [cls, label] = SEC_VERDICT[r.verdict] || ["", r.verdict];
+          const checked = r.lastChecked ? r.lastChecked.slice(0, 16).replace("T", " ") : "-";
+          const links = [
+            r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">report</a>` : "",
+            r.reportFile ? `<a href="/${esc(r.reportFile)}" target="_blank" rel="noopener">evidence</a>` : "",
+          ].filter(Boolean).join(" &middot; ");
+          return `<tr>
+            <td class="mono">${esc(checked)}</td>
+            <td>${esc(r.provider)}</td>
+            <td class="mono">${esc(r.file || "-")}</td>
+            <td><span class="adm-badge ${cls ? "adm-badge--" + cls : ""}">${esc(label)}</span></td>
+            <td>${esc(r.detail || "")}${links ? " &middot; " + links : ""}</td>
+            <td style="text-align:right">
+              ${r.kind === "manual" ? `<button class="adm-btn adm-btn--ghost adm-btn--sm" data-sec-edit="${esc(r.id)}" type="button">Edit</button>` : ""}
+              <button class="adm-btn adm-btn--ghost adm-btn--sm" data-sec-del="${esc(r.id)}" data-sec-kind="${esc(r.kind)}" type="button">Delete</button>
+            </td>
+          </tr>`;
+        }).join("") || '<tr><td colspan="6" class="adm-small">No analyses yet — run a VirusTotal scan or add one manually.</td></tr>';
+
+        // Keep the raw entries around for the edit shortcut below.
+        $("#secRows").dataset.entries = JSON.stringify(entries);
+      }
+
+      $("#secScanBtn").addEventListener("click", async () => {
+        $("#secScanBtn").disabled = true;
+        msg($("#secScanMsg"), "Scanning latest builds against VirusTotal…", true);
+        try {
+          const r = await call("security-vt-scan", { json: {} });
+          const note = r.rateLimited ? " (rate limited — run again in a minute for the rest)" : "";
+          msg($("#secScanMsg"), `Checked ${r.scanned}/${r.totalBuilds} builds${note}.`, true);
+          loadSecurity();
+        } catch (e) { msg($("#secScanMsg"), e.message, false); }
+        finally { $("#secScanBtn").disabled = false; }
+      });
+
+      $("#secAddBtn").addEventListener("click", async () => {
+        const provider = $("#secProvider").value.trim();
+        if (!provider) { msg($("#secAddMsg"), "Provider name is required.", false); return; }
+        const form = new FormData();
+        form.append("provider", provider);
+        form.append("file", $("#secFile").value.trim());
+        form.append("verdict", $("#secVerdict").value);
+        form.append("lastChecked", $("#secDate").value);
+        form.append("url", $("#secUrl").value.trim());
+        form.append("notes", $("#secNotes").value.trim());
+        const editId = $("#secAddBtn").dataset.editId || "";
+        if (editId) form.append("id", editId);
+        const rep = $("#secReport").files[0];
+        if (rep) form.append("report", rep);
+        $("#secAddBtn").disabled = true;
+        try {
+          await call("security-add", { form });
+          msg($("#secAddMsg"), editId ? "Analysis updated." : "Analysis added.", true);
+          ["#secProvider", "#secFile", "#secUrl", "#secNotes", "#secDate"].forEach(s => { $(s).value = ""; });
+          $("#secReport").value = "";
+          delete $("#secAddBtn").dataset.editId;
+          $("#secAddBtn").textContent = "Save analysis";
+          loadSecurity();
+        } catch (e) { msg($("#secAddMsg"), e.message, false); }
+        finally { $("#secAddBtn").disabled = false; }
+      });
+
+      $("#secRows").addEventListener("click", async (e) => {
+        const del = e.target.closest("[data-sec-del]");
+        if (del) {
+          if (!confirm("Delete this analysis entry?")) return;
+          try {
+            await call("security-delete", { json: { id: del.dataset.secDel, kind: del.dataset.secKind } });
+            loadSecurity();
+          } catch (err) { msg($("#secScanMsg"), err.message, false); }
+          return;
+        }
+        const edit = e.target.closest("[data-sec-edit]");
+        if (edit) {
+          const entries = JSON.parse($("#secRows").dataset.entries || "[]");
+          const row = entries.find((r) => r.id === edit.dataset.secEdit && r.kind === "manual");
+          if (!row) return;
+          $("#secProvider").value = row.provider || "";
+          $("#secFile").value = row.file || "";
+          $("#secVerdict").value = ["clean", "informational", "suspicious", "malicious"].includes(row.verdict) ? row.verdict : "clean";
+          $("#secDate").value = (row.lastChecked || "").slice(0, 10);
+          $("#secUrl").value = row.url || "";
+          $("#secNotes").value = row.detail || "";
+          $("#secAddBtn").dataset.editId = row.id;
+          $("#secAddBtn").textContent = "Update analysis";
+          $("#secAddBtn").scrollIntoView({ behavior: "smooth", block: "center" });
+        }
       });
 
       checkSession();

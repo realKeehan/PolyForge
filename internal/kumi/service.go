@@ -3,7 +3,6 @@ package kumi
 import (
 	"context"
 	_ "embed"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -75,7 +74,7 @@ func (s *Service) Options() []OptionDescriptor {
 		{ID: "atlauncher", Title: "ATLauncher Install", Description: "Install into ATLauncher.", RequiresPath: true, PathLabel: "ATLauncher Root"},
 		{ID: "prismlauncher", Title: "PrismLauncher Install", Description: "Install into PrismLauncher.", RequiresPath: true, PathLabel: "PrismLauncher Root"},
 		{ID: "bakaxl", Title: "BakaXL Install", Description: "Install into BakaXL.", RequiresPath: true, PathLabel: "BakaXL Root"},
-		{ID: "feather", Title: "Feather Install", Description: "Install into Feather client.", RequiresPath: true, PathLabel: "Feather Root"},
+		{ID: "dawn", Title: "Dawn Install", Description: "Install into the Dawn client (formerly Feather).", RequiresPath: true, PathLabel: "Dawn Root"},
 		{ID: "technic", Title: "Technic Install", Description: "Install into Technic.", RequiresPath: true, PathLabel: "Technic Root"},
 		{ID: "polymc", Title: "PolyMC Install", Description: "Install into PolyMC.", RequiresPath: true, PathLabel: "PolyMC Root"},
 		{ID: "sklauncher", Title: "SK Launcher Install", Description: "Install into SK Launcher.", RequiresPath: true, PathLabel: "SK Launcher Root"},
@@ -125,14 +124,14 @@ var launcherExeNames = map[string][]string{
 	"atlauncher":     {"ATLauncher.exe"},
 	"prismlauncher":  {"prismlauncher.exe"},
 	"bakaxl":         {"BakaXL.exe"},
-	"feather":        {"Feather Launcher.exe", "Feather.exe"},
+	"dawn":           {"Dawn (Feather).exe", "Feather Launcher.exe", "Feather.exe"},
 	"technic":        {"TechnicLauncher.exe", "technic-launcher.exe"},
 	"polymc":         {"polymc.exe"},
 	"sklauncher":     {"SKlauncher.exe"},
 	"freesm":         {"freesmlauncher.exe"},
 	"elyprism":       {"PineconeMC.exe", "ElyPrismLauncher.exe", "elyprism.exe"},
 	"shatteredprism": {"shatteredprism.exe"},
-	"qwertz":         {"QWERTZ Launcher.exe", "QWERTZLauncher.exe"},
+	"qwertz":         {"QWERTZ Launcher.exe", "QWERTZLauncher.exe", "QWERTZ_Launcher.exe"},
 	"fjord":          {"fjordlauncher.exe"},
 	"hmcl":           {"HMCL.exe"},
 	"ultimmc":        {"UltimMC.exe"},
@@ -199,24 +198,25 @@ func (s *Service) detectByExecutable(options []OptionDescriptor) {
 	}
 	dropFound()
 
-	// 2+3) Shortcut resolution and the bounded filesystem scan both read
-	// thousands of files, so they share a 12h throttle. Hits land in the
-	// cache, making later startups instant; the Browse button covers any
-	// launcher installed inside the throttle window.
-	if len(wanted) > 0 && shouldRunDeepScan() {
+	// 2) Shortcut resolution is cheap and high-signal, so run it every time.
+	// Hits land in the cache, making later startups instant.
+	if len(wanted) > 0 {
 		for id, path := range resolveShortcutTargets(wanted) {
 			found[id] = path
 			remember(id, path, EvStartMenuLnk, "high")
 		}
 		dropFound()
+	}
 
-		if len(wanted) > 0 {
-			ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-			defer cancel()
-			for id, path := range scanForExes(ctx, commonScanRoots(), wanted, 5, 8) {
-				found[id] = path
-				remember(id, path, EvScan, "low")
-			}
+	// 3) The bounded filesystem scan is the expensive fallback, throttled to
+	// once every 12 hours. The Browse button covers any launcher installed
+	// inside the throttle window without a shortcut.
+	if len(wanted) > 0 && shouldRunDeepScan() {
+		ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+		defer cancel()
+		for id, path := range scanForExes(ctx, commonScanRoots(), wanted, 5, 8) {
+			found[id] = path
+			remember(id, path, EvScan, "low")
 		}
 		markDeepScanDone()
 	}
@@ -309,8 +309,8 @@ func (s *Service) detectLauncherPath(id string) string {
 		return firstExistingDirectory(prismLauncherCandidates(""))
 	case "bakaxl":
 		return firstExistingDirectory(bakaXLCandidates(""))
-	case "feather":
-		return firstExistingDirectory(featherCandidates(""))
+	case "dawn":
+		return firstExistingDirectory(dawnCandidates(""))
 	case "technic":
 		return firstExistingDirectory(technicCandidates(""))
 	case "polymc":
@@ -340,10 +340,10 @@ func (s *Service) detectLauncherPath(id string) string {
 	}
 }
 
-// installFromLocalPack installs a user-provided .polypack (manual
-// profile mode): extracts the pack's overrides into the chosen target
-// directory and records the installed manifest for future update diffs.
-// Per-launcher profile generation is a TODO (see packformat.go).
+// installFromLocalPack installs a user-provided .polypack: lays the pack
+// out for the selected launcher (when one was chosen), extracts the
+// overrides, records the installed manifest for future update diffs, and
+// generates the launcher's instance/profile files (see gen_launchers.go).
 func (s *Service) installFromLocalPack(payload ExecutionPayload) (*ActionResult, error) {
 	result := NewResult()
 	packPath := strings.TrimSpace(payload.Extra["packPath"])
@@ -365,7 +365,7 @@ func (s *Service) installFromLocalPack(payload ExecutionPayload) (*ActionResult,
 	}
 
 	s.logStep(result, "info", fmt.Sprintf("Installing local pack from %s", packPath))
-	if !s.extractAndVerifyPack(result, packPath, target) {
+	if !s.extractAndVerifyPack(result, packPath, target, strings.TrimSpace(payload.Extra["launcher"])) {
 		result.Success = false
 		return result, nil
 	}
@@ -410,8 +410,8 @@ func (s *Service) Execute(optionID string, payload ExecutionPayload) (*ActionRes
 		return s.installPrismLauncher(payload.Path)
 	case "bakaxl":
 		return s.installBakaXL(payload.Path)
-	case "feather":
-		return s.installFeather(payload.Path)
+	case "dawn":
+		return s.installDawn(payload.Path)
 	case "technic":
 		return s.installTechnic(payload.Path)
 	case "polymc":
@@ -481,9 +481,3 @@ func (s *Service) installDependencies() install.Dependencies {
 	}
 }
 
-func (s *Service) requirePath(path string) error {
-	if strings.TrimSpace(path) == "" {
-		return errors.New("a destination path must be provided")
-	}
-	return nil
-}

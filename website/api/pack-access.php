@@ -54,14 +54,14 @@ function recordPackDownload(string $packId): void
     $byPack[$packId] = max(0, (int) ($byPack[$packId] ?? 0)) + 1;
     $stats['byPack'] = $byPack;
 
-    $today = gmdate('Y-m-d');
+    $today = date('Y-m-d');
     $history = is_array($stats['history'] ?? null) ? $stats['history'] : [];
     $day = is_array($history[$today] ?? null) ? $history[$today] : [];
     $day['packs'] = max(0, (int) ($day['packs'] ?? 0)) + 1;
     $history[$today] = $day;
     $stats['history'] = $history;
 
-    $stats['updated'] = gmdate('c');
+    $stats['updated'] = date('c');
     file_put_contents(STATS_FILE, json_encode($stats, JSON_PRETTY_PRINT), LOCK_EX);
 }
 

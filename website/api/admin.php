@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/php-compat.php';
 require __DIR__ . '/packs-registry.php';
+require __DIR__ . '/security-lib.php';
 
 const RELEASES_DIR   = __DIR__ . '/../releases';
 const PACKS_DIR      = __DIR__ . '/../packs';
@@ -26,7 +27,14 @@ const MANIFEST_FILE  = __DIR__ . '/manifest.json';
 const HISTORY_FILE   = __DIR__ . '/manifest-history.json';
 const ADMIN_STATE    = __DIR__ . '/admin-state.json';
 const STATS_FILE     = __DIR__ . '/stats-data.json';
+const SECURITY_FILE  = __DIR__ . '/security-data.json';
+const SECURITY_REPORTS_DIR = __DIR__ . '/../security-reports';
 const DOC_EXTENSIONS = ['md', 'txt', 'json', 'html'];
+// Cap VirusTotal lookups per scan so a run stays well inside PHP's execution
+// window and the free-tier quota; the admin can re-run to continue.
+const VT_MAX_PER_SCAN = 16;
+// Evidence files an admin may attach to a manual analysis entry.
+const SECURITY_UPLOAD_EXT = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'pdf', 'txt', 'html', 'json'];
 
 // Folders shippable in a pack (from real profile analysis); everything else
 // (saves, journeymap, essential, logs, ...) is user data and never packed.
@@ -180,7 +188,7 @@ case 'releases-list': {
                 $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
                 $isDoc = in_array($ext, DOC_EXTENSIONS, true);
                 $m = filemtime($p);
-                $files[] = ['name' => $f, 'size' => filesize($p), 'mtime' => gmdate('c', $m), 'doc' => $isDoc];
+                $files[] = ['name' => $f, 'size' => filesize($p), 'mtime' => date('c', $m), 'doc' => $isDoc];
                 if (!$isDoc && ($m > $latestTime || ($m === $latestTime && strcmp($f, (string) $latest) > 0))) {
                     $latest = $f;
                     $latestTime = $m;
@@ -260,7 +268,7 @@ case 'manifest-save': {
     // Snapshot the previous manifest for history/rollback.
     $history = loadJson(HISTORY_FILE, ['entries' => []]);
     $history['entries'][] = [
-        'saved'    => gmdate('c'),
+        'saved'    => date('c'),
         'manifest' => loadJson(MANIFEST_FILE),
     ];
     $history['entries'] = array_slice($history['entries'], -100);
@@ -303,7 +311,7 @@ case 'packs-list': {
             if ($f[0] === '.' || !is_file($p) || str_ends_with($f, '.md')) {
                 continue;
             }
-            $hosted[] = ['name' => $f, 'size' => filesize($p), 'mtime' => gmdate('c', filemtime($p))];
+            $hosted[] = ['name' => $f, 'size' => filesize($p), 'mtime' => date('c', filemtime($p))];
             if (!str_ends_with($f, '.manifest.json')) {
                 continue;
             }
@@ -420,11 +428,11 @@ case 'pack-selfdestruct-save': {
         $modpacks[] = $new;
     }
     $manifest['modpacks'] = array_values($modpacks);
-    $manifest['updated'] = gmdate('c');
+    $manifest['updated'] = date('c');
 
     // Snapshot for history/rollback, mirroring manifest-save.
     $history = loadJson(HISTORY_FILE, ['entries' => []]);
-    $history['entries'][] = ['saved' => gmdate('c'), 'manifest' => loadJson(MANIFEST_FILE)];
+    $history['entries'][] = ['saved' => date('c'), 'manifest' => loadJson(MANIFEST_FILE)];
     $history['entries'] = array_slice($history['entries'], -100);
     saveJson(HISTORY_FILE, $history);
 
@@ -595,7 +603,9 @@ case 'pack-build': {
         }
 
         // Mod metadata: filename heuristic, refined from inside the jar.
-        if ($parts[0] === 'mods' && count($parts) === 2 && str_ends_with(strtolower($rel), '.jar')) {
+        $lowerRel = strtolower($rel);
+        if ($parts[0] === 'mods' && count($parts) === 2
+            && (str_ends_with($lowerRel, '.jar') || str_ends_with($lowerRel, '.litemod'))) {
             $mods[] = packBuildModEntry($parts[1], $data);
         }
     }
@@ -615,7 +625,7 @@ case 'pack-build': {
         'version'       => $version,
         'minecraft'     => $mc,
         'loader'        => ['type' => $loader, 'version' => $loaderV],
-        'created'       => gmdate('c'),
+        'created'       => date('c'),
         'mods'          => $mods,
         'overrides'     => ['folders' => $folders, 'fileCount' => $fileCount, 'totalBytes' => $totalBytes, 'files' => $files],
     ];
@@ -625,7 +635,7 @@ case 'pack-build': {
     $launcherIds = [
         'vanilla', 'multimc', 'polymc', 'prismlauncher', 'shatteredprism', 'elyprism',
         'ultimmc', 'fjord', 'modrinth', 'curseforge', 'atlauncher', 'gdlauncher',
-        'technic', 'feather', 'bakaxl', 'sklauncher', 'freesm', 'qwertz', 'hmcl',
+        'technic', 'dawn', 'bakaxl', 'sklauncher', 'freesm', 'qwertz', 'hmcl',
         'polymerium', 'xmcl',
     ];
     $launcherEntries = [];
@@ -675,6 +685,200 @@ case 'pack-build': {
     ]);
 }
 
+// ── Security analyses ────────────────────────────
+// Combines automated VirusTotal results (keyed by build SHA-256) with manually
+// added analyses from other providers (Hybrid Analysis, ANY.RUN, ...). Both the
+// admin panel and the public /security page render securityEntries(), which is
+// always sorted newest-checked first.
+case 'security-list': {
+    $data = loadJson(SECURITY_FILE, ['virustotal' => [], 'manual' => []]);
+    respond(200, [
+        'entries'    => securityEntries($data),
+        'apiKeySet'  => (string) ($config['virusTotalApiKey'] ?? '') !== '',
+    ]);
+}
+
+// Adds or updates a manual analysis entry (a non-VirusTotal provider result).
+// Accepts JSON or multipart form; an optional evidence file (screenshot/PDF/
+// report) is stored under security-reports/ and linked publicly.
+case 'security-add': {
+    if (!$isPost) {
+        respond(405, ['error' => 'POST required']);
+    }
+    $in = !empty($body) ? $body : $_POST;
+    $provider = trim((string) ($in['provider'] ?? ''));
+    if ($provider === '' || strlen($provider) > 120) {
+        respond(400, ['error' => 'provider name is required']);
+    }
+    $verdict = strtolower(trim((string) ($in['verdict'] ?? 'clean')));
+    if (!in_array($verdict, ['clean', 'suspicious', 'malicious', 'informational'], true)) {
+        $verdict = 'clean';
+    }
+    $url = trim((string) ($in['url'] ?? ''));
+    if ($url !== '' && !preg_match('#^https?://#i', $url)) {
+        respond(400, ['error' => 'report URL must start with http(s)://']);
+    }
+
+    // "checked" date: honor an admin-supplied date (YYYY-MM-DD), else now. Stored
+    // as a full timestamp so ordering is stable within a day.
+    $checkedIn = trim((string) ($in['lastChecked'] ?? ''));
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $checkedIn)) {
+        $lastChecked = date('c', (int) strtotime($checkedIn . ' 12:00:00'));
+    } else {
+        $lastChecked = date('c');
+    }
+
+    $data = loadJson(SECURITY_FILE, ['virustotal' => [], 'manual' => []]);
+    $manual = is_array($data['manual'] ?? null) ? $data['manual'] : [];
+
+    // Update in place when an id is given, else create a new entry.
+    $id = preg_replace('/[^a-z0-9]/', '', strtolower((string) ($in['id'] ?? '')));
+    if ($id === '') {
+        $id = 'm' . bin2hex(random_bytes(6));
+    }
+    $entry = null;
+    foreach ($manual as &$m) {
+        if (is_array($m) && ($m['id'] ?? '') === $id) {
+            $entry = &$m;
+            break;
+        }
+    }
+    unset($m);
+
+    $reportFile = is_array($entry) ? ($entry['reportFile'] ?? '') : '';
+    $up = $_FILES['report'] ?? null;
+    if ($up && $up['error'] === UPLOAD_ERR_OK) {
+        $ext = strtolower(pathinfo((string) $up['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, SECURITY_UPLOAD_EXT, true)) {
+            respond(400, ['error' => 'evidence file type not allowed']);
+        }
+        if (!is_dir(SECURITY_REPORTS_DIR) && !mkdir(SECURITY_REPORTS_DIR, 0755, true)) {
+            respond(500, ['error' => 'could not create security-reports folder']);
+        }
+        $stored = $id . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
+        if (!move_uploaded_file($up['tmp_name'], SECURITY_REPORTS_DIR . '/' . $stored)) {
+            respond(500, ['error' => 'could not store evidence file']);
+        }
+        // Replace any previous evidence for this entry.
+        if ($reportFile !== '' && is_file(SECURITY_REPORTS_DIR . '/' . basename($reportFile))) {
+            @unlink(SECURITY_REPORTS_DIR . '/' . basename($reportFile));
+        }
+        $reportFile = 'security-reports/' . $stored;
+    }
+
+    $record = [
+        'id'          => $id,
+        'provider'    => $provider,
+        'file'        => trim((string) ($in['file'] ?? '')),
+        'verdict'     => $verdict,
+        'url'         => $url,
+        'reportFile'  => $reportFile,
+        'notes'       => trim((string) ($in['notes'] ?? '')),
+        'lastChecked' => $lastChecked,
+    ];
+    if (is_array($entry)) {
+        $entry = array_merge($entry, $record);
+    } else {
+        $manual[] = $record;
+    }
+    $data['manual'] = array_values($manual);
+    if (!saveJson(SECURITY_FILE, $data)) {
+        respond(500, ['error' => 'could not save security data']);
+    }
+    respond(200, ['ok' => true, 'id' => $id]);
+}
+
+case 'security-delete': {
+    $kind = (string) ($body['kind'] ?? 'manual'); // 'manual' | 'virustotal'
+    $id   = (string) ($body['id'] ?? '');
+    if (!$isPost || $id === '') {
+        respond(400, ['error' => 'invalid parameters']);
+    }
+    $data = loadJson(SECURITY_FILE, ['virustotal' => [], 'manual' => []]);
+    if ($kind === 'virustotal') {
+        $vt = is_array($data['virustotal'] ?? null) ? $data['virustotal'] : [];
+        unset($vt[$id]);
+        $data['virustotal'] = $vt;
+    } else {
+        $manual = is_array($data['manual'] ?? null) ? $data['manual'] : [];
+        foreach ($manual as $i => $m) {
+            if (is_array($m) && ($m['id'] ?? '') === $id) {
+                if (!empty($m['reportFile']) && is_file(SECURITY_REPORTS_DIR . '/' . basename($m['reportFile']))) {
+                    @unlink(SECURITY_REPORTS_DIR . '/' . basename($m['reportFile']));
+                }
+                unset($manual[$i]);
+            }
+        }
+        $data['manual'] = array_values($manual);
+    }
+    if (!saveJson(SECURITY_FILE, $data)) {
+        respond(500, ['error' => 'could not save security data']);
+    }
+    respond(200, ['ok' => true]);
+}
+
+// Runs VirusTotal lookups for the newest build in each release type, keyed by
+// SHA-256 so results survive renames. Stops early on a 429 (quota) so already
+// scanned builds are kept and the admin can re-run for the rest.
+case 'security-vt-scan': {
+    if (!$isPost) {
+        respond(405, ['error' => 'POST required']);
+    }
+    $apiKey = (string) ($config['virusTotalApiKey'] ?? '');
+    if ($apiKey === '') {
+        respond(400, ['error' => 'no VirusTotal API key configured (set VIRUSTOTAL_API_KEY or admin-config.php)']);
+    }
+    require __DIR__ . '/virustotal.php';
+
+    $data = loadJson(SECURITY_FILE, ['virustotal' => [], 'manual' => []]);
+    $vt = is_array($data['virustotal'] ?? null) ? $data['virustotal'] : [];
+
+    $builds = latestReleaseBuilds(); // [['type'=>, 'file'=>'type/name', 'path'=>], ...]
+    $scanned = 0;
+    $rateLimited = false;
+    $results = [];
+    foreach ($builds as $b) {
+        if ($scanned >= VT_MAX_PER_SCAN) {
+            break;
+        }
+        $hash = hash_file('sha256', $b['path']);
+        if ($hash === false) {
+            continue;
+        }
+        $res = vtLookupHash($hash, $apiKey);
+        $scanned++;
+        if ($res['status'] === 'error' && str_contains($res['note'], '429')) {
+            $rateLimited = true;
+            break;
+        }
+        $vt[$hash] = [
+            'file'         => $b['file'],
+            'sha256'       => $hash,
+            'status'       => $res['status'],
+            'stats'        => $res['stats'],
+            'engines'      => $res['engines'],
+            'permalink'    => $res['permalink'],
+            'analysisDate' => $res['analysisDate'],
+            'note'         => $res['note'],
+            'lastChecked'  => date('c'),
+        ];
+        $results[] = ['file' => $b['file'], 'status' => $res['status'], 'engines' => $res['engines']];
+    }
+
+    $data['virustotal'] = $vt;
+    if (!saveJson(SECURITY_FILE, $data)) {
+        respond(500, ['error' => 'scanned but could not save results']);
+    }
+    respond(200, [
+        'ok'          => true,
+        'scanned'     => $scanned,
+        'totalBuilds' => count($builds),
+        'rateLimited' => $rateLimited,
+        'results'     => $results,
+        'entries'     => securityEntries($data),
+    ]);
+}
+
 // ── Stats ────────────────────────────────────────
 case 'stats': {
     respond(200, ['stats' => loadJson(STATS_FILE, ['downloads' => 0])]);
@@ -718,10 +922,10 @@ function upsertManifestPack(string $id, array $set, array $unset = []): void
         $modpacks[] = array_merge(['id' => $id], $set);
     }
     $manifest['modpacks'] = array_values($modpacks);
-    $manifest['updated'] = gmdate('c');
+    $manifest['updated'] = date('c');
 
     $history = loadJson(HISTORY_FILE, ['entries' => []]);
-    $history['entries'][] = ['saved' => gmdate('c'), 'manifest' => loadJson(MANIFEST_FILE)];
+    $history['entries'][] = ['saved' => date('c'), 'manifest' => loadJson(MANIFEST_FILE)];
     $history['entries'] = array_slice($history['entries'], -100);
     saveJson(HISTORY_FILE, $history);
 
@@ -777,12 +981,12 @@ function reconcileManifestPacks(array $discovered, array $registry): void
         $manifest['schemaVersion'] = 1;
     }
     $manifest['modpacks'] = array_values($modpacks);
-    $manifest['updated'] = gmdate('c');
+    $manifest['updated'] = date('c');
 
     // Snapshot the pre-change manifest for history/rollback, mirroring the
     // other manifest writers.
     $history = loadJson(HISTORY_FILE, ['entries' => []]);
-    $history['entries'][] = ['saved' => gmdate('c'), 'manifest' => loadJson(MANIFEST_FILE)];
+    $history['entries'][] = ['saved' => date('c'), 'manifest' => loadJson(MANIFEST_FILE)];
     $history['entries'] = array_slice($history['entries'], -100);
     saveJson(HISTORY_FILE, $history);
 
@@ -808,6 +1012,48 @@ function discoveredPackName(string $id): string
         }
     }
     return '';
+}
+
+/**
+ * Newest actual build (skipping dotfiles and doc files) in each release type
+ * folder — the same "latest per type" rule download.php serves. Returns
+ * [['type' => ..., 'file' => 'type/name', 'path' => absolute], ...], one per
+ * type that has a build, so the VirusTotal scan hashes exactly the files users
+ * download.
+ */
+function latestReleaseBuilds(): array
+{
+    $root = realpath(RELEASES_DIR);
+    if ($root === false) {
+        return [];
+    }
+    $builds = [];
+    foreach (scandir($root) ?: [] as $type) {
+        $dir = $root . DIRECTORY_SEPARATOR . $type;
+        if ($type[0] === '.' || !is_dir($dir)) {
+            continue;
+        }
+        $latest = null;
+        $latestTime = -1;
+        foreach (scandir($dir) ?: [] as $f) {
+            $p = $dir . DIRECTORY_SEPARATOR . $f;
+            if ($f[0] === '.' || !is_file($p)) {
+                continue;
+            }
+            if (in_array(strtolower(pathinfo($f, PATHINFO_EXTENSION)), DOC_EXTENSIONS, true)) {
+                continue;
+            }
+            $m = filemtime($p);
+            if ($m > $latestTime || ($m === $latestTime && strcmp($f, (string) $latest) > 0)) {
+                $latest = $f;
+                $latestTime = $m;
+            }
+        }
+        if ($latest !== null) {
+            $builds[] = ['type' => $type, 'file' => $type . '/' . $latest, 'path' => $dir . DIRECTORY_SEPARATOR . $latest];
+        }
+    }
+    return $builds;
 }
 
 /**
@@ -841,11 +1087,15 @@ function writeReleaseSums(string $typeDir): void
 
 /**
  * Builds a mod entry from a jar: filename heuristic first, then refined by
- * fabric.mod.json / quilt.mod.json / META-INF/mods.toml inside the jar.
+ * fabric.mod.json / quilt.mod.json / META-INF/[neoforge.]mods.toml /
+ * litemod.json inside the jar. `id` is the authoritative mod id (the app
+ * keys update diffs on it); `name` is the display name. Field set matches
+ * scripts/package-modpack.ps1 — keep the two packagers in sync.
  */
 function packBuildModEntry(string $filename, string $jarBytes): array
 {
-    $base = preg_replace('/\.jar$/i', '', $filename);
+    $base = preg_replace('/\.(jar|litemod)$/i', '', $filename);
+    $id = '';
     $name = $base;
     $version = '';
     if (preg_match('/^(.*?)[-_](v?\d[\w.+-]*)$/', $base, $m)) {
@@ -866,27 +1116,59 @@ function packBuildModEntry(string $filename, string $jarBytes): array
                     $info = $metaFile === 'quilt.mod.json' ? ($meta['quilt_loader'] ?? []) : $meta;
                     if (is_array($info)) {
                         if (!empty($info['id'])) {
-                            $name = (string) $info['id'];
+                            $id = (string) $info['id'];
                         }
                         if (!empty($info['version'])) {
                             $version = (string) $info['version'];
+                        }
+                        $display = $metaFile === 'quilt.mod.json'
+                            ? ($info['metadata']['name'] ?? '')
+                            : ($meta['name'] ?? '');
+                        if ($display !== '') {
+                            $name = (string) $display;
+                        } elseif ($id !== '') {
+                            $name = $id;
                         }
                     }
                     break;
                 }
             }
             // Forge/NeoForge mods.toml: light regex parse for modId/version.
-            if ($version === '' || $name === $base) {
+            if ($id === '') {
                 $toml = $jar->getFromName('META-INF/mods.toml');
                 if ($toml === false) {
                     $toml = $jar->getFromName('META-INF/neoforge.mods.toml');
                 }
                 if ($toml !== false) {
-                    if (preg_match('/modId\s*=\s*"([^"]+)"/', $toml, $m)) {
+                    if (preg_match('/^\s*modId\s*=\s*"([^"]+)"/m', $toml, $m)) {
+                        $id = $m[1];
+                        $name = $id;
+                    }
+                    if (preg_match('/^\s*displayName\s*=\s*"([^"]+)"/m', $toml, $m)) {
                         $name = $m[1];
                     }
-                    if (preg_match('/version\s*=\s*"(?!\$)([^"]+)"/', $toml, $m)) {
+                    if (preg_match('/^\s*version\s*=\s*"([^"]+)"/m', $toml, $m) && strpos($m[1], '${') === false) {
                         $version = $m[1];
+                    } elseif (($mf = $jar->getFromName('META-INF/MANIFEST.MF')) !== false
+                        && preg_match('/^Implementation-Version:\s*(\S+)/m', $mf, $m)) {
+                        // "${file.jarVersion}" (or no version) defers to the jar manifest.
+                        $version = $m[1];
+                    }
+                }
+            }
+            // LiteLoader (.litemod): legacy, one JSON file.
+            if ($id === '') {
+                $raw = $jar->getFromName('litemod.json');
+                if ($raw !== false) {
+                    $meta = json_decode($raw, true);
+                    if (is_array($meta)) {
+                        if (!empty($meta['name'])) {
+                            $id = (string) $meta['name'];
+                            $name = $id;
+                        }
+                        if (!empty($meta['version'])) {
+                            $version = (string) $meta['version'];
+                        }
                     }
                 }
             }
@@ -897,8 +1179,10 @@ function packBuildModEntry(string $filename, string $jarBytes): array
 
     return [
         'file'    => $filename,
+        'id'      => $id,
         'name'    => $name,
         'version' => $version,
         'sha256'  => hash('sha256', $jarBytes),
+        'sha1'    => hash('sha1', $jarBytes),
     ];
 }

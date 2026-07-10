@@ -30,27 +30,33 @@
     { name:"GDLauncher", status:"working", note:"A sleek launcher that emphasizes a friendly UI and integrated pack browsing/management.", url:"https://gdlauncher.com/" },
     { name:"Technic", status:"working", note:"One of the classic launcher platforms — known for legacy packs and older modpack history.", url:"https://www.technicpack.net/" },
     { name:"PolyMC", status:"working", note:"A Prism/MultiMC-family launcher — similar instance philosophy with community-driven tooling.", url:"https://polymc.org/" },
-    { name:"Feather", status:"working", note:"A performance-focused launcher often used for competitive play and client-side enhancements.", url:"https://feathermc.com/" },
+    { name:"Dawn", status:"working", note:"Formerly Feather — a performance-focused launcher often used for competitive play and client-side enhancements.", url:"https://dawn.gg/" },
     { name:"BakaXL", status:"working", note:"A launcher favored by some modded communities, especially in regions where it's widely adopted.", url:"https://www.bakaxl.com/" },
 
     // Planned — new launchers requested
+    { name:"Polymerium", status:"planned", note:"A modern Minecraft launcher for Windows with a clean UI and modpack management capabilities.", url:"https://polymerium.dearain.dev/" },
+    { name:"X Minecraft Launcher", status:"planned", note:"An open-source Minecraft launcher supporting multiple accounts, modpacks, and resource management.", url:"https://xmcl.app/" },
     { name:"SK Launcher", status:"planned", note:"An all-in-one Minecraft hub with built-in modloaders, modpack support, and skin management.", url:"https://skmedix.pl/" },
     { name:"Freesm Launcher", status:"planned", note:"A Prism-based launcher that removes offline account restrictions and adds custom auth server support.", url:"https://freesmlauncher.org/" },
-    { name:"ElyPrism", status:"planned", note:"A Prism Launcher fork with Ely.by authentication integration for alternative account systems.", url:"https://elyprismlauncher.github.io/" },
+    { name:"PineconeMC", status:"planned", note:"Formerly ElyPrism — a Prism Launcher fork with Ely.by authentication integration for alternative account systems.", url:"https://elyprismlauncher.github.io/" },
     { name:"ShatteredPrism", status:"planned", note:"A community-maintained Prism Launcher fork focused on extended features and flexibility.", url:"https://github.com/Noctilune/ShatteredPrism" },
     { name:"QWERTZ Launcher", status:"planned", note:"A launcher from the QWERTZ project ecosystem with streamlined Minecraft instance management.", url:"https://qwertz.app/projects/" },
     { name:"Fjord Launcher", status:"planned", note:"An Unmojang project — a Prism-family launcher with its own community-driven direction.", url:"https://github.com/unmojang/FjordLauncher" },
     { name:"HMCL", status:"planned", note:"A cross-platform Minecraft launcher popular in the Chinese community, supporting multiple auth and mod sources.", url:"https://hmcl.huangyuhui.net/" },
     { name:"UltimMC", status:"planned", note:"A MultiMC fork focused on offline play support and community-driven development.", url:"https://github.com/UltimMC/Launcher" },
 
+    // Unsupported
+    { name:"TLauncher", status:"unsupported", note:"Not supported due to documented privacy and security concerns raised by the Minecraft community.", url:null },
+
     // Catch-all
     { name:"Additional ecosystems", status:"planned", note:"More launcher adapters as the ecosystem evolves — prioritized by demand and stability.", url:null },
   ];
 
   const meta = {
-    supported: { label:"Supported", badge:"badge-supported" },
-    working:   { label:"In progress", badge:"badge-working" },
-    planned:   { label:"Planned", badge:"badge-planned" }
+    supported:   { label:"Supported", badge:"badge-supported" },
+    working:     { label:"In progress", badge:"badge-working" },
+    planned:     { label:"Planned", badge:"badge-planned" },
+    unsupported: { label:"Unsupported", badge:"badge-unsupported" }
   };
 
   // ── Theme ──────────────────────────────────────
@@ -141,7 +147,7 @@
     }).join("");
 
     // Update counts
-    const counts = { supported:0, working:0, planned:0 };
+    const counts = { supported:0, working:0, planned:0, unsupported:0 };
     list.forEach(l => counts[l.status]++);
 
     const set = (id, val) => { const el = $(id); if (el) el.textContent = String(val); };
@@ -151,7 +157,8 @@
     set("#btnSupported", counts.supported);
     set("#btnWorking", counts.working);
     set("#btnPlanned", counts.planned);
-    set("#btnAll", counts.supported + counts.working + counts.planned);
+    set("#btnUnsupported", counts.unsupported);
+    set("#btnAll", counts.supported + counts.working + counts.planned + counts.unsupported);
   }
 
   // ── Filters ────────────────────────────────────

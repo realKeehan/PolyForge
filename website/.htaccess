@@ -11,8 +11,13 @@ RewriteEngine On
 # Never serve the shared partials directly
 RewriteRule ^partials(/|$) - [F,L]
 
+# security-reports/ holds admin-uploaded evidence (screenshots/PDFs) — static
+# content only; never let anything in there execute even if it slipped past the
+# upload extension whitelist.
+RewriteRule ^security-reports/.+\.(php|phtml|phar)$ - [F,L]
+
 # Data files are only accessed through their API endpoints
-<FilesMatch "^(tetris-scores\.json|pack-access-state\.json|stats-data\.json|packs-data\.json|admin-state\.json|manifest-history\.json|packs\.data\.php|packs-registry\.php|admin-config\.php|slime-lib\.php)$">
+<FilesMatch "^(tetris-scores\.json|pack-access-state\.json|stats-data\.json|packs-data\.json|admin-state\.json|manifest-history\.json|security-data\.json|packs\.data\.php|packs-registry\.php|admin-config\.php|slime-lib\.php|security-lib\.php|virustotal\.php|php-compat\.php)$">
   Require all denied
 </FilesMatch>
 

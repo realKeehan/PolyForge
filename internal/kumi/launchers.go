@@ -52,8 +52,8 @@ func (s *Service) installBakaXL(explicitRoot string) (*ActionResult, error) {
 	return install.BakaXL(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
-func (s *Service) installFeather(explicitRoot string) (*ActionResult, error) {
-	return install.Feather(s.installDependencies(), featherCandidates(explicitRoot), "", emptyZipWarning)
+func (s *Service) installDawn(explicitRoot string) (*ActionResult, error) {
+	return install.Dawn(s.installDependencies(), dawnCandidates(explicitRoot), "", emptyZipWarning)
 }
 
 func (s *Service) installTechnic(explicitRoot string) (*ActionResult, error) {

@@ -8,136 +8,14 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
 )
 
-// ── Resolver framework ───────────────────────────
-// Multi-strategy launcher resolver. Discovers installed launchers through:
-//   1. Cache - previously validated paths
-//   2. Known paths - common install locations
-//   3. Registry - Windows uninstall keys
-//   4. Shell AppsFolder - UWP/Store apps via PowerShell
-//   5. Running processes - detect launchers currently open
-//   6. Start Menu shortcuts - resolve .lnk targets
-//   7. Targeted scan - depth-limited concurrent filesystem scan
-
-// ResolveResult holds the output of a launcher resolution attempt.
-type ResolveResult struct {
-	ExePath   string
-	DataDir   string
-	Evidence  Evidence
-	Notes     []string
-	FromCache bool
-}
-
-// LauncherSpec defines the parameters for resolving a specific launcher.
-type LauncherSpec struct {
-	ID         LauncherID
-	ExeNames   []string // e.g. ["MinecraftLauncher.exe"]
-	DataDirFn  func() string
-	KnownPaths func() []string
-	Validate   func(string) error
-	// Registry display name substring for uninstall key search (Windows)
-	RegistryDisplayName string
-	// Process name without extension for running process detection
-	ProcessName string
-}
-
-// ResolveLauncher runs through all detection strategies for the given spec.
-func ResolveLauncher(ctx context.Context, cache *LauncherCache, spec *LauncherSpec) (*ResolveResult, error) {
-	var notes []string
-
-	// 0) Data dir check
-	dataDir := ""
-	if spec.DataDirFn != nil {
-		dataDir = spec.DataDirFn()
-		if dirExists(dataDir) {
-			notes = append(notes, "Found data directory")
-		} else {
-			notes = append(notes, "Data directory not found (may be normal)")
-		}
-	}
-
-	// 1) Cache first
-	if cand := BestValidCachedCandidate(cache, spec.ID, spec.Validate); cand != nil {
-		cand.LastUsed = time.Now()
-		notes = append(notes, "Using cached path (validated)")
-		return &ResolveResult{
-			ExePath:   cand.Path,
-			DataDir:   dataDir,
-			Evidence:  EvCache,
-			Notes:     notes,
-			FromCache: true,
-		}, nil
-	}
-
-	// 2) Known paths
-	if spec.KnownPaths != nil {
-		for _, p := range spec.KnownPaths() {
-			if spec.Validate(p) == nil {
-				notes = append(notes, "Found via known paths")
-				UpsertCandidate(cache, &Candidate{
-					Launcher:   spec.ID,
-					Path:       p,
-					Kind:       "exe",
-					Evidence:   EvKnownPaths,
-					Confidence: "high",
-					LastUsed:   time.Now(),
-					LastOK:     time.Now(),
-					HashHint:   PathHint(p),
-				})
-				return &ResolveResult{ExePath: p, DataDir: dataDir, Evidence: EvKnownPaths, Notes: notes}, nil
-			}
-		}
-	}
-
-	// 3-7) Platform-specific detection strategies would go here.
-	// These are scaffolded as extension points.
-	// On Windows: registry, appsfolder, running processes, start menu, targeted scan.
-	// On Linux/macOS: known paths, running processes, XDG paths, targeted scan.
-
-	// 7) Targeted scan (last resort)
-	if len(spec.ExeNames) > 0 {
-		roots := commonScanRoots()
-		for _, exeName := range spec.ExeNames {
-			if p := scanForExe(ctx, roots, exeName, 5, 8); p != "" && spec.Validate(p) == nil {
-				notes = append(notes, fmt.Sprintf("Found via targeted scan: %s", exeName))
-				UpsertCandidate(cache, &Candidate{
-					Launcher:   spec.ID,
-					Path:       p,
-					Kind:       "exe",
-					Evidence:   EvScan,
-					Confidence: "low",
-					LastUsed:   time.Now(),
-					LastOK:     time.Now(),
-					HashHint:   PathHint(p),
-				})
-				return &ResolveResult{ExePath: p, DataDir: dataDir, Evidence: EvScan, Notes: notes}, nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("no valid executable found for %s via any detection strategy", spec.ID)
-}
-
-// SaveManualChoice caches a user-selected path with highest priority.
-func SaveManualChoice(cache *LauncherCache, id LauncherID, exePath string, validate func(string) error) error {
-	if err := validate(exePath); err != nil {
-		return err
-	}
-	UpsertCandidate(cache, &Candidate{
-		Launcher:   id,
-		Path:       exePath,
-		Kind:       "exe",
-		Evidence:   EvManual,
-		Confidence: "high",
-		UserPicked: true,
-		LastUsed:   time.Now(),
-		LastOK:     time.Now(),
-		HashHint:   PathHint(exePath),
-	})
-	return SaveCache(cache)
-}
+// ── Launcher discovery primitives ────────────────
+// Shared building blocks for exe-based launcher detection. The detection
+// pipeline itself lives in service.go (detectByExecutable) and detect.go
+// (discoverLauncherDirs): validated cache entries first, then Start Menu /
+// taskbar / Desktop shortcut resolution, then the bounded filesystem scan
+// below as the throttled last resort.
 
 // ── Targeted concurrent scan ─────────────────────
 //
@@ -156,11 +34,6 @@ func SaveManualChoice(cache *LauncherCache, id LauncherID, exePath string, valid
 // Either would sit in front of this scan as the fallback; neither helps
 // Linux/macOS. Only worth building if cold-scan latency becomes a real
 // complaint — the shortcut+cache pipeline already covers the common case.
-
-func scanForExe(ctx context.Context, roots []string, exeName string, maxDepth int, workers int) string {
-	hits := scanForExes(ctx, roots, map[string]string{strings.ToLower(exeName): exeName}, maxDepth, workers)
-	return hits[exeName]
-}
 
 // scanForExes searches the given roots for multiple executables in a single
 // traversal. wanted maps lowercase exe filenames to a caller-defined key;
@@ -283,6 +156,9 @@ func shortcutRoots() []string {
 		filepath.Join(programData, "Microsoft", "Windows", "Start Menu", "Programs"),
 		filepath.Join(user, "Desktop"),
 	}
+	for _, root := range oneDriveRoots(user) {
+		candidates = append(candidates, filepath.Join(root, "Desktop"))
+	}
 
 	var roots []string
 	for _, c := range candidates {
@@ -396,6 +272,12 @@ func commonScanRoots() []string {
 	add(filepath.Join(home, "Downloads"))
 	add(filepath.Join(home, "Documents"))
 	add(filepath.Join(home, "Games"))
+	for _, root := range oneDriveRoots(home) {
+		add(filepath.Join(root, "Desktop"))
+		add(filepath.Join(root, "Downloads"))
+		add(filepath.Join(root, "Documents"))
+		add(filepath.Join(root, "Games"))
+	}
 
 	// Program folders on secondary drives — installs are not constrained to
 	// the system drive. Existence is checked by the scan itself.
@@ -406,6 +288,18 @@ func commonScanRoots() []string {
 		add(filepath.Join(drive, "Games"))
 	}
 
+	return uniqueStrings(roots)
+}
+
+func oneDriveRoots(home string) []string {
+	roots := []string{
+		os.Getenv("OneDrive"),
+		os.Getenv("OneDriveConsumer"),
+		os.Getenv("OneDriveCommercial"),
+	}
+	if home != "" {
+		roots = append(roots, filepath.Join(home, "OneDrive"))
+	}
 	return uniqueStrings(roots)
 }
 

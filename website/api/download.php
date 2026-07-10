@@ -56,7 +56,7 @@ function recordDownload(?string $type, string $file = ''): void
         $stats['byFile'] = $byFile;
     }
     // Daily history for graphs, capped at ~400 days.
-    $today = gmdate('Y-m-d');
+    $today = date('Y-m-d');
     $history = is_array($stats['history'] ?? null) ? $stats['history'] : [];
     $day = is_array($history[$today] ?? null) ? $history[$today] : ['total' => 0, 'byType' => []];
     $day['total'] = max(0, (int) ($day['total'] ?? 0)) + 1;
@@ -69,7 +69,7 @@ function recordDownload(?string $type, string $file = ''): void
         $history = array_slice($history, -400, null, true);
     }
     $stats['history'] = $history;
-    $stats['updated'] = gmdate('c');
+    $stats['updated'] = date('c');
     file_put_contents(STATS_FILE, json_encode($stats, JSON_PRETTY_PRINT), LOCK_EX);
 }
 

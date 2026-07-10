@@ -22,8 +22,10 @@ func ShatteredPrism(deps Dependencies, candidates []string, zipURL string, warni
 	return InstanceWithOptionalZip(deps, "ShatteredPrism", candidates, "instances", "TurtelSMP5", zipURL, warning)
 }
 
+// QWERTZ stores instances under profiles\<name> (not instances\) with a
+// profiles.json registry at the launcher root (MachineTest_01).
 func QWERTZ(deps Dependencies, candidates []string, zipURL string, warning string) (*ktypes.ActionResult, error) {
-	return InstanceWithOptionalZip(deps, "QWERTZ", candidates, "instances", "TurtelSMP5", zipURL, warning)
+	return InstanceWithOptionalZip(deps, "QWERTZ", candidates, "profiles", "TurtelSMP5", zipURL, warning)
 }
 
 func Fjord(deps Dependencies, candidates []string, zipURL string, warning string) (*ktypes.ActionResult, error) {

@@ -139,7 +139,7 @@ If Wails reports `This version of %1 is not compatible with the version of Windo
 | Status | Launchers |
 |--------|-----------|
 | **Supported** | Vanilla Launcher, MultiMC, CurseForge, Modrinth (Theseus), Custom Path, Manual Install |
-| **In progress** | Prism Launcher, ATLauncher, GDLauncher, Technic, PolyMC, Feather, BakaXL |
+| **In progress** | Prism Launcher, ATLauncher, GDLauncher, Technic, PolyMC, Dawn (formerly Feather), BakaXL |
 | **Planned** | Polymerium, X Minecraft Launcher, SK Launcher, Freesm Launcher, PineconeMC (formerly ElyPrism), ShatteredPrism, QWERTZ, Fjord Launcher, HMCL, UltimMC |
 
 ## Architecture

@@ -3,6 +3,7 @@ package kumi
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -47,7 +48,7 @@ func (s *Service) installHostedPack(payload ExecutionPayload) (*ActionResult, er
 	defer os.Remove(tmpPath)
 	s.logStep(result, "info", "Download complete.")
 
-	if !s.extractAndVerifyPack(result, tmpPath, target) {
+	if !s.extractAndVerifyPack(result, tmpPath, target, strings.TrimSpace(payload.Extra["launcher"])) {
 		result.Success = false
 		return result, nil
 	}
@@ -55,12 +56,34 @@ func (s *Service) installHostedPack(payload ExecutionPayload) (*ActionResult, er
 	return result, nil
 }
 
-// extractAndVerifyPack extracts a pack file's overrides into target, verifies
-// every extracted file against the manifest checksums, and records the install
-// for future update/self-destruct passes. It streams each step live and returns
-// whether the install succeeded (integrity failures return false). Shared by the
-// hosted-pack and local-pack install paths.
-func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, target string) bool {
+// extractAndVerifyPack lays the pack out for the chosen launcher (instance
+// dir + game dir derived from the chosen path), extracts the overrides,
+// verifies every extracted file against the manifest checksums, records the
+// install for future update/self-destruct passes, and generates the
+// launcher's own instance/profile files. It streams each step live and
+// returns whether the install succeeded (integrity failures return false).
+// Shared by the hosted-pack and local-pack install paths. An empty
+// launcherID installs into chosenPath as-is with no generation (manual mode).
+func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, chosenPath, launcherID string) bool {
+	// Read the pack's identity first so the install can be laid out for the
+	// launcher (instances/<name>/minecraft etc.) before anything is written.
+	reader, err := openPackReader(packPath)
+	if err != nil {
+		s.logStep(result, "error", fmt.Sprintf("cannot open pack: %v", err))
+		return false
+	}
+	packManifest, err := readZipPackManifest(reader)
+	if err != nil {
+		s.logStep(result, "error", fmt.Sprintf("pack install failed: %v", err))
+		return false
+	}
+	launchersFile := readZipLaunchersFile(reader)
+	instanceName := instanceNameFor(launcherID, packManifest, launchersFile)
+	instanceDir, target := PlanInstallDirs(launcherID, chosenPath, instanceName)
+	if target != filepath.Clean(chosenPath) {
+		s.logStep(result, "info", fmt.Sprintf("Instance directory: %s", instanceDir))
+	}
+
 	s.emitStage("Extracting pack contents…")
 	s.logStep(result, "info", "Extracting pack contents…")
 	files, manifest, report, err := installLocalPack(packPath, target)
@@ -95,7 +118,23 @@ func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, target st
 	// Remember where this pack landed so remote mod removal (self-destruct) and
 	// future update checks can find it without re-selecting the launcher.
 	recordInstalledPack(manifest.ID, manifest.Name, manifest.Version, target)
+
+	// Generate the launcher's own instance/profile files (instance.cfg,
+	// mmc-pack.json, launcher_profiles.json entry, ...). A verified install
+	// never fails on generation — worst case the user adds the instance
+	// manually, which is exactly what the log then says.
+	generated, notes, genErr := GenerateLauncherFiles(launcherID, instanceDir, manifest, launchersFile)
+	for _, note := range notes {
+		s.logStep(result, "info", note)
+	}
+	switch {
+	case genErr != nil:
+		s.logStep(result, "warning", fmt.Sprintf("Could not write the launcher's instance files (%v) — add the instance to your launcher manually.", genErr))
+	case generated:
+		s.logStep(result, "info", "Launcher instance files are in place.")
+	case launcherID != "":
+		s.logStep(result, "warning", "This launcher has no profile generator yet - add the instance to your launcher manually.")
+	}
 	s.emitProgress(100, "Done")
-	s.logStep(result, "warning", "Launcher profile generation is not wired up yet - add the instance to your launcher manually.")
 	return true
 }

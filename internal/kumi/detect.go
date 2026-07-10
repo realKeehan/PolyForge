@@ -200,6 +200,9 @@ func gdLauncherCandidates(explicit string) []string {
 	appData := os.Getenv("APPDATA")
 	return cleanCandidates(
 		explicit,
+		// Current GDLauncher (Carbon) data dir; the exe lives separately
+		// under %LOCALAPPDATA%\Programs\@gddesktop (MachineTest_01).
+		filepath.Join(appData, "gdlauncher_carbon"),
 		filepath.Join(appData, "GDLauncher Carbon"),
 		filepath.Join(appData, "gdlauncher_next"),
 		filepath.Join(appData, "gdlauncher"),
@@ -231,11 +234,17 @@ func bakaXLCandidates(explicit string) []string {
 	)
 }
 
-func featherCandidates(explicit string) []string {
+// Dawn is the rebranded Feather client (acquired by InPVP, mid-2026). The
+// exe installs under %LOCALAPPDATA%\Dawn but profiles live in
+// %APPDATA%\.dawn (MachineTest_01). Legacy Feather dirs are kept for
+// installs that predate the rebrand.
+func dawnCandidates(explicit string) []string {
+	appData := os.Getenv("APPDATA")
 	return cleanCandidates(
 		explicit,
-		filepath.Join(os.Getenv("APPDATA"), "feather"),
-		filepath.Join(os.Getenv("APPDATA"), "FeatherClient"),
+		filepath.Join(appData, ".dawn"),
+		filepath.Join(appData, "feather"),
+		filepath.Join(appData, "FeatherClient"),
 		filepath.Join(localLowDir(), "Feather"),
 	)
 }
@@ -293,9 +302,13 @@ func shatteredPrismCandidates(explicit string) []string {
 	)
 }
 
+// QWERTZ keeps its exe *inside* the data dir (%APPDATA%\QWERTZ-Launcher)
+// and stores instances under profiles\<name> next to a profiles.json
+// registry (MachineTest_01).
 func qwertzCandidates(explicit string) []string {
 	return cleanCandidates(
 		explicit,
+		filepath.Join(os.Getenv("APPDATA"), "QWERTZ-Launcher"),
 		filepath.Join(os.Getenv("APPDATA"), "QWERTZ"),
 		filepath.Join(os.Getenv("APPDATA"), "qwertz"),
 	)
@@ -323,17 +336,26 @@ func ultimMCCandidates(explicit string) []string {
 	)
 }
 
+// Polymerium is inverted relative to most launchers: settings.json sits in
+// %APPDATA%\Polymerium but instances live under %LOCALAPPDATA%\Trident
+// (MachineTest_01), so Trident is probed first for install targeting.
 func polymeriumCandidates(explicit string) []string {
 	return cleanCandidates(
 		explicit,
+		filepath.Join(os.Getenv("LOCALAPPDATA"), "Trident"),
 		filepath.Join(os.Getenv("APPDATA"), "Polymerium"),
 		filepath.Join(os.Getenv("LOCALAPPDATA"), "Polymerium"),
 	)
 }
 
+// XMCL splits config from game data: %APPDATA%\xmcl holds settings plus the
+// instances.json registry, while the instance folders themselves live under
+// %USERPROFILE%\.minecraftx\instances (MachineTest_01). .minecraftx comes
+// first so installs land where the instances actually are.
 func xmclCandidates(explicit string) []string {
 	return cleanCandidates(
 		explicit,
+		filepath.Join(os.Getenv("USERPROFILE"), ".minecraftx"),
 		filepath.Join(os.Getenv("APPDATA"), "xmcl"),
 		filepath.Join(os.Getenv("APPDATA"), "X Minecraft Launcher"),
 		filepath.Join(os.Getenv("LOCALAPPDATA"), "xmcl"),

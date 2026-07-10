@@ -23,9 +23,8 @@ import (
 //   overrides/          — files copied into the instance
 //
 // The installer generates the actual launcher files (profiles, instance
-// configs) from LaunchersFile + PackManifest at install time.
-// TODO: per-launcher generators and default install locations will be
-// implemented once the test-machine pack structures are provided.
+// configs) from LaunchersFile + PackManifest at install time — see
+// gen_launchers.go for the per-launcher writers and install-layout planning.
 // ══════════════════════════════════════════════════
 
 // PackManifest identifies a pack and lists its mods. The Mods slice is the
@@ -44,17 +43,45 @@ type PackManifest struct {
 
 // PackLoader names the mod loader a pack targets.
 type PackLoader struct {
-	Type    string `json:"type,omitempty"` // "fabric", "forge", "neoforge", "quilt", "vanilla"
+	Type    string `json:"type,omitempty"` // "fabric", "forge", "neoforge", "quilt", "liteloader", "vanilla"
 	Version string `json:"version,omitempty"`
 }
 
-// PackMod is one mod entry; name+version drive update comparison and
-// sha256 doubles as integrity verification.
+// PackMod is one mod entry. ModID is the authoritative mod id the packager
+// read from the loader metadata inside the jar (fabric.mod.json /
+// quilt.mod.json / mods.toml / litemod.json) and is the stable identity for
+// update comparison; Name is the display name (filename-derived when no
+// metadata was readable). SHA256 doubles as integrity verification, SHA1
+// keys Modrinth hash lookups.
 type PackMod struct {
-	File    string `json:"file"`
-	Name    string `json:"name"`
-	Version string `json:"version,omitempty"`
-	SHA256  string `json:"sha256,omitempty"`
+	File    string         `json:"file"`
+	ModID   string         `json:"id,omitempty"`
+	Name    string         `json:"name"`
+	Version string         `json:"version,omitempty"`
+	SHA256  string         `json:"sha256,omitempty"`
+	SHA1    string         `json:"sha1,omitempty"`
+	Source  *PackModSource `json:"source,omitempty"`
+}
+
+// PackModSource records the upstream platform a mod was matched to (the
+// packager resolves it by file hash), so packs are traceable to their
+// projects and updates can re-fetch a mod from the platform instead of
+// shipping the bytes.
+type PackModSource struct {
+	Provider  string `json:"provider,omitempty"`  // "modrinth" | "curseforge"
+	ProjectID string `json:"projectId,omitempty"`
+	VersionID string `json:"versionId,omitempty"` // curseforge: the file id
+	URL       string `json:"url,omitempty"`       // direct download URL
+}
+
+// key is the identity used for update comparison: the mod id when the
+// packager could read one, otherwise the name. The prefixes keep an id from
+// ever colliding with a name-keyed entry from an older pack.
+func (m PackMod) key() string {
+	if m.ModID != "" {
+		return "id:" + m.ModID
+	}
+	return "name:" + m.Name
 }
 
 // PackOverrides summarizes the overrides/ payload. Files lists every shipped
@@ -128,23 +155,25 @@ func (d PackModDiff) HasChanges() bool {
 	return len(d.Added) > 0 || len(d.Removed) > 0 || len(d.Changed) > 0
 }
 
-// ComparePackMods diffs mod lists by name. Version is compared first,
-// falling back to hash so re-built jars with identical versions still
-// register as changed.
+// ComparePackMods diffs mod lists by mod id (falling back to name for packs
+// built before ids were emitted). Version is compared first, falling back to
+// hash so re-built jars with identical versions still register as changed.
+// A pack whose mods gained ids since the installed copy diffs as
+// removed+added once; the files on disk still reconcile by path+hash.
 func ComparePackMods(installed, latest []PackMod) PackModDiff {
 	var diff PackModDiff
 
-	installedByName := make(map[string]PackMod, len(installed))
+	installedByKey := make(map[string]PackMod, len(installed))
 	for _, m := range installed {
-		installedByName[m.Name] = m
+		installedByKey[m.key()] = m
 	}
-	latestByName := make(map[string]PackMod, len(latest))
+	latestByKey := make(map[string]PackMod, len(latest))
 	for _, m := range latest {
-		latestByName[m.Name] = m
+		latestByKey[m.key()] = m
 	}
 
 	for _, m := range latest {
-		old, ok := installedByName[m.Name]
+		old, ok := installedByKey[m.key()]
 		if !ok {
 			diff.Added = append(diff.Added, m)
 			continue
@@ -154,7 +183,7 @@ func ComparePackMods(installed, latest []PackMod) PackModDiff {
 		}
 	}
 	for _, m := range installed {
-		if _, ok := latestByName[m.Name]; !ok {
+		if _, ok := latestByKey[m.key()]; !ok {
 			diff.Removed = append(diff.Removed, m)
 		}
 	}
@@ -231,6 +260,32 @@ func readZipPackManifest(reader *zip.Reader) (*PackManifest, error) {
 		return ParsePackManifest(data)
 	}
 	return nil, fmt.Errorf("not a PolyForge pack: pack-manifest.json missing")
+}
+
+// readZipLaunchersFile returns the pack's launchers.json, or nil when the
+// pack doesn't carry one (older packs) or it is unreadable — launcher
+// generation then falls back to manifest-derived defaults.
+func readZipLaunchersFile(reader *zip.Reader) *LaunchersFile {
+	for _, f := range reader.File {
+		if f.Name != "launchers.json" {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return nil
+		}
+		data, err := io.ReadAll(io.LimitReader(rc, 4<<20))
+		rc.Close()
+		if err != nil {
+			return nil
+		}
+		l, err := ParseLaunchersFile(data)
+		if err != nil {
+			return nil
+		}
+		return l
+	}
+	return nil
 }
 
 // ── Integrity verification ───────────────────────
@@ -369,14 +424,13 @@ func installLocalPack(packPath, targetDir string) (files int, manifest *PackMani
 	return files, manifest, report, nil
 }
 
-// ── Dynamic per-launcher generation (scaffold) ───
+// ── Dynamic per-launcher generation ──────────────
 //
 // A pack is launcher-agnostic: overrides/ + a manifest + info fields. The
 // installer turns those into the concrete files a given launcher needs, so
 // one pack installs everywhere. Generation is data-driven through this
-// registry — add a launcher's real writer once its folder structure is
-// known (see scripts/dump-launcher-trees.ps1 output) without touching the
-// packager or the pack format.
+// registry; the writers live in gen_launchers.go and follow the schemas
+// captured from real installs (TemporaryDetectRef/MachineTest_01/INSTANCES).
 
 // LauncherTarget describes where and how a launcher expects an instance.
 type LauncherTarget struct {
@@ -385,36 +439,46 @@ type LauncherTarget struct {
 	// instance root, e.g. "minecraft" or ".minecraft" or "" (root).
 	InstanceSubdir string
 	// Generate writes the launcher-specific files (profile/instance configs)
-	// from the pack manifest + info fields into instanceDir. nil = not yet
-	// implemented (overrides still get extracted; profile is manual).
-	Generate func(instanceDir string, m *PackManifest, info map[string]any, defaults PackLauncherDefaults) error
+	// from the pack manifest + info fields into instanceDir, returning
+	// human-readable notes for the install log. nil = not implemented
+	// (overrides still get extracted; the profile is added manually).
+	Generate func(instanceDir string, m *PackManifest, info map[string]any, defaults PackLauncherDefaults) ([]string, error)
 }
 
-// launcherTargets is the generation registry. Subdirs reflect common
-// conventions; the Generate writers are stubbed until the real per-launcher
-// file schemas are captured from a test machine.
+// launcherTargets is the generation registry. Subdirs reflect the layouts
+// captured from the MachineTest_01 reference dump: MultiMC and the older
+// forks keep `.minecraft`, the modern Prism family writes `minecraft` (no
+// dot), and several launchers use the instance root itself as the game dir.
+// Launchers without a Generate writer and why:
+//   - atlauncher: its instance.json embeds the full Mojang + loader version
+//     manifests (~70 KB); use ATLauncher's own "Add pack" instead.
+//   - technic: custom packs couldn't be produced for reference (Notes.txt).
+//   - qwertz: profiles.json master-list schema not captured yet.
+//   - bakaxl / hmcl / ultimmc / sklauncher: unsupported or untested on the
+//     reference machine (language barrier / missing download / uses the
+//     vanilla .minecraft directly).
 var launcherTargets = map[string]LauncherTarget{
-	"vanilla":        {ID: "vanilla", InstanceSubdir: ""},         // profile in launcher_profiles.json → .minecraft
-	"multimc":        {ID: "multimc", InstanceSubdir: ".minecraft"},
-	"polymc":         {ID: "polymc", InstanceSubdir: ".minecraft"},
-	"prismlauncher":  {ID: "prismlauncher", InstanceSubdir: ".minecraft"},
-	"shatteredprism": {ID: "shatteredprism", InstanceSubdir: ".minecraft"},
-	"elyprism":       {ID: "elyprism", InstanceSubdir: ".minecraft"},
-	"ultimmc":        {ID: "ultimmc", InstanceSubdir: ".minecraft"},
-	"fjord":          {ID: "fjord", InstanceSubdir: ".minecraft"},
-	"modrinth":       {ID: "modrinth", InstanceSubdir: ""},
-	"curseforge":     {ID: "curseforge", InstanceSubdir: ""},
-	"atlauncher":     {ID: "atlauncher", InstanceSubdir: ".minecraft"},
-	"gdlauncher":     {ID: "gdlauncher", InstanceSubdir: ""},
+	"vanilla":        {ID: "vanilla", InstanceSubdir: "", Generate: genVanillaProfile}, // profile in launcher_profiles.json → chosen game dir
+	"multimc":        {ID: "multimc", InstanceSubdir: ".minecraft", Generate: genMMCInstance(false)},
+	"polymc":         {ID: "polymc", InstanceSubdir: ".minecraft", Generate: genMMCInstance(false)},
+	"prismlauncher":  {ID: "prismlauncher", InstanceSubdir: "minecraft", Generate: genMMCInstance(true)},
+	"shatteredprism": {ID: "shatteredprism", InstanceSubdir: "minecraft", Generate: genMMCInstance(true)},
+	"elyprism":       {ID: "elyprism", InstanceSubdir: "minecraft", Generate: genMMCInstance(true)},
+	"ultimmc":        {ID: "ultimmc", InstanceSubdir: ".minecraft", Generate: genMMCInstance(false)},
+	"fjord":          {ID: "fjord", InstanceSubdir: "minecraft", Generate: genMMCInstance(true)},
+	"modrinth":       {ID: "modrinth", InstanceSubdir: "", Generate: genModrinthProfile},
+	"curseforge":     {ID: "curseforge", InstanceSubdir: "", Generate: genCurseForgeInstance},
+	"atlauncher":     {ID: "atlauncher", InstanceSubdir: ""}, // mods/ etc. sit at the instance root
+	"gdlauncher":     {ID: "gdlauncher", InstanceSubdir: "instance", Generate: genGDLauncherInstance},
 	"technic":        {ID: "technic", InstanceSubdir: "bin"},
-	"feather":        {ID: "feather", InstanceSubdir: ""},
+	"dawn":           {ID: "dawn", InstanceSubdir: ".minecraft", Generate: genDawnProfile},
 	"bakaxl":         {ID: "bakaxl", InstanceSubdir: ""},
 	"sklauncher":     {ID: "sklauncher", InstanceSubdir: ""},
-	"freesm":         {ID: "freesm", InstanceSubdir: ".minecraft"},
-	"qwertz":         {ID: "qwertz", InstanceSubdir: ".minecraft"},
+	"freesm":         {ID: "freesm", InstanceSubdir: "minecraft", Generate: genMMCInstance(true)},
+	"qwertz":         {ID: "qwertz", InstanceSubdir: ""}, // profiles\<name> is the game dir
 	"hmcl":           {ID: "hmcl", InstanceSubdir: ""},
-	"polymerium":     {ID: "polymerium", InstanceSubdir: ""},
-	"xmcl":           {ID: "xmcl", InstanceSubdir: ""},
+	"polymerium":     {ID: "polymerium", InstanceSubdir: "", Generate: genPolymeriumProfile},
+	"xmcl":           {ID: "xmcl", InstanceSubdir: "", Generate: genXMCLInstance}, // instance root is the game dir (.minecraftx\instances\<name>)
 }
 
 // InstanceSubdirFor returns where a launcher expects the pack's overrides,
@@ -427,12 +491,13 @@ func InstanceSubdirFor(launcherID string) string {
 }
 
 // GenerateLauncherFiles writes the launcher-specific configuration for an
-// installed pack. Returns (false, nil) when no generator exists yet for the
-// launcher — the caller should tell the user to add the instance manually.
-func GenerateLauncherFiles(launcherID, instanceDir string, m *PackManifest, l *LaunchersFile) (generated bool, err error) {
+// installed pack, returning notes for the install log. Returns
+// (false, nil, nil) when no generator exists for the launcher — the caller
+// should tell the user to add the instance manually.
+func GenerateLauncherFiles(launcherID, instanceDir string, m *PackManifest, l *LaunchersFile) (generated bool, notes []string, err error) {
 	target, ok := launcherTargets[launcherID]
 	if !ok || target.Generate == nil {
-		return false, nil
+		return false, nil, nil
 	}
 	var info map[string]any
 	var defaults PackLauncherDefaults
@@ -440,17 +505,8 @@ func GenerateLauncherFiles(launcherID, instanceDir string, m *PackManifest, l *L
 		info = l.Launchers[launcherID]
 		defaults = l.Defaults
 	}
-	return true, target.Generate(instanceDir, m, info, defaults)
-}
-
-// AllLauncherIDs returns every launcher the generator knows about, so the
-// packager can emit info fields for all of them.
-func AllLauncherIDs() []string {
-	ids := make([]string, 0, len(launcherTargets))
-	for id := range launcherTargets {
-		ids = append(ids, id)
-	}
-	return ids
+	notes, err = target.Generate(instanceDir, m, info, defaults)
+	return true, notes, err
 }
 
 // TODO: CheckPackUpdate(installedManifest, hostedManifestURL) using

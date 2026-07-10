@@ -15,16 +15,26 @@
 # mirrors the app's discovery pipeline so portable installs show up:
 #   - Start Menu / taskbar / Desktop shortcuts are resolved and matched
 #     against each launcher's executable names (internal/kumi/service.go
-#     launcherExeNames); hits add the exe's folder as a candidate dir.
+#     launcherExeNames); hits add the exe's folder as a candidate dir, but
+#     only when no fixed data dir was found — exe dirs of launchers that keep
+#     data elsewhere are pure Electron/JRE noise in the dump.
 #   - Modrinth's app.db is located and settings.custom_dir extracted (via the
 #     sqlite3 CLI when available), because profiles live under that custom
 #     directory when set — not under %APPDATA%\ModrinthApp.
 #   - PolyForge's own launcher_cache.json is copied into the dump.
+#
+# Candidate paths were validated against the MachineTest_01 reference dump
+# (TemporaryDetectRef/MachineTest_01): gdlauncher_carbon, .dawn (Feather →
+# Dawn rebrand), QWERTZ-Launcher, .minecraftx (XMCL) and Trident (Polymerium)
+# were all missed by earlier revisions of this script.
 
 [CmdletBinding()]
 param(
     [int]$MaxDepth = 3,
-    [string]$OutDir = ''
+    [string]$OutDir = '',
+    # Extra folders to sweep for .lnk shortcuts (e.g. a test machine's
+    # hand-made shortcut collection for portable launchers).
+    [string[]]$ExtraShortcutRoots = @()
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -60,16 +70,22 @@ $launchers = [ordered]@{
     'modrinth'       = @( (Join-Path $APPDATA 'ModrinthApp'), (Join-Path $APPDATA 'com.modrinth.theseus') )
     'curseforge'     = @( (Join-Path $USER 'curseforge\minecraft'), (Join-Path $APPDATA 'CurseForge') )
     'atlauncher'     = @( (Join-Path $APPDATA 'ATLauncher'), 'C:\ATLauncher' )
-    'gdlauncher'     = @( (Join-Path $APPDATA 'GDLauncher Carbon'), (Join-Path $APPDATA 'gdlauncher_next'), (Join-Path $APPDATA 'gdlauncher') )
+    'gdlauncher'     = @( (Join-Path $APPDATA 'gdlauncher_carbon'), (Join-Path $APPDATA 'GDLauncher Carbon'), (Join-Path $APPDATA 'gdlauncher_next'), (Join-Path $APPDATA 'gdlauncher') )
     'technic'        = @( (Join-Path $APPDATA '.technic'), 'C:\.technic' )
-    'feather'        = @( (Join-Path $APPDATA 'feather'), (Join-Path $APPDATA 'FeatherClient'), (Join-Path $LOCALLOW 'Feather') )
+    # Dawn = rebranded Feather: exe under %LOCALAPPDATA%\Dawn, profiles in
+    # %APPDATA%\.dawn. Legacy Feather dirs kept for pre-rebrand installs.
+    'dawn'           = @( (Join-Path $APPDATA '.dawn'), (Join-Path $LOCAL 'Dawn'), (Join-Path $APPDATA 'feather'), (Join-Path $APPDATA 'FeatherClient'), (Join-Path $LOCALLOW 'Feather') )
     'bakaxl'         = @( (Join-Path $APPDATA 'BakaXL'), 'C:\BakaXL' )
     'sklauncher'     = @( (Join-Path $APPDATA 'SKLauncher'), (Join-Path $APPDATA '.sklauncher') )
     'freesm'         = @( (Join-Path $APPDATA 'FreesmLauncher'), (Join-Path $APPDATA 'freesmlauncher') )
-    'qwertz'         = @( (Join-Path $APPDATA 'QWERTZ'), (Join-Path $APPDATA 'qwertz') )
+    # QWERTZ keeps the exe inside its data dir; instances live in profiles\.
+    'qwertz'         = @( (Join-Path $APPDATA 'QWERTZ-Launcher'), (Join-Path $APPDATA 'QWERTZ'), (Join-Path $APPDATA 'qwertz') )
     'hmcl'           = @( (Join-Path $APPDATA '.hmcl'), (Join-Path $USER '.hmcl') )
-    'polymerium'     = @( (Join-Path $APPDATA 'Polymerium'), (Join-Path $LOCAL 'Polymerium') )
-    'xmcl'           = @( (Join-Path $APPDATA 'xmcl'), (Join-Path $APPDATA 'X Minecraft Launcher'), (Join-Path $LOCAL 'xmcl') )
+    # Polymerium: settings in Roaming\Polymerium, instances in Local\Trident.
+    'polymerium'     = @( (Join-Path $LOCAL 'Trident'), (Join-Path $APPDATA 'Polymerium'), (Join-Path $LOCAL 'Polymerium') )
+    # XMCL: config + instances.json registry in Roaming\xmcl, instance
+    # folders under %USERPROFILE%\.minecraftx\instances.
+    'xmcl'           = @( (Join-Path $USER '.minecraftx'), (Join-Path $APPDATA 'xmcl'), (Join-Path $APPDATA 'X Minecraft Launcher'), (Join-Path $LOCAL 'xmcl') )
 }
 
 # Executable names per launcher (mirrors internal/kumi/service.go
@@ -83,14 +99,14 @@ $exeNames = @{
     'atlauncher'     = @('ATLauncher.exe')
     'prismlauncher'  = @('prismlauncher.exe')
     'bakaxl'         = @('BakaXL.exe')
-    'feather'        = @('Feather Launcher.exe', 'Feather.exe')
+    'dawn'           = @('Dawn (Feather).exe', 'Feather Launcher.exe', 'Feather.exe')
     'technic'        = @('TechnicLauncher.exe', 'technic-launcher.exe')
     'polymc'         = @('polymc.exe')
     'sklauncher'     = @('SKlauncher.exe')
     'freesm'         = @('freesmlauncher.exe')
     'elyprism'       = @('PineconeMC.exe', 'ElyPrismLauncher.exe', 'elyprism.exe')
     'shatteredprism' = @('shatteredprism.exe')
-    'qwertz'         = @('QWERTZ Launcher.exe', 'QWERTZLauncher.exe')
+    'qwertz'         = @('QWERTZ Launcher.exe', 'QWERTZLauncher.exe', 'QWERTZ_Launcher.exe')
     'fjord'          = @('fjordlauncher.exe')
     'hmcl'           = @('HMCL.exe')
     'ultimmc'        = @('UltimMC.exe')
@@ -111,7 +127,13 @@ $schemaNames = @(
     'instances.json',
     'modpack.json',
     'settings.json',
-    '.minecraft.json'
+    '.minecraft.json',
+    'profiles.json',      # QWERTZ profile registry (launcher root)
+    'content-index.json', # Dawn per-profile content index
+    'data.lock.json',     # Polymerium per-instance lock
+    'CoreDirectory.json', # BakaXL game-dir pointers
+    'installedPacks',     # Technic installed-pack registry
+    '.curseclient'        # CurseForge per-instance marker
 )
 
 # ── Shortcut discovery (mirrors internal/kumi/resolver.go) ──────────────────
@@ -126,8 +148,11 @@ $shortcutRoots = @(
     (Join-Path $USER 'AppData\Roaming\Microsoft\Internet Explorer\Quick Launch'),
     (Join-Path $APPDATA 'Microsoft\Windows\Start Menu\Programs'),
     (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs'),
-    (Join-Path $USER 'Desktop')
-) | Where-Object { $_ -and (Test-Path $_ -PathType Container) }
+    (Join-Path $USER 'Desktop'),
+    # Test-machine convention: hand-made shortcuts for portable launchers
+    # (MultiMC/ATLauncher/XMCL zips) that never register a Start Menu entry.
+    (Join-Path $USER 'Downloads\PolyForge\SHORTCUTS')
+) + $ExtraShortcutRoots | Where-Object { $_ -and (Test-Path $_ -PathType Container) }
 
 # launcher id -> list of exe-holding dirs discovered via shortcuts
 $discovered = @{}
@@ -186,9 +211,19 @@ if ($modrinthDb) {
     [void]$modrinthNotes.AppendLine('app.db not found - Modrinth not installed or never launched.')
 }
 
-# Fold shortcut-discovered exe dirs into the candidate tables.
+# Fold shortcut-discovered exe dirs into the candidate tables — but only for
+# launchers whose fixed data dirs all came up empty (mirrors detect.go's
+# withDirDiscovery). Most launchers keep data away from the exe (Dawn,
+# GDLauncher, CurseForge, the Prism family), so dumping the exe dir when the
+# data dir was already found only buries the useful trees under megabytes of
+# Electron/JRE noise. When nothing else was found the exe dir is still worth
+# dumping: it proves the launcher is installed and, for portable installs
+# (MultiMC family, ATLauncher), it *is* the data dir.
 foreach ($id in $discovered.Keys) {
-    $launchers[$id] = @($launchers[$id]) + $discovered[$id]
+    $hasFixedHit = @($launchers[$id] | Where-Object { $_ -and (Test-Path $_ -PathType Container) }).Count -gt 0
+    if (-not $hasFixedHit) {
+        $launchers[$id] = @($launchers[$id]) + $discovered[$id]
+    }
 }
 
 function Write-Tree {

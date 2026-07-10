@@ -1,9 +1,10 @@
 # PolyForge modpack format (.polypack)
 
-> **Status: scaffold.** The layout and schemas below are the working
-> structure; exact per-launcher fields and default folder locations will be
-> filled in once real launcher trees from the test machine are provided
-> (`scripts/dump-launcher-trees.ps1`).
+> **Status: implemented.** Pack layout, packager metadata resolution, and
+> per-launcher instance generation are in place; the per-launcher schemas
+> were captured from real installs on the test machine
+> (`TemporaryDetectRef/MachineTest_01`, `scripts/dump-launcher-trees.ps1`).
+> Remaining gaps are listed under "Open items" at the bottom.
 
 ## The .polypack container
 
@@ -70,9 +71,17 @@ downloading the full pack.
   "mods": [
     {
       "file": "sodium-fabric-0.5.3.jar",
-      "name": "sodium-fabric",
+      "id": "sodium",
+      "name": "Sodium",
       "version": "0.5.3",
-      "sha256": "…"
+      "sha256": "…",
+      "sha1": "…",
+      "source": {
+        "provider": "modrinth",
+        "projectId": "AANobbMI",
+        "versionId": "…",
+        "url": "https://cdn.modrinth.com/data/…/sodium-fabric-0.5.3.jar"
+      }
     }
   ],
   "overrides": {
@@ -90,7 +99,52 @@ downloading the full pack.
 **The `mods` array is the only thing used for update decisions.** The
 installer compares the installed manifest against the hosted one and
 computes added / removed / version-changed mods (see `ComparePackMods` in
-`internal/kumi/packformat.go`).
+`internal/kumi/packformat.go`). Entries are keyed by `id` — the authoritative
+mod id read from the loader metadata inside each jar — falling back to `name`
+for packs built before ids were emitted.
+
+### Mod identity + source (how the fields are filled)
+
+Both packagers read each mod's metadata from inside the archive rather than
+trusting the filename:
+
+| File inside the jar | Loader | Fields |
+|---------------------|--------|--------|
+| `fabric.mod.json` | Fabric | `id`, `version`, display `name` |
+| `quilt.mod.json` (`quilt_loader`) | Quilt | `id`, `version`, `metadata.name` |
+| `META-INF/mods.toml` / `META-INF/neoforge.mods.toml` | Forge / NeoForge | `modId`, `version` (`${file.jarVersion}` resolves via `MANIFEST.MF` `Implementation-Version`), `displayName` |
+| `litemod.json` | LiteLoader (`.litemod` files, legacy) | `name` (used as id), `version` |
+
+The filename split (`name-version.jar` at the last hyphen-digit) is only the
+fallback when no metadata is readable.
+
+`sha1` keys a bulk Modrinth lookup (`POST /v2/version_files`): mods found on
+Modrinth get a `source` block (`provider`, `projectId`, `versionId`, direct
+`url`), which makes packs traceable to their upstream projects and lets a
+future update path re-fetch a mod from Modrinth instead of shipping the
+bytes. CurseForge has an equivalent (`POST /v1/fingerprints`, murmur2) but
+requires a partner `x-api-key` — planned once a key is provisioned. Mods
+without a match (private/renamed jars) simply have no `source`.
+
+### Loader version resolution
+
+The PowerShell packager resolves and validates `loader.version` against each
+loader's official metadata (`-LoaderVersion latest` — or empty — picks the
+newest stable for `-McVersion`; an explicit version is validated with a
+warning):
+
+| Loader | Source of truth |
+|--------|-----------------|
+| Fabric | `meta.fabricmc.net/v2/versions/loader/{mc}` (stable flag) |
+| Quilt | `meta.quiltmc.org/v3/versions/loader/{mc}` |
+| Forge | `files.minecraftforge.net/.../promotions_slim.json` (recommended → latest), validated against the Forge Maven |
+| NeoForge | `maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml` (MC `1.X.Y` → NeoForge `X.Y.*`; 1.20.1 is the legacy `net.neoforged:forge` artifact and must be passed explicitly) |
+| LiteLoader / vanilla | recorded verbatim, never resolved |
+
+`-McVersion` itself is sanity-checked against Mojang's
+`piston-meta.mojang.com/mc/game/version_manifest_v2.json`. Every network step
+degrades to a warning when unreachable, and `-Offline` skips them all — only
+`-LoaderVersion latest` hard-requires the network.
 
 ### `overrides.files` — per-file integrity
 
@@ -103,10 +157,6 @@ the install if anything is wrong (`VerifyInstalledPack` /
 problems in-game.** Packs built before this field existed simply omit it and
 verification is skipped (backward compatible). This same per-file hash list is
 the foundation for file-level delta updates (below).
-
-Mod `name`/`version` are currently derived from the jar filename
-(best-effort). TODO: read `fabric.mod.json` / `META-INF/mods.toml` from
-inside each jar for authoritative metadata.
 
 ## launchers.json — one pack, every launcher
 
@@ -133,17 +183,30 @@ files, so the same `.polypack` installs everywhere.
 
 Generation is data-driven through the registry in
 `internal/kumi/packformat.go` (`launcherTargets`): each launcher declares
-where overrides go (`InstanceSubdirFor`) and a `Generate` writer. Overrides
-are always extracted; the `Generate` writers are stubs until the real
-schemas are captured. Rough plan per family:
+where overrides go (`InstanceSubdirFor`) and a `Generate` writer
+(`internal/kumi/gen_launchers.go`). At install time the app derives the
+instance layout from the chosen path (`PlanInstallDirs`: launcher root →
+`instances/<name>/<gamedir>`, `profiles/<name>`, ...), extracts + verifies
+the overrides, then writes the launcher's own files. Every schema was
+captured from a real install on the reference machine
+(`TemporaryDetectRef/MachineTest_01/INSTANCES`):
 
-| Launcher family | Generated at install time |
-|-----------------|---------------------------|
-| vanilla | `launcher_profiles.json` entry (profile id, icon, args) |
-| MultiMC / PolyMC / Prism forks | `instance.cfg` + `mmc-pack.json` (components from `minecraft` + `loader`) |
-| Modrinth (Theseus) | profile entry / `profile.json` |
-| CurseForge | `minecraftinstance.json` |
-| others | TBD from `dump-launcher-trees.ps1` output |
+| Launcher | Generated at install time |
+|----------|---------------------------|
+| vanilla | `launcher_profiles.json` entry (gameDir, icon, `-Xmx` args); Fabric/Quilt version JSON fetched from the loader meta API into `versions\` so the profile launches immediately (Forge/NeoForge: run their installer once) |
+| MultiMC / PolyMC / UltimMC | legacy headerless `instance.cfg` + `mmc-pack.json` (components from `minecraft` + `loader`) |
+| Prism / ShatteredPrism / PineconeMC (elyprism) / Fjord / Freesm | `[General]`-style `instance.cfg` + `mmc-pack.json` |
+| Modrinth App (Theseus) | profile row registered directly in `app.db` (pure-Go SQLite; app-version-specific columns templated from an existing profile row) |
+| CurseForge | `minecraftinstance.json` (guid, `baseModLoader`, memory; the app repairs the loader `versionJson` on first open) |
+| GDLauncher Carbon | `instance.json` |
+| XMCL | `instance.json` (runtime block) |
+| Dawn | `profile.json` (schemaVersion 3) + `content-index.json` |
+| Polymerium | `profile.json` (Trident purl-style loader id) |
+| ATLauncher / Technic / QWERTZ / BakaXL / SKLauncher / HMCL | no generator (embedded-manifest format, uncaptured schema, or unsupported) — overrides still extract; the log says to add the instance manually |
+
+Generation never fails a verified install: every writer degrades to a log
+note (missing launcher state, unreachable meta API, ...) so worst case the
+files are in place and the user adds the instance in the launcher UI.
 
 ## Update flow
 
@@ -193,11 +256,14 @@ apply this filter automatically.
 
 Mod filenames in the wild are too inconsistent for reliable parsing
 (`entity_texture_features_26.1-fabric-7.1.jar`, `Gamma-Utils-3.0.0+mc26.1.jar`),
-so the online packager reads `fabric.mod.json` / `quilt.mod.json` /
-`META-INF/mods.toml` from inside each jar; the filename split is only the
-fallback (and the PowerShell script's current method).
+so **both** packagers read the loader metadata from inside each jar (see
+"Mod identity + source" above); the filename split is only the fallback.
 
-## Open items (waiting on test-machine pack structures)
+## Open items
 
-- Default install locations per launcher (instances dir, profiles dir).
-- Exact launcher file schemas + required fields for generation.
+- Generators for the remaining launchers: ATLauncher (its `instance.json`
+  embeds full Mojang + loader manifests, so it needs the meta APIs at install
+  time), QWERTZ (capture its `profiles.json` master-list schema from the test
+  machine), Technic / BakaXL / SKLauncher / HMCL (unsupported or untested).
+- CurseForge fingerprint matching in the packagers (`POST /v1/fingerprints`,
+  murmur2) once a partner `x-api-key` is provisioned.

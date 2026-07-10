@@ -89,6 +89,79 @@ func TestMultiMCCandidatesIncludesPortablePaths(t *testing.T) {
 	}
 }
 
+// TestMachineTestCandidatePaths pins the data-dir names observed in the
+// MachineTest_01 reference dump (TemporaryDetectRef/MachineTest_01). Each of
+// these was missed by an earlier candidate list: gdlauncher_carbon (not
+// "GDLauncher Carbon"), .dawn (Feather → Dawn rebrand), QWERTZ-Launcher,
+// .minecraftx (XMCL instances) and Trident (Polymerium instances).
+func TestMachineTestCandidatePaths(t *testing.T) {
+	home := filepath.Join("X:", "Users", "tester")
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("APPDATA", filepath.Join(home, "AppData", "Roaming"))
+	t.Setenv("LOCALAPPDATA", filepath.Join(home, "AppData", "Local"))
+
+	cases := []struct {
+		name string
+		got  []string
+		want string
+	}{
+		{"gdlauncher", gdLauncherCandidates(""), filepath.Join(home, "AppData", "Roaming", "gdlauncher_carbon")},
+		{"dawn", dawnCandidates(""), filepath.Join(home, "AppData", "Roaming", ".dawn")},
+		{"qwertz", qwertzCandidates(""), filepath.Join(home, "AppData", "Roaming", "QWERTZ-Launcher")},
+		{"xmcl", xmclCandidates(""), filepath.Join(home, ".minecraftx")},
+		{"polymerium", polymeriumCandidates(""), filepath.Join(home, "AppData", "Local", "Trident")},
+	}
+	for _, tc := range cases {
+		joined := strings.ToLower(strings.Join(tc.got, "|"))
+		if !strings.Contains(joined, strings.ToLower(tc.want)) {
+			t.Errorf("%s candidates missing %q; got %v", tc.name, tc.want, tc.got)
+		}
+	}
+}
+
+func TestCommonScanRootsIncludesOneDriveDocuments(t *testing.T) {
+	home := filepath.Join("X:", "Users", "vtori")
+	oneDrive := filepath.Join(home, "OneDrive")
+	t.Setenv("USERPROFILE", home)
+	t.Setenv("OneDrive", oneDrive)
+	t.Setenv("OneDriveConsumer", "")
+	t.Setenv("OneDriveCommercial", "")
+
+	got := commonScanRoots()
+	joined := strings.ToLower(strings.Join(got, "|"))
+	want := strings.ToLower(filepath.Join(oneDrive, "Documents"))
+	if !strings.Contains(joined, want) {
+		t.Fatalf("commonScanRoots missing OneDrive Documents root %q; got %v", want, got)
+	}
+}
+
+func TestShortcutRootsIncludesOneDriveDesktop(t *testing.T) {
+	base := t.TempDir()
+	oneDrive := filepath.Join(base, "OneDrive")
+	desktop := filepath.Join(oneDrive, "Desktop")
+	if err := os.MkdirAll(desktop, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("USERPROFILE", base)
+	t.Setenv("APPDATA", filepath.Join(base, "AppData", "Roaming"))
+	t.Setenv("ProgramData", filepath.Join(base, "ProgramData"))
+	t.Setenv("OneDrive", oneDrive)
+	t.Setenv("OneDriveConsumer", "")
+	t.Setenv("OneDriveCommercial", "")
+
+	got := shortcutRoots()
+	found := false
+	for _, root := range got {
+		if root == desktop {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("shortcutRoots missing OneDrive Desktop root %q; got %v", desktop, got)
+	}
+}
+
 // isolateDiscoveryEnv points every root the discovery pipeline touches
 // (launcher cache, shortcut roots) at throwaway temp dirs so tests neither
 // read nor write the real machine state.
