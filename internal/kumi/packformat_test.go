@@ -44,6 +44,36 @@ func TestComparePackMods(t *testing.T) {
 	}
 }
 
+func TestComparePackModsKeysByModID(t *testing.T) {
+	installed := []PackMod{
+		// Display name and filename both changed upstream; the mod id is the
+		// stable identity, so this must NOT read as removed+added.
+		{ModID: "sodium", Name: "sodium-fabric", File: "sodium-fabric-0.5.2.jar", Version: "0.5.2", SHA256: "aaa"},
+		{ModID: "lithium", Name: "Lithium", Version: "0.11.0", SHA256: "bbb"},
+	}
+	latest := []PackMod{
+		{ModID: "sodium", Name: "Sodium", File: "sodium-0.5.3+mc1.20.1.jar", Version: "0.5.3", SHA256: "ccc"},
+		{ModID: "lithium", Name: "Lithium", Version: "0.11.0", SHA256: "bbb"},
+	}
+
+	diff := ComparePackMods(installed, latest)
+	if len(diff.Added) != 0 || len(diff.Removed) != 0 {
+		t.Errorf("id-matched mods must not diff as added/removed, got added=%v removed=%v", diff.Added, diff.Removed)
+	}
+	if len(diff.Changed) != 1 || diff.Changed[0].ModID != "sodium" {
+		t.Errorf("Changed = %v, want [sodium]", diff.Changed)
+	}
+
+	// An id never collides with a name-keyed legacy entry of the same text.
+	mixed := ComparePackMods(
+		[]PackMod{{Name: "sodium", Version: "0.5.2"}},
+		[]PackMod{{ModID: "sodium", Name: "Sodium", Version: "0.5.2"}},
+	)
+	if len(mixed.Added) != 1 || len(mixed.Removed) != 1 {
+		t.Errorf("legacy name key must not match a new id key, got %+v", mixed)
+	}
+}
+
 func TestParsePackManifest(t *testing.T) {
 	good := []byte(`{"schemaVersion":1,"id":"turtel-smp","version":"1.0.0","name":"Turtel SMP","loader":{"type":"quilt","version":"0.22.0"},"mods":[{"file":"a-1.0.jar","name":"a","version":"1.0"}],"overrides":{"folders":["mods"],"fileCount":1,"totalBytes":10}}`)
 	m, err := ParsePackManifest(good)

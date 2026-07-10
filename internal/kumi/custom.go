@@ -9,7 +9,3 @@ func (s *Service) installCustomMods(modsDir string) (*ActionResult, error) {
 func (s *Service) installManual(target string) (*ActionResult, error) {
 	return install.Manual(s.installDependencies(), target, manualZipURL)
 }
-
-func (s *Service) installInstanceWithOptionalZip(label string, candidates []string, subDir string, instanceName string, zipURL string, warning string) (*ActionResult, error) {
-	return install.InstanceWithOptionalZip(s.installDependencies(), label, candidates, subDir, instanceName, zipURL, warning)
-}

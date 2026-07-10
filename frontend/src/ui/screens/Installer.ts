@@ -455,12 +455,20 @@ export function renderInstaller(store: Store): HTMLElement {
 
     // Hosted + local pack installs stream live; run them on the status screen
     // with a progress bar instead of the blocking overlay.
+    // The selected launcher row tells the backend how to lay out the install
+    // (instances/<name>/minecraft, profiles/<name>, ...) and which launcher's
+    // instance/profile files to generate after extraction.
     if (isHostedPack) {
       await runStreamingInstall(store, {
         mode: 'hostedpack',
         payload: {
           path: store.getState().selectedPath,
-          extra: { packUrl: packUrl!, packId: remotePack!.id, packName: remotePack!.name },
+          extra: {
+            packUrl: packUrl!,
+            packId: remotePack!.id,
+            packName: remotePack!.name,
+            launcher: option.id,
+          },
         },
         label: `Downloading ${remotePack!.name}…`,
       });
@@ -469,7 +477,10 @@ export function renderInstaller(store: Store): HTMLElement {
     if (isLocalPack) {
       await runStreamingInstall(store, {
         mode: 'localpack',
-        payload: { path: store.getState().selectedPath, extra: { packPath: localPack!.path } },
+        payload: {
+          path: store.getState().selectedPath,
+          extra: { packPath: localPack!.path, launcher: option.id },
+        },
         label: `Installing ${localPack!.name}…`,
       });
       return;

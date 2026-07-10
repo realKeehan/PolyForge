@@ -450,6 +450,12 @@ img { max-width: 100%; height: auto; display: block; }
   border-color: rgba(255, 92, 143, 0.45);
   color: var(--text);
 }
+.chip-unsupported { border-color: rgba(136, 136, 136, 0.4); }
+.chip-unsupported.is-active {
+  background: rgba(136, 136, 136, 0.12);
+  border-color: rgba(136, 136, 136, 0.45);
+  color: var(--text);
+}
 
 /* ── Launcher grid ───────────────────────────────── */
 .launcher-grid {
@@ -502,6 +508,7 @@ a.launcher:hover { text-decoration: none; }
 .badge-supported { border-color: rgba(55, 210, 156, 0.45); color: var(--pf-success); }
 .badge-working { border-color: rgba(143, 0, 255, 0.45); color: var(--pf-purple); }
 .badge-planned { border-color: rgba(255, 92, 143, 0.45); color: var(--pf-danger); }
+.badge-unsupported { border-color: rgba(136, 136, 136, 0.45); color: #888; }
 .launcher.is-hidden { display: none; }
 
 /* ── CTA block ───────────────────────────────────── */

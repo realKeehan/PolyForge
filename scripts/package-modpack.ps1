@@ -6,17 +6,21 @@
 #   <OutDir>\<id>-<version>.polypack        (obfuscated zip: manifest + launchers + overrides/)
 #   <OutDir>\<id>-<version>.manifest.json   (standalone manifest for hosted update checks)
 #
-# The mods list in pack-manifest.json (names + versions + hashes) is the
+# The mods list in pack-manifest.json (ids + versions + hashes) is the
 # only thing used for update decisions. launchers.json carries per-launcher
 # info fields; the installer generates the actual launcher files from them.
 #
-# STATUS: scaffold. Folder defaults and per-launcher fields will be
-# finalized once real pack structures from the test machine are provided.
+# Mod identity is read from the loader metadata inside each jar
+# (fabric.mod.json / quilt.mod.json / META-INF/[neoforge.]mods.toml /
+# litemod.json); the filename split is only the fallback. Loader versions
+# resolve/validate against the loaders' official metadata (Fabric Meta,
+# Quilt Meta, Forge/NeoForge Maven), and mods are matched to their Modrinth
+# source by hash. All network steps degrade to warnings; -Offline skips them.
 #
 # Example:
 #   pwsh scripts/package-modpack.ps1 -SourceDir C:\packs\turtel-src `
 #     -PackId turtel-smp -PackName "Turtel SMP" -PackVersion 1.0.0 `
-#     -McVersion 1.20.1 -Loader quilt -LoaderVersion 0.22.0
+#     -McVersion 1.20.1 -Loader quilt -LoaderVersion latest
 
 [CmdletBinding()]
 param(
@@ -25,8 +29,11 @@ param(
     [Parameter(Mandatory)][string]$PackName,
     [Parameter(Mandatory)][string]$PackVersion,
     [string]$McVersion = '',
-    [ValidateSet('', 'fabric', 'forge', 'neoforge', 'quilt', 'vanilla')]
+    [ValidateSet('', 'fabric', 'forge', 'neoforge', 'quilt', 'liteloader', 'vanilla')]
     [string]$Loader = '',
+    # Empty or 'latest' resolves the newest stable release for -McVersion from
+    # the loader's official metadata service; an explicit version is validated
+    # against the same source (warning only, never fails the build).
     [string]$LoaderVersion = '',
 
     # Minecraft folders to include when present in SourceDir. Defaults are
@@ -41,10 +48,48 @@ param(
     # Root files packs commonly ship (default settings / server list).
     [string[]]$IncludeRootFiles = @('options.txt', 'servers.dat'),
 
+    # Skip every network call (loader resolution/validation, Minecraft version
+    # check, Modrinth source matching). The pack still builds fine offline.
+    [switch]$Offline,
+
     [string]$OutDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
+
+# ── Metadata service access ──────────────────────
+# The loader/mod metadata APIs need TLS 1.2+ (PS 5.1 doesn't enable it by
+# default) and a User-Agent identifying the tool - Quilt Meta and Modrinth
+# both require a descriptive UA.
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+$script:UserAgent = 'PolyForge-Packager/2.0 (+https://polyforge.dev)'
+
+# GET/POST a metadata endpoint (JSON or XML). Returns $null on any failure so
+# callers degrade gracefully when offline - packaging never needs the network.
+function Invoke-MetaApi {
+    param(
+        [Parameter(Mandatory)][string]$Uri,
+        [string]$Method = 'Get',
+        [string]$Body = $null
+    )
+    if ($Offline) { return $null }
+    try {
+        $req = @{
+            Uri        = $Uri
+            Method     = $Method
+            UserAgent  = $script:UserAgent
+            TimeoutSec = 20
+        }
+        if ($Body) {
+            $req.Body        = $Body
+            $req.ContentType = 'application/json'
+        }
+        return Invoke-RestMethod @req
+    } catch {
+        Write-Verbose "Request failed: $Uri ($_)"
+        return $null
+    }
+}
 
 # ── 3x3 braille dot-matrix loader ────────────────
 # A little 3x3 grid of dots that spins while the slow steps run (hashing,
@@ -101,6 +146,80 @@ function Complete-Spinner {
     Write-Host ("`r{0}  {1}" -f ([char]0x2713), $Label).PadRight(70) -ForegroundColor Green
 }
 
+# ── Mod metadata from inside the archive ─────────
+# Mod filenames in the wild are too inconsistent for reliable parsing, so the
+# loader metadata files inside each jar are the authority (same approach as
+# the online packager in website/api/admin.php): fabric.mod.json /
+# quilt.mod.json / META-INF/[neoforge.]mods.toml / litemod.json. The filename
+# split stays as the fallback only.
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+function Get-ModArchiveMetadata {
+    param([Parameter(Mandatory)][string]$Path)
+    $meta = @{ Id = ''; Name = ''; Version = '' }
+    $zip = $null
+    try {
+        $zip = [IO.Compression.ZipFile]::OpenRead($Path)
+        # Reads one zip entry as text; $null when the entry doesn't exist.
+        $readEntry = {
+            param($entryName)
+            $entry = $zip.GetEntry($entryName)
+            if (-not $entry) { return $null }
+            $sr = New-Object IO.StreamReader($entry.Open())
+            try { return $sr.ReadToEnd() } finally { $sr.Dispose() }
+        }
+
+        # Fabric / Quilt (JSON): id, version, display name.
+        foreach ($jsonName in 'fabric.mod.json', 'quilt.mod.json') {
+            $raw = & $readEntry $jsonName
+            if (-not $raw) { continue }
+            try {
+                $json = $raw | ConvertFrom-Json
+                $info = if ($jsonName -eq 'quilt.mod.json') { $json.quilt_loader } else { $json }
+                if ($info.id)      { $meta.Id = [string]$info.id }
+                if ($info.version) { $meta.Version = [string]$info.version }
+                $display = if ($jsonName -eq 'quilt.mod.json') { $info.metadata.name } else { $json.name }
+                if ($display) { $meta.Name = [string]$display }
+            } catch { }
+            break
+        }
+
+        # Forge / NeoForge (TOML): light regex parse, like the online packager.
+        if (-not $meta.Id) {
+            $toml = & $readEntry 'META-INF/mods.toml'
+            if (-not $toml) { $toml = & $readEntry 'META-INF/neoforge.mods.toml' }
+            if ($toml) {
+                if ($toml -match '(?m)^\s*modId\s*=\s*"([^"]+)"')       { $meta.Id = $matches[1] }
+                if ($toml -match '(?m)^\s*displayName\s*=\s*"([^"]+)"') { $meta.Name = $matches[1] }
+                if ($toml -match '(?m)^\s*version\s*=\s*"([^"]+)"')     { $meta.Version = $matches[1] }
+                # "${file.jarVersion}" defers to the jar's own manifest.
+                if ($meta.Version -like '*${*') {
+                    $meta.Version = ''
+                    $mf = & $readEntry 'META-INF/MANIFEST.MF'
+                    if ($mf -and $mf -match '(?m)^Implementation-Version:\s*(.+?)\s*$') {
+                        $meta.Version = $matches[1]
+                    }
+                }
+            }
+        }
+
+        # LiteLoader (.litemod): legacy, but the metadata is one JSON away.
+        if (-not $meta.Id) {
+            $raw = & $readEntry 'litemod.json'
+            if ($raw) {
+                try {
+                    $json = $raw | ConvertFrom-Json
+                    if ($json.name)    { $meta.Id = [string]$json.name; $meta.Name = [string]$json.name }
+                    if ($json.version) { $meta.Version = [string]$json.version }
+                } catch { }
+            }
+        }
+    } catch { } finally {
+        if ($zip) { $zip.Dispose() }
+    }
+    return $meta
+}
+
 if (-not (Test-Path $SourceDir -PathType Container)) {
     Write-Error "Source folder not found: $SourceDir"
     exit 1
@@ -115,6 +234,156 @@ if ($normalizedId -notmatch '^[a-z0-9-]+$') {
     exit 1
 }
 $PackId = $normalizedId
+
+# ── Resolve loader + game versions ───────────────
+# Each loader's official metadata source (see docs/modpack-format.md): Fabric
+# Meta and Quilt Meta are JSON APIs built for launchers/tools; Forge and
+# NeoForge publish Maven metadata (their installer jars are the install-time
+# source of truth, but versions resolve from the same Maven). LiteLoader is
+# legacy - recorded verbatim, never resolved.
+
+function Get-MavenVersions {
+    param([Parameter(Mandatory)][string]$Uri)
+    $xml = Invoke-MetaApi $Uri
+    if (-not $xml) { return @() }
+    try { return @($xml.metadata.versioning.versions.version) } catch { return @() }
+}
+
+# Returns the version to record in the manifest, or $null when the metadata
+# service is unreachable. Unknown explicit versions warn but pass through.
+function Resolve-LoaderVersion {
+    param([string]$Type, [string]$Mc, [string]$Requested)
+
+    $wantLatest = ($Requested -eq '' -or $Requested -eq 'latest')
+    switch ($Type) {
+        'fabric' {
+            $list = Invoke-MetaApi "https://meta.fabricmc.net/v2/versions/loader/$Mc"
+            if (-not $list) { return $null }
+            if ($wantLatest) {
+                $stable = @($list | Where-Object { $_.loader.stable })
+                if ($stable.Count -gt 0) { return [string]$stable[0].loader.version }
+                return [string]$list[0].loader.version
+            }
+            if (@($list | Where-Object { $_.loader.version -eq $Requested }).Count -eq 0) {
+                Write-Warning "Fabric loader $Requested is not listed for Minecraft $Mc on meta.fabricmc.net."
+            }
+            return $Requested
+        }
+        'quilt' {
+            $list = Invoke-MetaApi "https://meta.quiltmc.org/v3/versions/loader/$Mc"
+            if (-not $list) { return $null }
+            if ($wantLatest) {
+                # Quilt Meta has no stable flag (a hyphen marks a beta/pre) and,
+                # unlike Fabric Meta, the list is NOT newest-first — verified
+                # 2026-07: stable 0.24.0 sat mid-list while 0.29.2 was newest.
+                # Sort by parsed version instead of trusting list order.
+                $stable = @($list | Where-Object { $_.loader.version -notmatch '-' })
+                $pool = if ($stable.Count -gt 0) { $stable } else { @($list) }
+                $newest = $pool | Sort-Object {
+                    $base = ($_.loader.version -split '[-+]')[0]
+                    try { [version]$base } catch { [version]'0.0' }
+                } | Select-Object -Last 1
+                return [string]$newest.loader.version
+            }
+            if (@($list | Where-Object { $_.loader.version -eq $Requested }).Count -eq 0) {
+                Write-Warning "Quilt loader $Requested is not listed for Minecraft $Mc on meta.quiltmc.org."
+            }
+            return $Requested
+        }
+        'forge' {
+            # promotions_slim.json carries Forge's own recommended/latest per
+            # MC version; the Maven list validates explicit versions.
+            if ($wantLatest) {
+                $promos = Invoke-MetaApi 'https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json'
+                if ($promos) {
+                    $pick = $promos.promos."$Mc-recommended"
+                    if (-not $pick) { $pick = $promos.promos."$Mc-latest" }
+                    if ($pick) { return [string]$pick }
+                }
+            }
+            $versions = Get-MavenVersions 'https://maven.minecraftforge.net/net/minecraftforge/forge/maven-metadata.xml'
+            if ($versions.Count -eq 0) { return $null }
+            $matching = @($versions | Where-Object { $_ -like "$Mc-*" })
+            if ($wantLatest) {
+                if ($matching.Count -eq 0) { return $null }
+                return ($matching[-1] -split '-', 2)[1]   # maven list runs oldest -> newest
+            }
+            if ($matching -notcontains "$Mc-$Requested") {
+                Write-Warning "Forge $Requested is not on the Forge Maven for Minecraft $Mc."
+            }
+            return $Requested
+        }
+        'neoforge' {
+            if ($Mc -eq '1.20.1') {
+                # 1.20.1 NeoForge lives under the legacy net.neoforged:forge
+                # artifact, which upstream advises against targeting now.
+                Write-Warning 'NeoForge for Minecraft 1.20.1 uses the legacy net.neoforged:forge artifact; pass its version explicitly.'
+                return $Requested
+            }
+            # Two NeoForge version schemes (verified against the Maven 2026-07):
+            #   1.x era:  MC without the leading "1." + build  (1.21.4 -> 21.4.x)
+            #   26.x era: MC padded to three segments + build  (26.2 -> 26.2.0.x,
+            #             26.1.2 -> 26.1.2.x)
+            if ($Mc -match '^1\.(\d+)(?:\.(\d+))?$') {
+                $prefix = "$($matches[1]).$([int]$matches[2])."
+            } elseif ($Mc -match '^\d+(\.\d+){1,2}$') {
+                $parts = @($Mc -split '\.')
+                while ($parts.Count -lt 3) { $parts += '0' }
+                $prefix = ($parts -join '.') + '.'
+            } else {
+                return $Requested
+            }
+            $versions = Get-MavenVersions 'https://maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml'
+            if ($versions.Count -eq 0) { return $null }
+            $matching = @($versions | Where-Object { $_ -like "$prefix*" })
+            if ($wantLatest) {
+                if ($matching.Count -eq 0) { return $null }
+                $stable = @($matching | Where-Object { $_ -notmatch '-' })
+                if ($stable.Count -gt 0) { return $stable[-1] }
+                return $matching[-1]
+            }
+            if ($matching -notcontains $Requested) {
+                Write-Warning "NeoForge $Requested is not on the NeoForge Maven (expected a $prefix* version for Minecraft $Mc)."
+            }
+            return $Requested
+        }
+    }
+    return $Requested
+}
+
+if ($Loader -and $Loader -notin @('vanilla', 'liteloader')) {
+    if (-not $McVersion) {
+        if ($LoaderVersion -eq '' -or $LoaderVersion -eq 'latest') {
+            Write-Warning "-McVersion is required to resolve the latest $Loader version; leaving the loader version empty."
+            $LoaderVersion = ''
+        }
+    } elseif ($Offline) {
+        if ($LoaderVersion -eq 'latest') {
+            Write-Error 'Cannot resolve -LoaderVersion latest with -Offline; pass an explicit version.'
+            exit 1
+        }
+    } else {
+        $resolved = Resolve-LoaderVersion -Type $Loader -Mc $McVersion -Requested $LoaderVersion
+        if ($null -eq $resolved) {
+            if ($LoaderVersion -eq '' -or $LoaderVersion -eq 'latest') {
+                Write-Error "Could not resolve the latest $Loader version for Minecraft $McVersion (offline, or no $Loader release for that Minecraft version). Pass an explicit -LoaderVersion or -Offline."
+                exit 1
+            }
+            Write-Warning "Could not reach the $Loader metadata service to validate loader version $LoaderVersion; continuing."
+        } elseif ($resolved -ne $LoaderVersion) {
+            Write-Host "Resolved $Loader loader version: $resolved (Minecraft $McVersion)" -ForegroundColor Cyan
+            $LoaderVersion = $resolved
+        }
+    }
+}
+
+# Sanity-check the Minecraft version against Mojang's manifest (warn only).
+if ($McVersion) {
+    $mojang = Invoke-MetaApi 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
+    if ($mojang -and (@($mojang.versions | Where-Object { $_.id -eq $McVersion }).Count -eq 0)) {
+        Write-Warning "Minecraft version '$McVersion' is not in Mojang's version manifest - check for a typo."
+    }
+}
 
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $OutDir) { $OutDir = Join-Path $root 'build\packs' }
@@ -152,35 +421,76 @@ if ($foundFolders.Count -eq 0) {
 Write-Host "Including folders: $($foundFolders -join ', ')" -ForegroundColor Cyan
 
 # ── Build mod list (drives updates) ──────────────
-# Best-effort name/version split from the jar filename: the version starts
-# at the last hyphen followed by a digit ("sodium-fabric-0.5.3.jar").
-# TODO: read fabric.mod.json / META-INF/mods.toml inside the jar for
-# authoritative metadata instead.
+# Identity comes from the loader metadata inside each jar; the filename split
+# ("sodium-fabric-0.5.3.jar" -> name + version at the last hyphen-digit) is
+# only the fallback. sha256 drives integrity verification; sha1 keys the
+# Modrinth hash lookup below.
 $mods = @()
 $modsDir = Join-Path $SourceDir 'mods'
 if (Test-Path $modsDir -PathType Container) {
-    $jars = @(Get-ChildItem $modsDir -Filter '*.jar' -File | Sort-Object Name)
+    $modFiles = @(Get-ChildItem $modsDir -File |
+        Where-Object { $_.Extension -in @('.jar', '.litemod') } | Sort-Object Name)
     $n = 0
-    foreach ($jar in $jars) {
+    foreach ($modFile in $modFiles) {
         $n++
-        Update-Spinner "Hashing mods ($n/$($jars.Count)): $($jar.Name)"
-        $base = [IO.Path]::GetFileNameWithoutExtension($jar.Name)
+        Update-Spinner "Hashing mods ($n/$($modFiles.Count)): $($modFile.Name)"
+        $base = [IO.Path]::GetFileNameWithoutExtension($modFile.Name)
         $name = $base
         $version = ''
-        if ($base -match '^(.*?)-(v?\d[\w.+-]*)$') {
+        if ($base -match '^(.*?)[-_](v?\d[\w.+-]*)$') {
             $name = $matches[1]
             $version = $matches[2]
         }
+        $meta = Get-ModArchiveMetadata -Path $modFile.FullName
+        if ($meta.Name)        { $name = $meta.Name }
+        elseif ($meta.Id)      { $name = $meta.Id }
+        if ($meta.Version)     { $version = $meta.Version }
         $mods += [ordered]@{
-            file    = $jar.Name
+            file    = $modFile.Name
+            id      = $meta.Id
             name    = $name
             version = $version
-            sha256  = (Get-FileHash $jar.FullName -Algorithm SHA256).Hash.ToLower()
+            sha256  = (Get-FileHash $modFile.FullName -Algorithm SHA256).Hash.ToLower()
+            sha1    = (Get-FileHash $modFile.FullName -Algorithm SHA1).Hash.ToLower()
         }
     }
-    if ($jars.Count -gt 0) { Complete-Spinner "Hashed $($jars.Count) mods" }
+    if ($modFiles.Count -gt 0) { Complete-Spinner "Hashed $($modFiles.Count) mods" }
 }
 Write-Host "Found $($mods.Count) mods" -ForegroundColor Cyan
+
+# ── Modrinth source annotation ───────────────────
+# One bulk POST resolves every mod by sha1 (docs.modrinth.com, version_files).
+# Matched mods carry source { provider, projectId, versionId, url } so packs
+# are traceable to their upstream project and the update flow can re-fetch a
+# mod from Modrinth instead of shipping the bytes. CurseForge has an
+# equivalent (POST /v1/fingerprints, murmur2) but requires a partner
+# x-api-key - left out until a key is provisioned.
+if ($mods.Count -gt 0 -and -not $Offline) {
+    Update-Spinner 'Matching mods on Modrinth...'
+    $body = @{
+        hashes    = @($mods | ForEach-Object { $_.sha1 })
+        algorithm = 'sha1'
+    } | ConvertTo-Json
+    $mrVersions = Invoke-MetaApi 'https://api.modrinth.com/v2/version_files' -Method Post -Body $body
+    if ($mrVersions) {
+        $hits = 0
+        foreach ($mod in $mods) {
+            $ver = $mrVersions.($mod.sha1)
+            if (-not $ver) { continue }
+            $verFile = @($ver.files | Where-Object { $_.hashes.sha1 -eq $mod.sha1 }) | Select-Object -First 1
+            $mod.source = [ordered]@{
+                provider  = 'modrinth'
+                projectId = [string]$ver.project_id
+                versionId = [string]$ver.id
+                url       = if ($verFile) { [string]$verFile.url } else { '' }
+            }
+            $hits++
+        }
+        Complete-Spinner "Matched $hits/$($mods.Count) mods to Modrinth projects"
+    } else {
+        Complete-Spinner 'Modrinth lookup unavailable (offline?) - packing without sources'
+    }
+}
 
 # ── Stage the archive layout ─────────────────────
 $staging = Join-Path ([IO.Path]::GetTempPath()) "polypack-$PackId-$(Get-Random)"
@@ -257,7 +567,7 @@ $profileName = $PackName
 $launcherIds = @(
     'vanilla', 'multimc', 'polymc', 'prismlauncher', 'shatteredprism', 'elyprism',
     'ultimmc', 'fjord', 'modrinth', 'curseforge', 'atlauncher', 'gdlauncher',
-    'technic', 'feather', 'bakaxl', 'sklauncher', 'freesm', 'qwertz', 'hmcl',
+    'technic', 'dawn', 'bakaxl', 'sklauncher', 'freesm', 'qwertz', 'hmcl',
     'polymerium', 'xmcl'
 )
 $launcherEntries = [ordered]@{}
