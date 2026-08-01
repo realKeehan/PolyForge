@@ -1,0 +1,9 @@
+{
+  // website/ is a separate git repo (realKeehan/polyforge-web) checked out inside
+  // this one. Because this repo's .gitignore lists website/, VS Code's automatic
+  // repository scan skips it — so point the Git extension at it explicitly.
+  // Both repos then show up side by side in the Source Control view.
+  "git.scanRepositories": ["website"],
+  "git.repositoryScanMaxDepth": 2,
+  "git.openRepositoryInParentFolders": "always"
+}
