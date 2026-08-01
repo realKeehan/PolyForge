@@ -23,5 +23,9 @@ website/
 
 launcher-trees-*/
 
+# Superseded static site that used to live at the repo root, kept locally for
+# reference only. See archive/legacy-site/README.md.
+archive/
+
 # Local reference/scratch material (not a project artifact)
 TemporaryDetectRef/
