@@ -48,7 +48,7 @@ func (s *Service) installHostedPack(payload ExecutionPayload) (*ActionResult, er
 	defer os.Remove(tmpPath)
 	s.logStep(result, "info", "Download complete.")
 
-	if !s.extractAndVerifyPack(result, tmpPath, target, strings.TrimSpace(payload.Extra["launcher"])) {
+	if !s.extractAndVerifyPack(result, tmpPath, target, strings.TrimSpace(payload.Extra["launcher"]), ParseInstallMode(payload.Extra["mode"])) {
 		result.Success = false
 		return result, nil
 	}
@@ -57,14 +57,16 @@ func (s *Service) installHostedPack(payload ExecutionPayload) (*ActionResult, er
 }
 
 // extractAndVerifyPack lays the pack out for the chosen launcher (instance
-// dir + game dir derived from the chosen path), extracts the overrides,
+// dir + game dir derived from the chosen path), applies the install mode's
+// pre-extraction semantics (stale-file sweep for update/reinstall, full
+// quarantine for clean — see installmodes.go), extracts the overrides,
 // verifies every extracted file against the manifest checksums, records the
 // install for future update/self-destruct passes, and generates the
 // launcher's own instance/profile files. It streams each step live and
 // returns whether the install succeeded (integrity failures return false).
 // Shared by the hosted-pack and local-pack install paths. An empty
 // launcherID installs into chosenPath as-is with no generation (manual mode).
-func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, chosenPath, launcherID string) bool {
+func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, chosenPath, launcherID string, mode InstallMode) bool {
 	// Read the pack's identity first so the install can be laid out for the
 	// launcher (instances/<name>/minecraft etc.) before anything is written.
 	reader, err := openPackReader(packPath)
@@ -82,6 +84,22 @@ func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, chosenPat
 	instanceDir, target := PlanInstallDirs(launcherID, chosenPath, instanceName)
 	if target != filepath.Clean(chosenPath) {
 		s.logStep(result, "info", fmt.Sprintf("Instance directory: %s", instanceDir))
+	}
+
+	// Mode semantics run between planning and extraction: decide what the
+	// requested mode means for THIS target, then sweep/quarantine as needed.
+	mode, oldManifest, note := resolveInstallMode(mode, target)
+	s.logStep(result, "info", fmt.Sprintf("Install mode: %s", mode))
+	if note != "" {
+		s.logStep(result, "info", note)
+	}
+	prepNotes, prepErr := prepareGameDir(mode, target, oldManifest, packManifest)
+	for _, n := range prepNotes {
+		s.logStep(result, "info", n)
+	}
+	if prepErr != nil {
+		s.logStep(result, "error", prepErr.Error())
+		return false
 	}
 
 	s.emitStage("Extracting pack contents…")

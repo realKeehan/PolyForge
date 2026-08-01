@@ -126,7 +126,7 @@ func applySelfDestruct(manifest *RemoteManifest) []string {
 			continue
 		}
 		// Only touch folders that are still one of our installs.
-		if _, err := os.Stat(filepath.Join(inst.Target, ".polyforge-pack.json")); err != nil {
+		if _, err := os.Stat(filepath.Join(inst.Target, installedManifestName)); err != nil {
 			continue
 		}
 		modsDir := filepath.Join(inst.Target, "mods")

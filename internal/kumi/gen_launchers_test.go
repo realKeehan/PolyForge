@@ -405,8 +405,80 @@ VALUES ('Existing', 'installed', 'Existing', '26.1', 'fabric', '0.19.0', '[]', 0
 }
 
 func TestGenerateLauncherFilesUnknownLauncher(t *testing.T) {
-	generated, notes, err := GenerateLauncherFiles("qwertz", t.TempDir(), genTestManifest("fabric", "0.19.3"), nil)
+	generated, notes, err := GenerateLauncherFiles("technic", t.TempDir(), genTestManifest("fabric", "0.19.3"), nil)
 	if generated || notes != nil || err != nil {
 		t.Errorf("expected no-op for launcher without a generator, got (%v, %v, %v)", generated, notes, err)
+	}
+}
+
+// TestGenQwertzProfile pins the profiles.json registry schema captured in
+// the machine test 2 dump: a flat profiles array at the launcher root whose
+// entries carry the folder name, an uppercase loader enum and the bundled
+// JVM marker. A second install with the same name must update in place, and
+// entries for other profiles must survive untouched.
+func TestGenQwertzProfile(t *testing.T) {
+	root := t.TempDir()
+	instanceDir := filepath.Join(root, "profiles", "Smoke Pack")
+	if err := os.MkdirAll(instanceDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Pre-existing registry with an unrelated profile (as on the reference
+	// machine, where "Polyforge QWERTZ Test" was already registered).
+	seed := `{"profiles":[{"name":"Other Pack","icon":"minecraft.png","icon_type":"default","loader":"FABRIC","version":"26.2","jvm":"BI"}]}`
+	regPath := filepath.Join(root, "profiles.json")
+	if err := os.WriteFile(regPath, []byte(seed), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	notes, err := genQwertzProfile(instanceDir, genTestManifest("fabric", "0.19.3"), nil, PackLauncherDefaults{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(notes) != 1 || !strings.Contains(notes[0], "profiles.json") {
+		t.Fatalf("notes = %v", notes)
+	}
+
+	doc := decodeJSONFile(t, regPath)
+	list, _ := doc["profiles"].([]any)
+	if len(list) != 2 {
+		t.Fatalf("profiles = %v, want the seeded entry plus the new one", list)
+	}
+	entry, _ := list[1].(map[string]any)
+	if entry["name"] != "Smoke Pack" || entry["loader"] != "FABRIC" || entry["version"] != "26.2" || entry["jvm"] != "BI" {
+		t.Errorf("entry = %v", entry)
+	}
+
+	// Re-install (update): same name must be replaced, not duplicated.
+	if _, err := genQwertzProfile(instanceDir, genTestManifest("forge", "47.2.0"), nil, PackLauncherDefaults{}); err != nil {
+		t.Fatal(err)
+	}
+	doc = decodeJSONFile(t, regPath)
+	list, _ = doc["profiles"].([]any)
+	if len(list) != 2 {
+		t.Fatalf("after update profiles = %v, want no duplicate", list)
+	}
+	entry, _ = list[1].(map[string]any)
+	if entry["loader"] != "FORGE" {
+		t.Errorf("updated loader = %v, want FORGE", entry["loader"])
+	}
+
+	// Missing registry (QWERTZ present but never wrote one): file is created.
+	root2 := t.TempDir()
+	dir2 := filepath.Join(root2, "profiles", "Smoke Pack")
+	if err := os.MkdirAll(dir2, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := genQwertzProfile(dir2, genTestManifest("", ""), nil, PackLauncherDefaults{}); err != nil {
+		t.Fatal(err)
+	}
+	doc = decodeJSONFile(t, filepath.Join(root2, "profiles.json"))
+	list, _ = doc["profiles"].([]any)
+	if len(list) != 1 {
+		t.Fatalf("fresh registry profiles = %v", list)
+	}
+	entry, _ = list[0].(map[string]any)
+	if entry["loader"] != "VANILLA" {
+		t.Errorf("loaderless pack loader = %v, want VANILLA", entry["loader"])
 	}
 }

@@ -19,8 +19,9 @@ import (
 // A .polypack is launcher-agnostic; these writers turn the pack manifest +
 // launchers.json info fields into the real files each launcher needs. Every
 // schema below was captured from a real install on the reference machine
-// (TemporaryDetectRef/MachineTest_01/INSTANCES) — when a writer needs to
-// change, re-dump a fresh instance there rather than guessing.
+// (TemporaryDetectRef: MachineTest_01/INSTANCES + the machine test 2 tree
+// dump) — when a writer needs to change, re-dump a fresh instance there
+// rather than guessing.
 //
 // Writers return human-readable notes (surfaced in the install log) and an
 // error only for hard failures; anything best-effort (network fetches,
@@ -32,6 +33,12 @@ import (
 
 // instancesDirName is the folder a launcher keeps its instances/profiles in,
 // relative to its data root ("" = the chosen directory is used as-is).
+//
+// TODO(matrix #1): "gdlauncher" is wrong — Carbon nests instances under
+// data\instances (machine test 2: gdlauncher_carbon\data\instances\<name>),
+// but PlanInstallDirs' base-name comparisons assume a single path segment,
+// so returning a joined path here needs that logic adjusted with it. See
+// docs/launcher-install-matrix.md.
 func instancesDirName(launcherID string) string {
 	switch launcherID {
 	case "multimc", "polymc", "prismlauncher", "shatteredprism", "elyprism",
@@ -591,7 +598,10 @@ func genGDLauncherInstance(instanceDir string, m *PackManifest, info map[string]
 }
 
 // ── X Minecraft Launcher ─────────────────────────
-// instance.json (captured from "Polyforge XMCL Test").
+// instance.json (captured from "Polyforge XMCL Test"). The Roaming\xmcl
+// instances.json registry needs no upsert: XMCL rescans .minecraftx\instances
+// on boot (confirmed on the reference machine), like most registry-keeping
+// launchers.
 
 func genXMCLInstance(instanceDir string, m *PackManifest, info map[string]any, defaults PackLauncherDefaults) ([]string, error) {
 	runtime := map[string]any{
@@ -816,4 +826,71 @@ FROM profiles LIMIT 1`
 		return []string{fmt.Sprintf("Could not update the existing Modrinth profile (%v).", err)}, nil
 	}
 	return []string{"Updated the existing Modrinth App profile."}, nil
+}
+
+// ── QWERTZ Launcher ──────────────────────────────
+//
+// One flat registry at the launcher root (%APPDATA%\QWERTZ-Launcher\
+// profiles.json) lists every profile; the game dir is profiles\<name>\.
+// Schema captured in the machine test 2 dump ("Polyforge QWERTZ Test"):
+// loader is an uppercase enum (only "FABRIC" is reference-verified; the
+// other loaders are inferred), version is the Minecraft version id, and
+// jvm "BI" selects the launcher's bundled Java. There is no loader-version
+// field — QWERTZ resolves the loader build itself.
+
+func genQwertzProfile(instanceDir string, m *PackManifest, info map[string]any, defaults PackLauncherDefaults) ([]string, error) {
+	// QWERTZ maps a profile to its game dir by name (profiles\<name>), so the
+	// registry entry must carry the folder name, not the display name.
+	name := filepath.Base(instanceDir)
+	regPath := filepath.Join(filepath.Dir(filepath.Dir(instanceDir)), "profiles.json")
+
+	doc := map[string]any{}
+	if b, err := os.ReadFile(regPath); err == nil {
+		if err := json.Unmarshal(b, &doc); err != nil {
+			return nil, fmt.Errorf("QWERTZ profiles.json is not valid JSON: %w", err)
+		}
+	}
+
+	var notes []string
+	loader := "VANILLA"
+	switch kind := loaderKindTitle(m.Loader.Type); kind {
+	case "", "LiteLoader":
+		if kind == "LiteLoader" {
+			notes = append(notes, "QWERTZ has no LiteLoader support; registered a vanilla profile (mods are still in place).")
+		}
+	default:
+		loader = strings.ToUpper(kind)
+	}
+
+	entry := map[string]any{
+		"name":      name,
+		"icon":      "minecraft.png",
+		"icon_type": "default",
+		"loader":    loader,
+		"version":   m.Minecraft,
+		"jvm":       "BI",
+	}
+
+	list, _ := doc["profiles"].([]any)
+	replaced := false
+	for i, raw := range list {
+		p, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		if n, _ := p["name"].(string); strings.EqualFold(n, name) {
+			list[i] = entry
+			replaced = true
+			break
+		}
+	}
+	if !replaced {
+		list = append(list, entry)
+	}
+	doc["profiles"] = list
+
+	if err := writeJSONFile(regPath, doc); err != nil {
+		return nil, err
+	}
+	return append(notes, "Registered the profile in QWERTZ's profiles.json."), nil
 }

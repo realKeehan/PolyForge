@@ -68,7 +68,7 @@ type PackMod struct {
 // projects and updates can re-fetch a mod from the platform instead of
 // shipping the bytes.
 type PackModSource struct {
-	Provider  string `json:"provider,omitempty"`  // "modrinth" | "curseforge"
+	Provider  string `json:"provider,omitempty"` // "modrinth" | "curseforge"
 	ProjectID string `json:"projectId,omitempty"`
 	VersionID string `json:"versionId,omitempty"` // curseforge: the file id
 	URL       string `json:"url,omitempty"`       // direct download URL
@@ -355,11 +355,7 @@ func hashFile(path string) (string, int64, error) {
 // (.polyforge-pack.json) left at install time. Powers a "verify / repair" pass
 // and the pre-flight check before an update.
 func VerifyInstalledPack(installDir string) (*PackManifest, IntegrityReport, error) {
-	data, err := os.ReadFile(filepath.Join(filepath.Clean(installDir), ".polyforge-pack.json"))
-	if err != nil {
-		return nil, IntegrityReport{}, fmt.Errorf("no installed pack manifest here: %w", err)
-	}
-	manifest, err := ParsePackManifest(data)
+	manifest, err := readInstalledPackManifest(installDir)
 	if err != nil {
 		return nil, IntegrityReport{}, err
 	}
@@ -414,9 +410,9 @@ func installLocalPack(packPath, targetDir string) (files int, manifest *PackMani
 		files++
 	}
 
-	// Installed manifest copy — the future update check diffs against this.
+	// Installed manifest copy — update diffs and repair verify against this.
 	if data, jsonErr := json.MarshalIndent(manifest, "", "  "); jsonErr == nil {
-		_ = os.WriteFile(filepath.Join(cleanTarget, ".polyforge-pack.json"), data, 0o644)
+		_ = os.WriteFile(filepath.Join(cleanTarget, installedManifestName), data, 0o644)
 	}
 
 	// Verify what actually landed on disk against the manifest's checksums.
@@ -446,17 +442,24 @@ type LauncherTarget struct {
 }
 
 // launcherTargets is the generation registry. Subdirs reflect the layouts
-// captured from the MachineTest_01 reference dump: MultiMC and the older
-// forks keep `.minecraft`, the modern Prism family writes `minecraft` (no
-// dot), and several launchers use the instance root itself as the game dir.
+// captured from the reference dumps (MachineTest_01 + machine test 2):
+// MultiMC and the older forks keep `.minecraft`, the modern Prism family
+// writes `minecraft` (no dot), and several launchers use the instance root
+// itself as the game dir.
 // Launchers without a Generate writer and why:
 //   - atlauncher: its instance.json embeds the full Mojang + loader version
 //     manifests (~70 KB); use ATLauncher's own "Add pack" instead.
-//   - technic: custom packs couldn't be produced for reference (Notes.txt).
-//   - qwertz: profiles.json master-list schema not captured yet.
-//   - bakaxl / hmcl / ultimmc / sklauncher: unsupported or untested on the
-//     reference machine (language barrier / missing download / uses the
-//     vanilla .minecraft directly).
+//   - technic: parked for now — whether PolyForge can target it at all
+//     hinges on Technic being a pack *provider* (packs come from its site)
+//     vs accepting local custom packs; installedPacks on the reference
+//     machine was empty, so there is still no custom-pack row to mirror.
+//   - bakaxl / hmcl / ultimmc: parked — language barrier (BakaXL, HMCL) or
+//     no obtainable download (UltimMC). BakaXL's CoreDirectory.json schema
+//     also remains uncaptured (scrubbed from the machine test 2 dump).
+//   - sklauncher: registers instances as vanilla launcher_profiles.json
+//     entries with gameDir .minecraft\instances\<name> (machine test 2), so
+//     the vanilla writer is the right vehicle once its install flow routes
+//     to the .minecraft root; not wired yet.
 var launcherTargets = map[string]LauncherTarget{
 	"vanilla":        {ID: "vanilla", InstanceSubdir: "", Generate: genVanillaProfile}, // profile in launcher_profiles.json → chosen game dir
 	"multimc":        {ID: "multimc", InstanceSubdir: ".minecraft", Generate: genMMCInstance(false)},
@@ -475,10 +478,14 @@ var launcherTargets = map[string]LauncherTarget{
 	"bakaxl":         {ID: "bakaxl", InstanceSubdir: ""},
 	"sklauncher":     {ID: "sklauncher", InstanceSubdir: ""},
 	"freesm":         {ID: "freesm", InstanceSubdir: "minecraft", Generate: genMMCInstance(true)},
-	"qwertz":         {ID: "qwertz", InstanceSubdir: ""}, // profiles\<name> is the game dir
+	"qwertz":         {ID: "qwertz", InstanceSubdir: "", Generate: genQwertzProfile}, // profiles\<name> is the game dir
 	"hmcl":           {ID: "hmcl", InstanceSubdir: ""},
-	"polymerium":     {ID: "polymerium", InstanceSubdir: "", Generate: genPolymeriumProfile},
-	"xmcl":           {ID: "xmcl", InstanceSubdir: "", Generate: genXMCLInstance}, // instance root is the game dir (.minecraftx\instances\<name>)
+	// TODO(machine-test): the machine test 2 Trident tree shows the live game
+	// dir is instances\<id>\build\ (options.txt/mods/saves sit there after
+	// deploy), so overrides extracted to the instance root may be invisible
+	// in-game. Verify on the reference machine, then likely switch to "build".
+	"polymerium": {ID: "polymerium", InstanceSubdir: "", Generate: genPolymeriumProfile},
+	"xmcl":       {ID: "xmcl", InstanceSubdir: "", Generate: genXMCLInstance}, // instance root is the game dir (.minecraftx\instances\<name>)
 }
 
 // InstanceSubdirFor returns where a launcher expects the pack's overrides,
@@ -509,5 +516,5 @@ func GenerateLauncherFiles(launcherID, instanceDir string, m *PackManifest, l *L
 	return true, notes, err
 }
 
-// TODO: CheckPackUpdate(installedManifest, hostedManifestURL) using
-// ComparePackMods to decide whether and what to update.
+// Update checks live in installmodes.go: PlanPackUpdate reads the installed
+// manifest copy and diffs it against a hosted manifest via ComparePackMods.

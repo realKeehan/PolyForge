@@ -77,7 +77,9 @@ func discoverLauncherDirs(id string) []string {
 	cache, _ := LoadCache()
 
 	// 1) Previously found and still valid (exe still exists at that path).
-	if cand := BestValidCachedCandidate(cache, LauncherID(id), ValidateExeByName(exeNames...)); cand != nil {
+	// Unmarked scan hits are re-discovered instead of trusted — machine
+	// test 2's cache had latched onto a leftover ATLauncher.exe download.
+	if cand := BestValidCachedCandidate(cache, LauncherID(id), ValidateExeByName(exeNames...)); cand != nil && trustCachedExeCandidate(id, cand) {
 		cand.LastUsed = time.Now()
 		_ = SaveCache(cache)
 		return []string{filepath.Dir(cand.Path)}

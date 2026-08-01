@@ -24,9 +24,25 @@
 #   - PolyForge's own launcher_cache.json is copied into the dump.
 #
 # Candidate paths were validated against the MachineTest_01 reference dump
-# (TemporaryDetectRef/MachineTest_01): gdlauncher_carbon, .dawn (Feather →
-# Dawn rebrand), QWERTZ-Launcher, .minecraftx (XMCL) and Trident (Polymerium)
-# were all missed by earlier revisions of this script.
+# and re-confirmed by the machine test 2 dump (2026-07-11): gdlauncher_carbon,
+# .dawn (Feather → Dawn rebrand), QWERTZ-Launcher, .minecraftx (XMCL) and
+# Trident (Polymerium) all resolve on the reference machine.
+#
+# v4 changes (from the machine test 2 analysis):
+#   - Candidate dirs are deduped case-insensitively. Windows paths are
+#     case-insensitive, so PolyMC/polymc and FreesmLauncher/freesmlauncher
+#     are the same folder — test 2 dumped those trees twice.
+#   - Every captured schema file is also copied verbatim under FILES\<launcher>\
+#     so the JSON can be parsed directly during analysis instead of being
+#     fished out of the .txt transcripts.
+#   - Modrinth's app.db (+ -wal/-shm sidecars) is copied into FILES\modrinth\
+#     for sqlite inspection. The DB carries login/session tokens — only ship
+#     dumps from dedicated test machines, or pass -SkipDbCopy.
+#   - BakaXL's Profile\ subtree (account credentials) is excluded from the
+#     tree and the file copies: bakaxl.txt was hand-deleted from the test 2
+#     dump, which also lost the harmless parts. BakaXL and Technic stay low
+#     priority (language barrier / custom-pack story undecided), but their
+#     trees are still captured whenever present.
 
 [CmdletBinding()]
 param(
@@ -34,7 +50,9 @@ param(
     [string]$OutDir = '',
     # Extra folders to sweep for .lnk shortcuts (e.g. a test machine's
     # hand-made shortcut collection for portable launchers).
-    [string[]]$ExtraShortcutRoots = @()
+    [string[]]$ExtraShortcutRoots = @(),
+    # Skip copying Modrinth's app.db into the dump (it contains login tokens).
+    [switch]$SkipDbCopy
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -136,6 +154,12 @@ $schemaNames = @(
     '.curseclient'        # CurseForge per-instance marker
 )
 
+# Top-level subtrees never dumped or copied, per launcher. BakaXL's Profile\
+# holds account credentials — the tester deleted all of bakaxl.txt from the
+# machine test 2 dump rather than ship them; skipping just that subtree keeps
+# the rest of the tree shippable.
+$excludeTopDirs = @{ 'bakaxl' = @('Profile') }
+
 # ── Shortcut discovery (mirrors internal/kumi/resolver.go) ──────────────────
 
 # exe basename (lowercase) -> launcher id
@@ -231,7 +255,8 @@ function Write-Tree {
         [string]$Path,
         [int]$Depth,
         [System.Text.StringBuilder]$Sb,
-        [int]$Indent = 0
+        [int]$Indent = 0,
+        [string[]]$ExcludeTop = @()
     )
 
     if ($Depth -lt 0) {
@@ -245,6 +270,10 @@ function Write-Tree {
 
     foreach ($item in $items) {
         if ($item.PSIsContainer) {
+            if ($Indent -eq 0 -and $ExcludeTop -contains $item.Name) {
+                [void]$Sb.AppendLine("$prefix[$($item.Name)]/  (excluded - credentials)")
+                continue
+            }
             [void]$Sb.AppendLine("$prefix[$($item.Name)]/")
             if ($Depth -gt 0) {
                 Write-Tree -Path $item.FullName -Depth ($Depth - 1) -Sb $Sb -Indent ($Indent + 1)
@@ -270,11 +299,15 @@ $summary = [System.Text.StringBuilder]::new()
 $foundCount = 0
 
 foreach ($name in $launchers.Keys) {
-    $existing = @(
-        $launchers[$name] |
-            Where-Object { $_ -and (Test-Path $_ -PathType Container) } |
-            Select-Object -Unique
-    )
+    # Case-insensitive dedupe: Windows paths are case-insensitive, and the
+    # candidate tables intentionally carry case variants (PolyMC/polymc).
+    $existing = @()
+    $seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($cand in $launchers[$name]) {
+        if ($cand -and (Test-Path $cand -PathType Container) -and $seen.Add($cand)) {
+            $existing += $cand
+        }
+    }
 
     $viaShortcut = if ($discovered[$name]) { ' (+shortcut hit)' } else { '' }
     $status = if ($existing.Count -gt 0) { "FOUND$viaShortcut" } else { 'missing' }
@@ -285,6 +318,7 @@ foreach ($name in $launchers.Keys) {
     }
 
     $foundCount++
+    $excluded = if ($excludeTopDirs.Contains($name)) { $excludeTopDirs[$name] } else { @() }
 
     $sb = [System.Text.StringBuilder]::new()
     [void]$sb.AppendLine("=== $name ===")
@@ -294,14 +328,21 @@ foreach ($name in $launchers.Keys) {
         [void]$sb.AppendLine($modrinthNotes.ToString())
     }
 
+    $usedLeaves = @{}
     foreach ($dir in $existing) {
         [void]$sb.AppendLine("`n# $dir")
-        Write-Tree -Path $dir -Depth $MaxDepth -Sb $sb
+        Write-Tree -Path $dir -Depth $MaxDepth -Sb $sb -ExcludeTop $excluded
 
         # Capture instance/profile schema files verbatim (small ones only).
-        $schemaFiles = Get-ChildItem -LiteralPath $dir -Recurse -Depth $MaxDepth -File -Force -ErrorAction SilentlyContinue |
-            Where-Object { $schemaNames -contains $_.Name -and $_.Length -lt 256KB } |
-            Select-Object -First 25
+        $schemaFiles = @(
+            Get-ChildItem -LiteralPath $dir -Recurse -Depth $MaxDepth -File -Force -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $rel = $_.FullName.Substring($dir.Length).TrimStart('\')
+                    $top = ($rel -split '\\')[0]
+                    ($schemaNames -contains $_.Name) -and $_.Length -lt 256KB -and ($excluded -notcontains $top)
+                } |
+                Select-Object -First 25
+        )
 
         foreach ($sf in $schemaFiles) {
             [void]$sb.AppendLine("`n--- FILE: $($sf.FullName) ---")
@@ -311,10 +352,44 @@ foreach ($name in $launchers.Keys) {
                 [void]$sb.AppendLine($content)
             }
         }
+
+        # Duplicate the schema files verbatim under FILES\<launcher>\ so the
+        # JSON parses directly during analysis (the inline copies above stay
+        # for single-file reading). Same-leaf candidate dirs (Roaming\ and
+        # Local\Polymerium) get a numeric suffix so copies never collide.
+        if ($schemaFiles.Count -gt 0) {
+            $leaf = Split-Path $dir -Leaf
+            if ($usedLeaves.ContainsKey($leaf)) {
+                $usedLeaves[$leaf]++
+                $leaf = "$leaf~$($usedLeaves[$leaf])"
+            } else {
+                $usedLeaves[$leaf] = 1
+            }
+            $destRoot = Join-Path $OutDir "FILES\$name\$leaf"
+            foreach ($sf in $schemaFiles) {
+                $rel = $sf.FullName.Substring($dir.Length).TrimStart('\')
+                $dest = Join-Path $destRoot $rel
+                New-Item -ItemType Directory -Path (Split-Path $dest -Parent) -Force | Out-Null
+                Copy-Item -LiteralPath $sf.FullName -Destination $dest -Force
+            }
+        }
     }
 
     [IO.File]::WriteAllText((Join-Path $OutDir "$name.txt"), $sb.ToString())
     Write-Host "  $name : dumped" -ForegroundColor Green
+}
+
+# Copy Modrinth's app.db (plus WAL/SHM sidecars, which hold recent writes)
+# so profile rows can be inspected with sqlite during analysis.
+if (-not $SkipDbCopy -and $modrinthDb) {
+    $dbDest = Join-Path $OutDir 'FILES\modrinth'
+    New-Item -ItemType Directory -Path $dbDest -Force | Out-Null
+    foreach ($suffix in @('', '-wal', '-shm')) {
+        $src = "$modrinthDb$suffix"
+        if ((Test-Path -LiteralPath $src -PathType Leaf) -and ((Get-Item -LiteralPath $src -Force).Length -lt 64MB)) {
+            Copy-Item -LiteralPath $src -Destination $dbDest -Force
+        }
+    }
 }
 
 # Extra diagnostics: shortcut hits, Modrinth resolution, PolyForge's own cache.
@@ -331,3 +406,4 @@ Write-Host ''
 Write-Host "Dumped $foundCount launcher(s) to: $OutDir" -ForegroundColor Cyan
 Write-Host 'Zip that folder and send it over for pack-format analysis.' -ForegroundColor Yellow
 Write-Host 'Note: schema files may contain usernames/paths - review before sharing.' -ForegroundColor DarkYellow
+Write-Host 'Note: FILES\modrinth\app.db contains login tokens - test machines only (-SkipDbCopy to omit).' -ForegroundColor DarkYellow

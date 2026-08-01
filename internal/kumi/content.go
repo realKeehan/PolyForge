@@ -39,6 +39,10 @@ type RemoteManifest struct {
 	Modpacks        []RemotePack           `json:"modpacks,omitempty"`
 	OptionOverrides []RemoteOptionOverride `json:"optionOverrides,omitempty"`
 	DisabledOptions []string               `json:"disabledOptions,omitempty"`
+	// RepairingOptions marks launcher options as temporarily under repair.
+	// Informational: the website shows a "Repairing" tag; the app still offers
+	// the option. Kept here so the disk cache round-trips the field.
+	RepairingOptions []string `json:"repairingOptions,omitempty"`
 }
 
 // RemoteAppInfo describes the latest binary release for update prompts.
@@ -56,6 +60,10 @@ type RemotePack struct {
 	Description      string `json:"description,omitempty"`
 	RequiresPassword bool   `json:"requiresPassword,omitempty"`
 	PasswordHash     string `json:"passwordHash,omitempty"`
+	// Hidden removes the pack from the app's pack picker without deleting it
+	// from the manifest — RemoveMods (self-destruct) still applies to hidden
+	// packs, so a pulled pack keeps cleaning up existing installs.
+	Hidden bool `json:"hidden,omitempty"`
 	// RemoveMods lists mod filenames the app should delete from an existing
 	// install of this pack on next launch — the remote "self-destruct" for
 	// pulling proprietary mods after distribution. Empty = nothing to remove.

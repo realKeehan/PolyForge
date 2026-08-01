@@ -36,14 +36,19 @@ import (
 // complaint — the shortcut+cache pipeline already covers the common case.
 
 // scanForExes searches the given roots for multiple executables in a single
-// traversal. wanted maps lowercase exe filenames to a caller-defined key;
-// the result maps each key to the first matching path found. The scan is
-// depth-limited, skips noise directories and reparse points (ReadDir never
-// descends into junctions/symlinks), and cancels as soon as every key is
-// resolved. Concurrency is bounded: when all worker slots are busy the
-// walk continues inline instead of blocking, so it can never deadlock.
+// traversal. wanted maps lowercase exe filenames to a caller-defined key
+// (the launcher id); the result maps each key to the best matching path: a
+// hit whose folder carries the launcher's data markers wins over the first
+// bare hit, which is kept only as a fallback (see launcherDataMarkers — the
+// machine test 2 cache had picked a leftover ATLauncher.exe download over
+// the real portable install). The scan is depth-limited, skips noise
+// directories and reparse points (ReadDir never descends into
+// junctions/symlinks), and cancels as soon as every key has a marked hit.
+// Concurrency is bounded: when all worker slots are busy the walk continues
+// inline instead of blocking, so it can never deadlock.
 func scanForExes(ctx context.Context, roots []string, wanted map[string]string, maxDepth, workers int) map[string]string {
 	results := map[string]string{}
+	provisional := map[string]string{}
 	if len(wanted) == 0 {
 		return results
 	}
@@ -77,6 +82,15 @@ func scanForExes(ctx context.Context, roots []string, wanted map[string]string, 
 		mu.Lock()
 		defer mu.Unlock()
 		if _, exists := results[key]; exists {
+			return
+		}
+		// A hit whose folder shows none of the launcher's data markers may
+		// be a stray copy of the exe (a leftover download); hold it as a
+		// fallback and keep walking for a marked folder.
+		if !dirLooksLikeLauncherData(key, filepath.Dir(path)) {
+			if _, held := provisional[key]; !held {
+				provisional[key] = path
+			}
 			return
 		}
 		results[key] = path
@@ -137,6 +151,13 @@ func scanForExes(ctx context.Context, roots []string, wanted map[string]string, 
 		walk(r, 0)
 	}
 	wg.Wait()
+	// Keys that never got a marked hit fall back to the bare one — a fresh
+	// portable launcher legitimately has nothing but its exe yet.
+	for key, path := range provisional {
+		if _, ok := results[key]; !ok {
+			results[key] = path
+		}
+	}
 	return results
 }
 
@@ -245,6 +266,50 @@ feed:
 	close(jobs)
 	wg.Wait()
 	return results
+}
+
+// ── Real-install preference ──────────────────────
+
+// launcherDataMarkers lists entries whose presence beside a discovered
+// executable marks the folder as a live install rather than a stray copy of
+// the exe. Machine test 2's launcher cache had cached the downloaded
+// ATLauncher.exe sitting in an installer stash (Downloads\...\INSTALLERS_FILES)
+// over the actual portable install one folder over — both match by basename,
+// and the scan used to keep whichever it walked first. Only launchers whose
+// exe dir doubles as the data dir need entries; the markers are a
+// preference, never a requirement, because a freshly unpacked portable
+// launcher has none of its data folders yet.
+var launcherDataMarkers = map[string][]string{
+	"atlauncher": {"instances", "configs", "libraries"},
+	"multimc":    {"instances", "multimc.cfg"},
+}
+
+// dirLooksLikeLauncherData reports whether dir carries any of the
+// launcher's data markers. Launchers without a marker list always pass.
+func dirLooksLikeLauncherData(id, dir string) bool {
+	markers, ok := launcherDataMarkers[id]
+	if !ok {
+		return true
+	}
+	for _, m := range markers {
+		if pathExists(filepath.Join(dir, m)) {
+			return true
+		}
+	}
+	return false
+}
+
+// trustCachedExeCandidate reports whether a validated cache hit can be used
+// without re-running discovery. Scan-sourced hits are the only suspect kind:
+// a stray exe copy keeps validating forever because the file never goes
+// away (machine test 2 held INSTALLERS_FILES\ATLauncher.exe for two days).
+// A scan hit whose folder still shows no data markers is re-discovered so a
+// marked install can displace it; user picks and shortcut hits stand.
+func trustCachedExeCandidate(id string, cand *Candidate) bool {
+	if cand.UserPicked || cand.Evidence != EvScan {
+		return true
+	}
+	return dirLooksLikeLauncherData(id, filepath.Dir(cand.Path))
 }
 
 func commonScanRoots() []string {

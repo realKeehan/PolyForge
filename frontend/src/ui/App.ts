@@ -295,8 +295,10 @@ export async function createApp(root: HTMLElement) {
     ]);
 
     store.setOptions(applyRemoteOverrides(options, remote));
-    if (remote?.manifest?.modpacks?.length) {
-      store.setModpacks(remote.manifest.modpacks);
+    if (remote?.manifest?.modpacks) {
+      // Hidden packs stay out of the picker; the manifest is still the source
+      // of truth even when everything visible is hidden (no built-in fallback).
+      store.setModpacks(remote.manifest.modpacks.filter((pack) => !pack.hidden));
     }
 
     // If launched by double-clicking a .polypack, pre-load it so the

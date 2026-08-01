@@ -48,6 +48,8 @@ export interface RemotePack {
   description?: string;
   requiresPassword?: boolean;
   passwordHash?: string;
+  /** Hidden packs are kept out of the picker but still self-destruct. */
+  hidden?: boolean;
   /** Mod filenames the app self-destructs from an existing install next launch. */
   removeMods?: string[];
 }
@@ -72,6 +74,8 @@ export interface RemoteManifest {
   modpacks?: RemotePack[];
   optionOverrides?: RemoteOptionOverride[];
   disabledOptions?: string[];
+  /** Launcher options under repair — informational (website tag); the app still offers them. */
+  repairingOptions?: string[];
 }
 
 export interface RemoteContentResult {

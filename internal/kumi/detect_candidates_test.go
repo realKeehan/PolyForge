@@ -1,6 +1,7 @@
 package kumi
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -254,5 +255,115 @@ func TestDiscoverLauncherDirsRevalidatesMovedInstall(t *testing.T) {
 	cand := BestValidCachedCandidate(cache, LauncherID("ultimmc"), ValidateExeByName("UltimMC.exe"))
 	if cand == nil || cand.Path != newExe {
 		t.Fatalf("cache not updated with new location; got %+v", cand)
+	}
+}
+
+// ── Real-install preference (machine test 2) ─────
+
+// TestScanForExesPrefersMarkedDir pins the machine test 2 defect: a leftover
+// copy of ATLauncher.exe in a downloads stash must lose to the actual
+// portable install, whose folder carries the launcher's data markers —
+// regardless of walk order. Without a marked hit anywhere, the bare copy is
+// still returned as the fallback (a fresh portable unzip has no data yet).
+func TestScanForExesPrefersMarkedDir(t *testing.T) {
+	root := t.TempDir()
+	stash := filepath.Join(root, "AAA_INSTALLERS") // sorts (and walks) first
+	install := filepath.Join(root, "ZZZ_LAUNCHERS", "ATLauncher")
+	for _, dir := range []string{stash, filepath.Join(install, "instances")} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	stashExe := filepath.Join(stash, "ATLauncher.exe")
+	installExe := filepath.Join(install, "ATLauncher.exe")
+	for _, exe := range []string{stashExe, installExe} {
+		if err := os.WriteFile(exe, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	wanted := map[string]string{"atlauncher.exe": "atlauncher"}
+	got := scanForExes(context.Background(), []string{root}, wanted, 6, 1)
+	if got["atlauncher"] != installExe {
+		t.Fatalf("scan picked %q, want marked install %q", got["atlauncher"], installExe)
+	}
+
+	// Fallback: with the marked install gone, the bare copy must still win.
+	if err := os.RemoveAll(filepath.Join(root, "ZZZ_LAUNCHERS")); err != nil {
+		t.Fatal(err)
+	}
+	got = scanForExes(context.Background(), []string{root}, wanted, 6, 1)
+	if got["atlauncher"] != stashExe {
+		t.Fatalf("scan fallback picked %q, want bare copy %q", got["atlauncher"], stashExe)
+	}
+}
+
+func TestTrustCachedExeCandidate(t *testing.T) {
+	bare := t.TempDir()
+	marked := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(marked, "instances"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name string
+		id   string
+		cand Candidate
+		want bool
+	}{
+		{"scan hit, bare dir", "atlauncher", Candidate{Evidence: EvScan, Path: filepath.Join(bare, "ATLauncher.exe")}, false},
+		{"scan hit, marked dir", "atlauncher", Candidate{Evidence: EvScan, Path: filepath.Join(marked, "ATLauncher.exe")}, true},
+		{"shortcut hit, bare dir", "atlauncher", Candidate{Evidence: EvStartMenuLnk, Path: filepath.Join(bare, "ATLauncher.exe")}, true},
+		{"user pick, bare dir", "atlauncher", Candidate{Evidence: EvScan, UserPicked: true, Path: filepath.Join(bare, "ATLauncher.exe")}, true},
+		{"launcher without markers", "ultimmc", Candidate{Evidence: EvScan, Path: filepath.Join(bare, "UltimMC.exe")}, true},
+	}
+	for _, tc := range cases {
+		if got := trustCachedExeCandidate(tc.id, &tc.cand); got != tc.want {
+			t.Errorf("%s: trustCachedExeCandidate = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// TestDiscoverLauncherDirsDisplacesStrayExeCopy replays the machine test 2
+// cache state end-to-end: the cache validates (the stray exe still exists)
+// but its folder carries no data markers, so discovery must re-run and land
+// on the real portable install under a scan root.
+func TestDiscoverLauncherDirsDisplacesStrayExeCopy(t *testing.T) {
+	appData := isolateDiscoveryEnv(t)
+	base := filepath.Dir(appData)
+	// Keep the scan away from the real Program Files on this machine.
+	t.Setenv("ProgramFiles", filepath.Join(base, "PF"))
+	t.Setenv("ProgramFiles(x86)", filepath.Join(base, "PF86"))
+
+	// Stray leftover exe copy outside every scan root, cached as a scan hit.
+	stray := t.TempDir()
+	strayExe := filepath.Join(stray, "ATLauncher.exe")
+	if err := os.WriteFile(strayExe, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cache, _ := LoadCache()
+	UpsertCandidate(cache, &Candidate{
+		Launcher: LauncherID("atlauncher"), Path: strayExe, Kind: "exe",
+		Evidence: EvScan, Confidence: "low",
+		LastUsed: time.Now(), LastOK: time.Now(), HashHint: PathHint(strayExe),
+	})
+	if err := SaveCache(cache); err != nil {
+		t.Fatal(err)
+	}
+
+	// The real portable install, marked by its instances\ folder, sits under
+	// a common scan root (Downloads).
+	install := filepath.Join(base, "Downloads", "LAUNCHERS", "ATLauncher")
+	if err := os.MkdirAll(filepath.Join(install, "instances"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	installExe := filepath.Join(install, "ATLauncher.exe")
+	if err := os.WriteFile(installExe, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	got := discoverLauncherDirs("atlauncher")
+	if len(got) != 1 || got[0] != install {
+		t.Fatalf("discoverLauncherDirs = %v, want [%s]", got, install)
 	}
 }

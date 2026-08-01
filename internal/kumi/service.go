@@ -190,9 +190,11 @@ func (s *Service) detectByExecutable(options []OptionDescriptor) {
 		cacheDirty = true
 	}
 
-	// 1) Previously validated cache entries
+	// 1) Previously validated cache entries. Unmarked scan hits fall through
+	// to shortcut resolution / the deep scan so a real install can displace
+	// a cached stray exe copy (see trustCachedExeCandidate).
 	for id := range index {
-		if cand := BestValidCachedCandidate(cache, LauncherID(id), ValidateExeByName(launcherExeNames[id]...)); cand != nil {
+		if cand := BestValidCachedCandidate(cache, LauncherID(id), ValidateExeByName(launcherExeNames[id]...)); cand != nil && trustCachedExeCandidate(id, cand) {
 			found[id] = cand.Path
 		}
 	}
@@ -365,7 +367,7 @@ func (s *Service) installFromLocalPack(payload ExecutionPayload) (*ActionResult,
 	}
 
 	s.logStep(result, "info", fmt.Sprintf("Installing local pack from %s", packPath))
-	if !s.extractAndVerifyPack(result, packPath, target, strings.TrimSpace(payload.Extra["launcher"])) {
+	if !s.extractAndVerifyPack(result, packPath, target, strings.TrimSpace(payload.Extra["launcher"]), ParseInstallMode(payload.Extra["mode"])) {
 		result.Success = false
 		return result, nil
 	}

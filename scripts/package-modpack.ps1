@@ -563,16 +563,46 @@ $manifestJson = $manifest | ConvertTo-Json -Depth 6
 # entry for EVERY supported launcher so one pack installs everywhere; the
 # per-launcher install locations/schemas are filled in on the installer side
 # (see internal/kumi/packformat.go and scripts/dump-launcher-trees.ps1).
-$profileName = $PackName
-$launcherIds = @(
-    'vanilla', 'multimc', 'polymc', 'prismlauncher', 'shatteredprism', 'elyprism',
-    'ultimmc', 'fjord', 'modrinth', 'curseforge', 'atlauncher', 'gdlauncher',
-    'technic', 'dawn', 'bakaxl', 'sklauncher', 'freesm', 'qwertz', 'hmcl',
-    'polymerium', 'xmcl'
-)
+#
+# Each entry carries a status field mirroring docs/launcher-install-matrix.md
+# so the installer/website can gate options without a schema change (the Go
+# side decodes entries as open maps):
+#   ready  — layout reference-verified and a config writer exists
+#   verify — installable, but an open question remains (see the matrix)
+#   parked — deliberately not implemented yet (language barrier / no
+#            download / custom-pack story undecided)
+# Update this table together with the matrix, not independently.
+$profileName    = $PackName
+$launcherStatus = [ordered]@{
+    'vanilla'        = 'ready'
+    'multimc'        = 'ready'
+    'polymc'         = 'ready'
+    'prismlauncher'  = 'ready'
+    'shatteredprism' = 'ready'
+    'elyprism'       = 'ready'
+    'ultimmc'        = 'parked'  # no obtainable download
+    'fjord'          = 'ready'
+    'modrinth'       = 'ready'
+    'curseforge'     = 'verify'  # .curseclient marker not written yet (matrix #2)
+    'atlauncher'     = 'verify'  # semi-manual: no config writer, use ATLauncher's own Add pack
+    'gdlauncher'     = 'verify'  # data\instances nesting fix pending (matrix #1)
+    'technic'        = 'parked'  # provider-vs-custom-pack question open
+    'dawn'           = 'ready'
+    'bakaxl'         = 'parked'  # language barrier; CoreDirectory.json uncaptured
+    'sklauncher'     = 'verify'  # rewire to the vanilla flow (matrix #3)
+    'freesm'         = 'ready'
+    'qwertz'         = 'verify'  # only FABRIC loader enum reference-verified (matrix #6)
+    'hmcl'           = 'parked'  # language barrier
+    'polymerium'     = 'verify'  # build\ game-dir question open (matrix #4)
+    'xmcl'           = 'ready'
+}
 $launcherEntries = [ordered]@{}
-foreach ($lid in $launcherIds) {
-    $launcherEntries[$lid] = [ordered]@{ profileName = $profileName; instanceName = $profileName }
+foreach ($lid in $launcherStatus.Keys) {
+    $launcherEntries[$lid] = [ordered]@{
+        profileName  = $profileName
+        instanceName = $profileName
+        status       = $launcherStatus[$lid]
+    }
 }
 $launchers = [ordered]@{
     schemaVersion = 1

@@ -20,6 +20,30 @@ type ExecutionPayload struct {
 	Extra map[string]string `json:"extra,omitempty"`
 }
 
+// InstallMode selects how a pack install treats an existing game directory.
+// The UI requests one via ExecutionPayload.Extra["mode"]; empty/unknown
+// values resolve as ModeAuto. Semantics live in kumi/installmodes.go.
+type InstallMode string
+
+const (
+	// ModeAuto picks ModeUpdate when the target carries an installed-pack
+	// record, ModeInstall otherwise.
+	ModeAuto InstallMode = "auto"
+	// ModeInstall lays the pack down over whatever is there (same-path files
+	// are overwritten, everything else is left alone) — the legacy behavior.
+	ModeInstall InstallMode = "install"
+	// ModeUpdate removes files the previous pack version shipped that the
+	// new one no longer ships, then extracts. User data is never a candidate.
+	ModeUpdate InstallMode = "update"
+	// ModeReinstall is repair: the same stale-file sweep as ModeUpdate plus a
+	// full re-extract, fixing files that went missing or were modified.
+	ModeReinstall InstallMode = "reinstall"
+	// ModeClean quarantines the entire game dir into
+	// .polyforge-quarantine\<timestamp>\ before extracting a pristine copy.
+	// Nothing is deleted.
+	ModeClean InstallMode = "clean"
+)
+
 type LogEntry struct {
 	Level   string `json:"level"`
 	Message string `json:"message"`

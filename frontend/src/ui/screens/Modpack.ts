@@ -137,9 +137,11 @@ export function renderModpack(store: Store): HTMLElement {
   toggleInput.addEventListener('change', updateToggle);
   updateToggle();
 
-  // Prefer the remotely managed pack list; fall back to built-ins offline.
+  // Prefer the remotely managed pack list; fall back to built-ins only when
+  // the manifest never arrived (offline first run). An empty remote list is
+  // intentional (all packs hidden/removed) and must not resurrect defaults.
   const remotePacks = store.getState().modpacks;
-  const packs: ModpackDef[] = remotePacks?.length ? remotePacks : DEFAULT_MODPACKS;
+  const packs: ModpackDef[] = remotePacks ?? DEFAULT_MODPACKS;
 
   const buttons: HTMLButtonElement[] = [];
   const selected = store.getState().selectedModpack ?? packs[0]?.id;
