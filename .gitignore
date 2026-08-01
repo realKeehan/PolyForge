@@ -15,21 +15,12 @@ frontend/wailsjs/
 # MkDocs build output
 site/
 
-# PolyTris leaderboard data (created at runtime)
-website/api/tetris-scores.json
-website/api/pack-access-state.json
-website/api/stats-data.json
-website/api/packs-data.json
-website/api/admin-state.json
-website/api/manifest-history.json
-website/api/security-data.json
-website/security-reports/
-# Holds the admin password hash + VirusTotal API key — never commit.
-# Copy admin-config.example.php to admin-config.php on new checkouts.
-website/api/admin-config.php
-website/packs/*.zip
-website/packs/*.polypack
-website/packs/*.json
+# The website now lives in its own (private) repo: realKeehan/polyforge-web.
+# It is still checked out here at website/ so scripts/package-website.ps1 keeps
+# working unchanged — but it is a separate git repo, so this one ignores it.
+# Clone it back with:  git clone git@github.com:realKeehan/polyforge-web.git website
+website/
+
 launcher-trees-*/
 
 # Local reference/scratch material (not a project artifact)
