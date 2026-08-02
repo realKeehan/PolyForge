@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -431,6 +431,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="pack-manifest.json">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mod-identity-source-how-the-fields-are-filled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mod identity + source (how the fields are filled)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loader-version-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loader version resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overridesfiles-per-file-integrity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        overrides.files — per-file integrity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -445,13 +484,30 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#update-flow-planned" class="md-nav__link">
+  <a href="#update-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Update flow (planned)
+        Update flow
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Update flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delta-updates-bandwidth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delta updates (bandwidth)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -467,10 +523,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#open-items-waiting-on-test-machine-pack-structures" class="md-nav__link">
+  <a href="#open-items" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Open items (waiting on test-machine pack structures)
+        Open items
       
     </span>
   </a>
@@ -542,6 +598,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="pack-manifest.json">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mod-identity-source-how-the-fields-are-filled" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mod identity + source (how the fields are filled)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loader-version-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loader version resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#overridesfiles-per-file-integrity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        overrides.files — per-file integrity
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -556,13 +651,30 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#update-flow-planned" class="md-nav__link">
+  <a href="#update-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Update flow (planned)
+        Update flow
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Update flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#delta-updates-bandwidth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delta updates (bandwidth)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -578,10 +690,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#open-items-waiting-on-test-machine-pack-structures" class="md-nav__link">
+  <a href="#open-items" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Open items (waiting on test-machine pack structures)
+        Open items
       
     </span>
   </a>
@@ -610,10 +722,11 @@
 
 <h1 id="polyforge-modpack-format-polypack">PolyForge modpack format (.polypack)<a class="headerlink" href="#polyforge-modpack-format-polypack" title="Permanent link">&para;</a></h1>
 <blockquote>
-<p><strong>Status: scaffold.</strong> The layout and schemas below are the working
-structure; exact per-launcher fields and default folder locations will be
-filled in once real launcher trees from the test machine are provided
-(<code>scripts/dump-launcher-trees.ps1</code>).</p>
+<p><strong>Status: implemented.</strong> Pack layout, packager metadata resolution, and
+per-launcher instance generation are in place; the per-launcher schemas
+were captured from real installs on the test machine
+(<code>TemporaryDetectRef/MachineTest_01</code>, <code>scripts/dump-launcher-trees.ps1</code>).
+Remaining gaps are listed under "Open items" at the bottom.</p>
 </blockquote>
 <h2 id="the-polypack-container">The .polypack container<a class="headerlink" href="#the-polypack-container" title="Permanent link">&para;</a></h2>
 <p>A pack ships as <code>&lt;id&gt;-&lt;version&gt;.polypack</code> — PolyForge's branded container. It
@@ -667,25 +780,128 @@ downloading the full pack.</p>
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="nt">&quot;mods&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="p">{</span>
 <a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">      </span><span class="nt">&quot;file&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sodium-fabric-0.5.3.jar&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sodium-fabric&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.5.3&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">      </span><span class="nt">&quot;sha256&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;…&quot;</span>
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">  </span><span class="p">],</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="nt">&quot;overrides&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">    </span><span class="nt">&quot;folders&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mods&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;config&quot;</span><span class="p">],</span>
-<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="nt">&quot;fileCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span>
-<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="nt">&quot;totalBytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">456789</span>
-<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="p">}</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sodium&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sodium&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">      </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.5.3&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">      </span><span class="nt">&quot;sha256&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;…&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span><span class="nt">&quot;sha1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;…&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">      </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">        </span><span class="nt">&quot;provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;modrinth&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span><span class="nt">&quot;projectId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AANobbMI&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">        </span><span class="nt">&quot;versionId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;…&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">        </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://cdn.modrinth.com/data/…/sodium-fabric-0.5.3.jar&quot;</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">  </span><span class="nt">&quot;overrides&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">    </span><span class="nt">&quot;folders&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mods&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;config&quot;</span><span class="p">],</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">    </span><span class="nt">&quot;fileCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">    </span><span class="nt">&quot;totalBytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">456789</span><span class="p">,</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">    </span><span class="nt">&quot;files&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mods/sodium-fabric-0.5.3.jar&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;sha256&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;…&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">456789</span><span class="w"> </span><span class="p">},</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;config/sodium.properties&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;sha256&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;…&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">    </span><span class="p">]</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>The <code>mods</code> array is the only thing used for update decisions.</strong> The
 installer compares the installed manifest against the hosted one and
 computes added / removed / version-changed mods (see <code>ComparePackMods</code> in
-<code>internal/kumi/packformat.go</code>). <code>sha256</code> doubles as integrity verification.</p>
-<p>Mod <code>name</code>/<code>version</code> are currently derived from the jar filename
-(best-effort). TODO: read <code>fabric.mod.json</code> / <code>META-INF/mods.toml</code> from
-inside each jar for authoritative metadata.</p>
+<code>internal/kumi/packformat.go</code>). Entries are keyed by <code>id</code> — the authoritative
+mod id read from the loader metadata inside each jar — falling back to <code>name</code>
+for packs built before ids were emitted.</p>
+<h3 id="mod-identity-source-how-the-fields-are-filled">Mod identity + source (how the fields are filled)<a class="headerlink" href="#mod-identity-source-how-the-fields-are-filled" title="Permanent link">&para;</a></h3>
+<p>Both packagers read each mod's metadata from inside the archive rather than
+trusting the filename:</p>
+<table>
+<thead>
+<tr>
+<th>File inside the jar</th>
+<th>Loader</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fabric.mod.json</code></td>
+<td>Fabric</td>
+<td><code>id</code>, <code>version</code>, display <code>name</code></td>
+</tr>
+<tr>
+<td><code>quilt.mod.json</code> (<code>quilt_loader</code>)</td>
+<td>Quilt</td>
+<td><code>id</code>, <code>version</code>, <code>metadata.name</code></td>
+</tr>
+<tr>
+<td><code>META-INF/mods.toml</code> / <code>META-INF/neoforge.mods.toml</code></td>
+<td>Forge / NeoForge</td>
+<td><code>modId</code>, <code>version</code> (<code>${file.jarVersion}</code> resolves via <code>MANIFEST.MF</code> <code>Implementation-Version</code>), <code>displayName</code></td>
+</tr>
+<tr>
+<td><code>litemod.json</code></td>
+<td>LiteLoader (<code>.litemod</code> files, legacy)</td>
+<td><code>name</code> (used as id), <code>version</code></td>
+</tr>
+</tbody>
+</table>
+<p>The filename split (<code>name-version.jar</code> at the last hyphen-digit) is only the
+fallback when no metadata is readable.</p>
+<p><code>sha1</code> keys a bulk Modrinth lookup (<code>POST /v2/version_files</code>): mods found on
+Modrinth get a <code>source</code> block (<code>provider</code>, <code>projectId</code>, <code>versionId</code>, direct
+<code>url</code>), which makes packs traceable to their upstream projects and lets a
+future update path re-fetch a mod from Modrinth instead of shipping the
+bytes. CurseForge has an equivalent (<code>POST /v1/fingerprints</code>, murmur2) but
+requires a partner <code>x-api-key</code> — planned once a key is provisioned. Mods
+without a match (private/renamed jars) simply have no <code>source</code>.</p>
+<h3 id="loader-version-resolution">Loader version resolution<a class="headerlink" href="#loader-version-resolution" title="Permanent link">&para;</a></h3>
+<p>The PowerShell packager resolves and validates <code>loader.version</code> against each
+loader's official metadata (<code>-LoaderVersion latest</code> — or empty — picks the
+newest stable for <code>-McVersion</code>; an explicit version is validated with a
+warning):</p>
+<table>
+<thead>
+<tr>
+<th>Loader</th>
+<th>Source of truth</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fabric</td>
+<td><code>meta.fabricmc.net/v2/versions/loader/{mc}</code> (stable flag)</td>
+</tr>
+<tr>
+<td>Quilt</td>
+<td><code>meta.quiltmc.org/v3/versions/loader/{mc}</code></td>
+</tr>
+<tr>
+<td>Forge</td>
+<td><code>files.minecraftforge.net/.../promotions_slim.json</code> (recommended → latest), validated against the Forge Maven</td>
+</tr>
+<tr>
+<td>NeoForge</td>
+<td><code>maven.neoforged.net/releases/net/neoforged/neoforge/maven-metadata.xml</code> (MC <code>1.X.Y</code> → NeoForge <code>X.Y.*</code>; 1.20.1 is the legacy <code>net.neoforged:forge</code> artifact and must be passed explicitly)</td>
+</tr>
+<tr>
+<td>LiteLoader / vanilla</td>
+<td>recorded verbatim, never resolved</td>
+</tr>
+</tbody>
+</table>
+<p><code>-McVersion</code> itself is sanity-checked against Mojang's
+<code>piston-meta.mojang.com/mc/game/version_manifest_v2.json</code>. Every network step
+degrades to a warning when unreachable, and <code>-Offline</code> skips them all — only
+<code>-LoaderVersion latest</code> hard-requires the network.</p>
+<h3 id="overridesfiles-per-file-integrity"><code>overrides.files</code> — per-file integrity<a class="headerlink" href="#overridesfiles-per-file-integrity" title="Permanent link">&para;</a></h3>
+<p><code>overrides.files</code> lists <strong>every</strong> file the pack ships (path relative to
+<code>overrides/</code>, forward slashes) with its SHA-256 and size. Both packagers emit
+it; the installer re-hashes each extracted file against this list and refuses
+the install if anything is wrong (<code>VerifyInstalledPack</code> /
+<code>verifyFilesOnDisk</code> in <code>internal/kumi/packformat.go</code>). This catches
+<strong>corruption, tampering, and truncated/incomplete downloads before they cause
+problems in-game.</strong> Packs built before this field existed simply omit it and
+verification is skipped (backward compatible). This same per-file hash list is
+the foundation for file-level delta updates (below).</p>
 <h2 id="launchersjson-one-pack-every-launcher">launchers.json — one pack, every launcher<a class="headerlink" href="#launchersjson-one-pack-every-launcher" title="Permanent link">&para;</a></h2>
 <p>The pack is <strong>launcher-agnostic</strong>: <code>launchers.json</code> carries info fields for
 <em>every</em> supported launcher, and the installer generates each launcher's real
@@ -707,47 +923,94 @@ files, so the same <code>.polypack</code> installs everywhere.</p>
 </code></pre></div>
 <p>Generation is data-driven through the registry in
 <code>internal/kumi/packformat.go</code> (<code>launcherTargets</code>): each launcher declares
-where overrides go (<code>InstanceSubdirFor</code>) and a <code>Generate</code> writer. Overrides
-are always extracted; the <code>Generate</code> writers are stubs until the real
-schemas are captured. Rough plan per family:</p>
+where overrides go (<code>InstanceSubdirFor</code>) and a <code>Generate</code> writer
+(<code>internal/kumi/gen_launchers.go</code>). At install time the app derives the
+instance layout from the chosen path (<code>PlanInstallDirs</code>: launcher root →
+<code>instances/&lt;name&gt;/&lt;gamedir&gt;</code>, <code>profiles/&lt;name&gt;</code>, ...), extracts + verifies
+the overrides, then writes the launcher's own files. Every schema was
+captured from a real install on the reference machine
+(<code>TemporaryDetectRef/MachineTest_01/INSTANCES</code>):</p>
 <table>
 <thead>
 <tr>
-<th>Launcher family</th>
+<th>Launcher</th>
 <th>Generated at install time</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>vanilla</td>
-<td><code>launcher_profiles.json</code> entry (profile id, icon, args)</td>
+<td><code>launcher_profiles.json</code> entry (gameDir, icon, <code>-Xmx</code> args); Fabric/Quilt version JSON fetched from the loader meta API into <code>versions\</code> so the profile launches immediately (Forge/NeoForge: run their installer once)</td>
 </tr>
 <tr>
-<td>MultiMC / PolyMC / Prism forks</td>
-<td><code>instance.cfg</code> + <code>mmc-pack.json</code> (components from <code>minecraft</code> + <code>loader</code>)</td>
+<td>MultiMC / PolyMC / UltimMC</td>
+<td>legacy headerless <code>instance.cfg</code> + <code>mmc-pack.json</code> (components from <code>minecraft</code> + <code>loader</code>)</td>
 </tr>
 <tr>
-<td>Modrinth (Theseus)</td>
-<td>profile entry / <code>profile.json</code></td>
+<td>Prism / ShatteredPrism / PineconeMC (elyprism) / Fjord / Freesm</td>
+<td><code>[General]</code>-style <code>instance.cfg</code> + <code>mmc-pack.json</code></td>
+</tr>
+<tr>
+<td>Modrinth App (Theseus)</td>
+<td>profile row registered directly in <code>app.db</code> (pure-Go SQLite; app-version-specific columns templated from an existing profile row)</td>
 </tr>
 <tr>
 <td>CurseForge</td>
-<td><code>minecraftinstance.json</code></td>
+<td><code>minecraftinstance.json</code> (guid, <code>baseModLoader</code>, memory; the app repairs the loader <code>versionJson</code> on first open)</td>
 </tr>
 <tr>
-<td>others</td>
-<td>TBD from <code>dump-launcher-trees.ps1</code> output</td>
+<td>GDLauncher Carbon</td>
+<td><code>instance.json</code></td>
+</tr>
+<tr>
+<td>XMCL</td>
+<td><code>instance.json</code> (runtime block)</td>
+</tr>
+<tr>
+<td>Dawn</td>
+<td><code>profile.json</code> (schemaVersion 3) + <code>content-index.json</code></td>
+</tr>
+<tr>
+<td>Polymerium</td>
+<td><code>profile.json</code> (Trident purl-style loader id)</td>
+</tr>
+<tr>
+<td>ATLauncher / Technic / QWERTZ / BakaXL / SKLauncher / HMCL</td>
+<td>no generator (embedded-manifest format, uncaptured schema, or unsupported) — overrides still extract; the log says to add the instance manually</td>
 </tr>
 </tbody>
 </table>
-<h2 id="update-flow-planned">Update flow (planned)<a class="headerlink" href="#update-flow-planned" title="Permanent link">&para;</a></h2>
+<p>Generation never fails a verified install: every writer degrades to a log
+note (missing launcher state, unreachable meta API, ...) so worst case the
+files are in place and the user adds the instance in the launcher UI.</p>
+<h2 id="update-flow">Update flow<a class="headerlink" href="#update-flow" title="Permanent link">&para;</a></h2>
 <ol>
 <li>App fetches the hosted <code>&lt;id&gt;-&lt;latest&gt;.manifest.json</code> (URL comes from the
    remote content manifest / pack-access endpoint).</li>
-<li>Compares <code>mods</code> against the locally installed manifest copy.</li>
-<li>Downloads only what changed (full zip for now; delta later), replaces
-   managed mods, leaves user files alone.</li>
+<li>Diffs the latest <code>overrides.files</code> against the locally installed manifest
+   copy (<code>.polyforge-pack.json</code>) <strong>by path + sha256</strong>:</li>
+<li>unchanged (same path + hash) → left on disk, never re-downloaded,</li>
+<li>changed / added → fetched and written,</li>
+<li>removed → deleted.
+   User files (not listed in the manifest) are never touched.</li>
+<li>Every fetched file is hash-verified against the manifest before it is
+   swapped into place — the same integrity guarantee as a fresh install.</li>
 </ol>
+<h3 id="delta-updates-bandwidth">Delta updates (bandwidth)<a class="headerlink" href="#delta-updates-bandwidth" title="Permanent link">&para;</a></h3>
+<p>Because step 2 already knows exactly which files changed, an update only needs
+to <em>transfer</em> the changed ones. Two hosting models:</p>
+<ul>
+<li><strong>File-level (recommended):</strong> host each shipped file content-addressed by its
+  hash (<code>/packs/&lt;id&gt;/objects/&lt;sha256&gt;</code>). The client fetches only the objects it
+  doesn't already have; unchanged files (and files shared across versions or
+  packs) are free. Verification is automatic — the object <em>is</em> its hash.</li>
+<li><strong>Whole-pack (today):</strong> host the full <code>&lt;id&gt;-&lt;version&gt;.polypack</code>. The diff
+  still avoids rewriting unchanged files on disk, but the whole pack is
+  downloaded. Simplest to host; no per-object endpoint.</li>
+</ul>
+<p>Byte-level binary diffs (bsdiff/xdelta) are intentionally <strong>not</strong> used: pack
+payloads are mostly jars that change wholesale between versions, so file-level
+delta captures nearly all the savings without a pure-Go patch codec.</p>
 <h2 id="what-ships-vs-what-never-ships">What ships vs. what never ships<a class="headerlink" href="#what-ships-vs-what-never-ships" title="Permanent link">&para;</a></h2>
 <p>Based on analysis of a real Modrinth/Theseus profile
 (<code>Modrinth/profiles/&lt;name&gt;</code> is a full .minecraft-style instance dir):</p>
@@ -785,13 +1048,16 @@ schemas are captured. Rough plan per family:</p>
 apply this filter automatically.</p>
 <p>Mod filenames in the wild are too inconsistent for reliable parsing
 (<code>entity_texture_features_26.1-fabric-7.1.jar</code>, <code>Gamma-Utils-3.0.0+mc26.1.jar</code>),
-so the online packager reads <code>fabric.mod.json</code> / <code>quilt.mod.json</code> /
-<code>META-INF/mods.toml</code> from inside each jar; the filename split is only the
-fallback (and the PowerShell script's current method).</p>
-<h2 id="open-items-waiting-on-test-machine-pack-structures">Open items (waiting on test-machine pack structures)<a class="headerlink" href="#open-items-waiting-on-test-machine-pack-structures" title="Permanent link">&para;</a></h2>
+so <strong>both</strong> packagers read the loader metadata from inside each jar (see
+"Mod identity + source" above); the filename split is only the fallback.</p>
+<h2 id="open-items">Open items<a class="headerlink" href="#open-items" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Default install locations per launcher (instances dir, profiles dir).</li>
-<li>Exact launcher file schemas + required fields for generation.</li>
+<li>Generators for the remaining launchers: ATLauncher (its <code>instance.json</code>
+  embeds full Mojang + loader manifests, so it needs the meta APIs at install
+  time), QWERTZ (capture its <code>profiles.json</code> master-list schema from the test
+  machine), Technic / BakaXL / SKLauncher / HMCL (unsupported or untested).</li>
+<li>CurseForge fingerprint matching in the packagers (<code>POST /v1/fingerprints</code>,
+  murmur2) once a partner <code>x-api-key</code> is provisioned.</li>
 </ul>
 
 
@@ -882,7 +1148,7 @@ fallback (and the PowerShell script's current method).</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.top", "navigation.sections", "toc.follow", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

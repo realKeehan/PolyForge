@@ -10,13 +10,9 @@
       
       
       
-        <link rel="canonical" href="https://docs.polyforge.dev/building/">
+        <link rel="canonical" href="https://docs.polyforge.dev/launcher-install-matrix/">
       
       
-        <link rel="prev" href="..">
-      
-      
-        <link rel="next" href="../launchers/">
       
       
         
@@ -27,7 +23,7 @@
     
     
       
-        <title>Building from source - PolyForge</title>
+        <title>Launcher install matrix (internal roadmap) - PolyForge</title>
       
     
     
@@ -78,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#building-from-source" class="md-skip">
+        <a href="#launcher-install-matrix-internal-roadmap" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Building from source
+              Launcher install matrix (internal roadmap)
             
           </span>
         </div>
@@ -286,37 +282,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Building from source
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../building/" class="md-nav__link">
         
   
   
@@ -332,126 +301,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Prerequisites
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Getting started
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#build-script-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Build script options
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Build script options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Examples
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Troubleshooting
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Troubleshooting">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#assets_embedgo-pattern-frontenddist-no-matching-files-found" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        assets_embed.go: pattern frontend/dist: no matching files found
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#windows-binding-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Windows binding errors
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#distribution-formats" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Distribution formats
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -537,10 +386,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
+  <a href="#the-two-install-paths" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Prerequisites
+        The two install paths
       
     </span>
   </a>
@@ -548,10 +397,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
+  <a href="#install-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Getting started
+        Install modes
       
     </span>
   </a>
@@ -559,77 +408,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#build-script-options" class="md-nav__link">
+  <a href="#matrix" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Build script options
+        Matrix
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Build script options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Examples
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
+  <a href="#action-items-ordered" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Troubleshooting
+        Action items (ordered)
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Troubleshooting">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#assets_embedgo-pattern-frontenddist-no-matching-files-found" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        assets_embed.go: pattern frontend/dist: no matching files found
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#windows-binding-errors" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Windows binding errors
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#distribution-formats" class="md-nav__link">
+  <a href="#parked-deliberate-2026-07-11" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Distribution formats
+        Parked (deliberate, 2026-07-11)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build scripts
       
     </span>
   </a>
@@ -656,178 +471,357 @@
   
 
 
-<h1 id="building-from-source">Building from source<a class="headerlink" href="#building-from-source" title="Permanent link">&para;</a></h1>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Tool</th>
-<th>Minimum version</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Go</td>
-<td>1.21+</td>
-<td>Backend compilation</td>
-</tr>
-<tr>
-<td>Node.js</td>
-<td>18+</td>
-<td>Frontend build toolchain</td>
-</tr>
-<tr>
-<td>npm</td>
-<td>(bundled with Node)</td>
-<td>Dependency management</td>
-</tr>
-<tr>
-<td>Wails CLI</td>
-<td>v2</td>
-<td>Desktop shell + bindings</td>
-</tr>
-<tr>
-<td>UPX</td>
-<td>(optional)</td>
-<td>Binary compression (<code>-UPX</code> flag)</td>
-</tr>
-<tr>
-<td>garble</td>
-<td>(optional)</td>
-<td>Bound-method obfuscation (<code>-Obfuscated</code> flag)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
+<h1 id="launcher-install-matrix-internal-roadmap">Launcher install matrix (internal roadmap)<a class="headerlink" href="#launcher-install-matrix-internal-roadmap" title="Permanent link">&para;</a></h1>
+<p>Scaffolding for updating and implementing the per-launcher install paths and
+the pack build scripts. Sources of truth, in order:</p>
 <ol>
-<li>
-<p>Install Go 1.21+, Node 18+, and the Wails CLI.</p>
-</li>
-<li>
-<p>Install and build the frontend bundle:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>frontend
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>npm<span class="w"> </span>ci
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>npm<span class="w"> </span>run<span class="w"> </span>build
-</code></pre></div>
-</li>
-<li>
-<p>From the project root, start the app in development mode:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Windows</label><label for="__tabbed_1_2">macOS / Linux</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">pwsh</span> <span class="n">scripts</span><span class="p">/</span><span class="n">wails-dev</span><span class="p">.</span><span class="n">ps1</span>
-</code></pre></div>
-<p>Handles npm install, Go toolchain normalisation, and stale binding cleanup.</p>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>wails<span class="w"> </span>dev
-</code></pre></div>
-</div>
-</div>
-</div>
-</li>
-<li>
-<p>To produce a release build on Windows:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">pwsh</span> <span class="n">scripts</span><span class="p">/</span><span class="n">wails-build</span><span class="p">.</span><span class="n">ps1</span>
-</code></pre></div>
-</li>
+<li><strong>Original KUMI PowerShell installer</strong> — <code>TemporaryDetectRef/OriginalKumiScripts/KUMI.ps1</code>
+   (v5.5.1). The Go install modules under <code>internal/kumi/install/</code> are direct
+   ports of its menu cases.</li>
+<li><strong>Reference machine dumps</strong> — <code>TemporaryDetectRef/MachineTest_01/</code> and
+   <code>TemporaryDetectRef/machine test 2/launcher-trees-2026-07-11_1415/</code>
+   (produced by <code>scripts/dump-launcher-trees.ps1</code>, v4). Every layout claim
+   below marked <em>(verified)</em> was read from those trees.</li>
+<li><strong>Current code</strong> — detection <code>internal/kumi/detect.go</code>, layout planning +
+   generation registry <code>internal/kumi/packformat.go</code> (<code>launcherTargets</code>),
+   writers <code>internal/kumi/gen_launchers.go</code>, legacy modules
+   <code>internal/kumi/install/*.go</code>, hosted flow <code>internal/kumi/hostedpack.go</code>.</li>
 </ol>
-<div class="admonition tip">
-<p class="admonition-title">Dev menu</p>
-<p><code>dev-menu.bat</code> wraps the common tasks (dev mode, release build with
-interactive flag selection, website localhost, packaging, version bump).</p>
-</div>
-<h2 id="build-script-options">Build script options<a class="headerlink" href="#build-script-options" title="Permanent link">&para;</a></h2>
+<h2 id="the-two-install-paths">The two install paths<a class="headerlink" href="#the-two-install-paths" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Legacy path</strong> (ported from KUMI.ps1): per-launcher buttons →
+  <code>Service.installX()</code> (<code>launchers.go</code>) → <code>install.X(...)</code> → find root →
+  create <code>&lt;root&gt;\&lt;subdir&gt;\TurtelSMP5</code> → download a fixed ZIP.
+  <strong>The legacy ZIPs are dead</strong>: they are Discord CDN attachment links
+  (<code>service.go</code> consts) that now carry expiring signatures — the Modrinth URL's
+  embedded <code>ex=</code> stamp is long past. Most launchers never had a ZIP at all and
+  fall through to "No ZIP URL configured".</li>
+<li><strong>Modern path</strong> (hosted <code>.polypack</code>): download from the pack registry →
+  <code>extractAndVerifyPack</code> → <code>PlanInstallDirs</code> → extract overrides into the game
+  dir → <code>GenerateLauncherFiles</code> writers → per-file integrity verification.
+  Launcher-agnostic and already reference-verified for the layouts below.</li>
+</ul>
+<p><strong>Migration goal:</strong> every legacy button becomes a pack-driven install — the
+per-launcher module keeps only root resolution (detection candidates), and
+layout + config generation come from <code>launcherTargets</code>. The staging scaffold
+for this is <code>internal/kumi/install/packflow.go</code> (<code>PackInstance</code>).</p>
+<h2 id="install-modes">Install modes<a class="headerlink" href="#install-modes" title="Permanent link">&para;</a></h2>
+<p>Implemented in <code>internal/kumi/installmodes.go</code> and applied by
+<code>extractAndVerifyPack</code> between layout planning and extraction. The UI
+requests a mode via <code>payload.Extra["mode"]</code> (both the hosted and local pack
+paths accept it); unknown/empty values resolve as <code>auto</code>, so an outdated
+frontend can never break installs. <code>PackInstance</code> carries the mode through
+to its stager for the migrated legacy buttons.</p>
 <table>
 <thead>
 <tr>
-<th>Flag</th>
-<th>Description</th>
+<th>Mode</th>
+<th>Existing game dir treatment</th>
+<th>User data</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>-UPX</code></td>
-<td>Compress the output binary with <a href="https://github.com/upx/upx/releases">UPX</a>. Requires <code>upx</code> on PATH.</td>
+<td><code>auto</code></td>
+<td><code>update</code> when the dir carries <code>.polyforge-pack.json</code>, else <code>install</code></td>
+<td>—</td>
 </tr>
 <tr>
-<td><code>-Obfuscated</code></td>
-<td>Obfuscate bound Wails methods via <a href="https://github.com/burrowers/garble">garble</a> (<code>wails build -obfuscated</code>). Requires <code>go install mvdan.cc/garble@latest</code>.</td>
+<td><code>install</code></td>
+<td>Legacy lay-down: shipped files overwrite same-path files, everything else untouched</td>
+<td>untouched</td>
 </tr>
 <tr>
-<td><code>-SkipFrontend</code></td>
-<td>Skip <code>npm ci</code> and <code>npm run build</code> if the frontend is already built.</td>
+<td><code>update</code></td>
+<td>Sweeps files the OLD pack shipped that the NEW pack dropped (candidates come only from the old manifest's overrides list), then extracts</td>
+<td>untouchable by construction</td>
+</tr>
+<tr>
+<td><code>reinstall</code></td>
+<td>Repair: same sweep + full re-extract restores missing/modified files (<code>VerifyInstalledPack</code> reports which)</td>
+<td>untouchable by construction</td>
+</tr>
+<tr>
+<td><code>clean</code></td>
+<td>Quarantines the entire game dir into <code>.polyforge-quarantine\&lt;timestamp&gt;\</code> first — generalizes KUMI.ps1's "not-turtel" move; nothing is deleted</td>
+<td>moved to quarantine, recoverable</td>
 </tr>
 </tbody>
 </table>
-<p>Any other flags are forwarded straight to <code>wails build</code> (e.g. <code>-nsis</code>,
-<code>-clean</code>, <code>-trimpath</code>, <code>-webview2 embed</code>, <code>-debug</code>).</p>
-<h3 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c"># Standard build</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">pwsh</span> <span class="n">scripts</span><span class="p">/</span><span class="n">wails-build</span><span class="p">.</span><span class="n">ps1</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c"># UPX + obfuscation</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">pwsh</span> <span class="n">scripts</span><span class="p">/</span><span class="n">wails-build</span><span class="p">.</span><span class="n">ps1</span> <span class="n">-UPX</span> <span class="n">-Obfuscated</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c"># NSIS installer output</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">pwsh</span> <span class="n">scripts</span><span class="p">/</span><span class="n">wails-build</span><span class="p">.</span><span class="n">ps1</span> <span class="n">-nsis</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c"># Skip the frontend rebuild (e.g. CI built it in a prior step)</span>
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="n">pwsh</span> <span class="n">scripts</span><span class="p">/</span><span class="n">wails-build</span><span class="p">.</span><span class="n">ps1</span> <span class="n">-SkipFrontend</span>
-</code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Windows PowerShell 5.1</p>
-<p>The build scripts are compatible with Windows PowerShell 5.1 (the default
-<code>powershell.exe</code>) as well as PowerShell 7 (<code>pwsh</code>). If you invoke them
-through the dev menu without <code>pwsh</code> installed, they fall back to 5.1.</p>
-</div>
-<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
-<h3 id="assets_embedgo-pattern-frontenddist-no-matching-files-found"><code>assets_embed.go: pattern frontend/dist: no matching files found</code><a class="headerlink" href="#assets_embedgo-pattern-frontenddist-no-matching-files-found" title="Permanent link">&para;</a></h3>
-<p>The Go compiler needs the frontend bundle to exist at <code>frontend/dist/</code> before
-building. The build scripts do this automatically. If building manually or in
-CI, run the frontend build first:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">cd</span><span class="w"> </span>frontend<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>ci<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>..
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>go<span class="w"> </span>build<span class="w"> </span>-v<span class="w"> </span>./...
-</code></pre></div>
-<h3 id="windows-binding-errors">Windows binding errors<a class="headerlink" href="#windows-binding-errors" title="Permanent link">&para;</a></h3>
-<p>If Wails reports <em>"This version of %1 is not compatible with the version of
-Windows you're running"</em> when generating bindings, the cached helper at
-<code>%TEMP%\wailsbindings.exe</code> is usually stale (compiled for the wrong
-architecture). The PowerShell scripts delete it automatically before each
-build; remove it manually and retry if the error persists.</p>
-<h2 id="distribution-formats">Distribution formats<a class="headerlink" href="#distribution-formats" title="Permanent link">&para;</a></h2>
-<p>PolyForge targets these formats across platforms (see the
-<a href="https://polyforge.dev/downloads">downloads page</a>):</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Windows</label><label for="__tabbed_2_2">macOS</label><label for="__tabbed_2_3">Linux</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
+<p>Notes: <code>update</code>/<code>reinstall</code> on a dir without a record fall back to <code>install</code>;
+packs that predate per-file manifests cannot be swept (logged as such);
+<code>PlanPackUpdate</code> (same file) powers "update available" previews via
+<code>ComparePackMods</code>. Clean covers the game dir only — launcher instance
+metadata is regenerated by the config writers.</p>
+<h2 id="matrix">Matrix<a class="headerlink" href="#matrix" title="Permanent link">&para;</a></h2>
+<p>Status legend: ✅ ready (layout verified + generator exists) · 🔧 needs-fix
+(known defect) · ❓ needs-verify (open question, next machine test) ·
+🅿️ parked (deliberate, see below) · ➖ n/a.</p>
+<table>
+<thead>
+<tr>
+<th>Launcher</th>
+<th>KUMI.ps1 origin</th>
+<th>Data root <em>(verified)</em></th>
+<th>Instance path under root</th>
+<th>Config writer (<code>gen_launchers.go</code>)</th>
+<th>Legacy module (<code>install/</code>)</th>
+<th>Status / next step</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>vanilla</td>
+<td>menu 1: KUMIProfiles zip + Quilt zip into <code>versions\</code> + <code>launcher_profiles.json</code> upsert</td>
+<td><code>%APPDATA%\.minecraft</code></td>
+<td>profile <code>gameDir</code> points anywhere</td>
+<td><code>genVanillaProfile</code> (fetches loader profile JSON)</td>
+<td><code>vanilla.go</code> (full port incl. profile upsert)</td>
+<td>✅ migrate zips → pack flow</td>
+</tr>
+<tr>
+<td>multimc</td>
+<td>menu 2: exe probe, 3 roots</td>
+<td>portable — shortcut/scan discovery</td>
+<td><code>instances\&lt;name&gt;\.minecraft</code></td>
+<td><code>genMMCInstance(false)</code></td>
+<td><code>multimc.go</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>polymc</td>
+<td>menu 11</td>
+<td><code>%APPDATA%\PolyMC</code></td>
+<td><code>instances\&lt;name&gt;\.minecraft</code></td>
+<td><code>genMMCInstance(false)</code></td>
+<td><code>polymc.go</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>prismlauncher</td>
+<td>menu 7</td>
+<td><code>%APPDATA%\PrismLauncher</code></td>
+<td><code>instances\&lt;name&gt;\minecraft</code></td>
+<td><code>genMMCInstance(true)</code></td>
+<td><code>prismlauncher.go</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>shatteredprism</td>
+<td>— (post-KUMI)</td>
+<td><code>%APPDATA%\ShatteredPrism</code></td>
+<td><code>instances\&lt;name&gt;\minecraft</code></td>
+<td><code>genMMCInstance(true)</code></td>
+<td><code>planned.go</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>elyprism</td>
+<td>—</td>
+<td><code>%APPDATA%\ElyPrismLauncher</code></td>
+<td><code>instances\&lt;name&gt;\minecraft</code></td>
+<td><code>genMMCInstance(true)</code></td>
+<td><code>planned.go</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>fjord</td>
+<td>—</td>
+<td><code>%APPDATA%\FjordLauncher</code></td>
+<td><code>instances\&lt;name&gt;\minecraft</code></td>
+<td><code>genMMCInstance(true)</code></td>
+<td><code>planned.go</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>freesm</td>
+<td>—</td>
+<td><code>%APPDATA%\FreesmLauncher</code></td>
+<td><code>instances\&lt;name&gt;\minecraft</code></td>
+<td><code>genMMCInstance(true)</code></td>
+<td><code>planned.go</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>modrinth</td>
+<td>menu 4 (used old <code>com.modrinth.theseus</code> path)</td>
+<td><code>%APPDATA%\ModrinthApp</code>, overridable via <code>settings.custom_dir</code> in app.db — <strong>may be set to the default path</strong> <em>(verified)</em></td>
+<td><code>profiles\&lt;name&gt;</code> (root = game dir)</td>
+<td><code>genModrinthProfile</code> (sqlite row, templates from an existing row)</td>
+<td><code>modrinth.go</code></td>
+<td>✅ needs ≥1 existing profile row to template</td>
+</tr>
+<tr>
+<td>curseforge</td>
+<td>menu 3</td>
+<td><code>%USERPROFILE%\curseforge\minecraft</code></td>
+<td><code>Instances\&lt;name&gt;</code> (root = game dir)</td>
+<td><code>genCurseForgeInstance</code></td>
+<td><code>curseforge.go</code></td>
+<td>🔧 generator does not write the <code>.curseclient</code> marker (bare instance GUID file; every real instance has one <em>(verified)</em>)</td>
+</tr>
+<tr>
+<td>atlauncher</td>
+<td>menu 6</td>
+<td>portable; exe dir = data dir (stray-copy scan fix 2026-07-11)</td>
+<td><code>instances\&lt;name&gt;</code> (root = game dir)</td>
+<td>none — instance.json embeds full Mojang+loader manifests (~70 KB)</td>
+<td><code>atlauncher.go</code></td>
+<td>➖ semi-manual: extract overrides, user adds pack in ATLauncher</td>
+</tr>
+<tr>
+<td>gdlauncher</td>
+<td>menu 5 (probed legacy <code>gdlauncher_next</code>/<code>gdlauncher</code>)</td>
+<td><code>%APPDATA%\gdlauncher_carbon</code> <em>(verified)</em></td>
+<td><strong><code>data\instances\&lt;name&gt;</code></strong>, game dir <code>...\instance\</code> <em>(verified)</em></td>
+<td><code>genGDLauncherInstance</code></td>
+<td><code>gdlauncher.go</code></td>
+<td>🔧 <code>instancesDirName("gdlauncher")</code> returns <code>instances</code> but Carbon nests them under <code>data\instances</code> — <code>PlanInstallDirs</code> targets the wrong folder when handed the detected root</td>
+</tr>
+<tr>
+<td>technic</td>
+<td>menu 10</td>
+<td><code>%APPDATA%\.technic</code></td>
+<td><code>modpacks\&lt;slug&gt;</code></td>
+<td>none</td>
+<td><code>technic.go</code></td>
+<td>🅿️ parked + ❓ <code>InstanceSubdir: "bin"</code> is suspect — mods/config sit at the modpack root, <code>bin\</code> holds <code>modpack.jar</code></td>
+</tr>
+<tr>
+<td>dawn</td>
+<td>menu 9 (as Feather)</td>
+<td><code>%APPDATA%\.dawn</code> <em>(verified)</em></td>
+<td><code>profiles\&lt;id&gt;</code> (kebab-case id), game dir <code>.minecraft\</code> <em>(verified)</em></td>
+<td><code>genDawnProfile</code></td>
+<td><code>dawn.go</code></td>
+<td>✅ edge: installed-but-never-run has no <code>.dawn</code> and no exe fallback wired</td>
+</tr>
+<tr>
+<td>bakaxl</td>
+<td>menu 8</td>
+<td><code>%APPDATA%\BakaXL</code></td>
+<td>unknown — <code>CoreDirectory.json</code> schema still uncaptured (scrubbed from test 2; dump v4 will capture it)</td>
+<td>none</td>
+<td><code>bakaxl.go</code> (assumes <code>instances\</code>, unverified)</td>
+<td>🅿️ parked (language barrier)</td>
+</tr>
+<tr>
+<td>sklauncher</td>
+<td>—</td>
+<td><strong>uses vanilla <code>.minecraft</code> directly</strong> <em>(verified)</em>: registers a <code>launcher_profiles.json</code> profile with <code>gameDir</code> <code>.minecraft\instances\&lt;name&gt;</code></td>
+<td>n/a</td>
+<td>vanilla writer is the right vehicle</td>
+<td><code>planned.go</code> (assumes own <code>instances\</code> — wrong)</td>
+<td>🔧 rewire to the vanilla flow with an <code>instances\&lt;name&gt;</code> game dir</td>
+</tr>
+<tr>
+<td>qwertz</td>
+<td>—</td>
+<td><code>%APPDATA%\QWERTZ-Launcher</code> (exe lives inside data dir) <em>(verified)</em></td>
+<td><code>profiles\&lt;name&gt;</code> (root = game dir) <em>(verified)</em></td>
+<td><code>genQwertzProfile</code> (registry upsert, added 2026-07-11)</td>
+<td><code>planned.go</code></td>
+<td>✅ ❓ only <code>FABRIC</code> loader enum value is reference-verified</td>
+</tr>
+<tr>
+<td>hmcl</td>
+<td>—</td>
+<td><code>%APPDATA%\.hmcl</code> / <code>~\.hmcl</code> (missing on ref machine)</td>
+<td>unknown</td>
+<td>none</td>
+<td><code>planned.go</code></td>
+<td>🅿️ parked (language barrier)</td>
+</tr>
+<tr>
+<td>ultimmc</td>
+<td>—</td>
+<td><code>%APPDATA%\UltimMC</code> (missing on ref machine)</td>
+<td><code>instances\&lt;name&gt;\.minecraft</code> (assumed, MultiMC fork)</td>
+<td><code>genMMCInstance(false)</code></td>
+<td><code>planned.go</code></td>
+<td>🅿️ parked (no obtainable download)</td>
+</tr>
+<tr>
+<td>polymerium</td>
+<td>—</td>
+<td><code>%LOCALAPPDATA%\Trident</code> (settings in <code>%APPDATA%\Polymerium</code>) <em>(verified)</em></td>
+<td><code>instances\&lt;id&gt;</code></td>
+<td><code>genPolymeriumProfile</code></td>
+<td><code>planned.go</code></td>
+<td>❓ live game dir appears to be <code>instances\&lt;id&gt;\build\</code> after deploy <em>(verified tree)</em> — overrides at the instance root may be invisible; likely <code>InstanceSubdir: "build"</code></td>
+</tr>
+<tr>
+<td>xmcl</td>
+<td>—</td>
+<td><code>%USERPROFILE%\.minecraftx</code> (config in <code>%APPDATA%\xmcl</code>) <em>(verified)</em></td>
+<td><code>instances\&lt;name&gt;</code> (root = game dir) <em>(verified)</em></td>
+<td><code>genXMCLInstance</code>; registry needs no upsert — XMCL rescans on boot</td>
+<td><code>planned.go</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>custom</td>
+<td>menu 12 (<code>bypass.turtel</code> / <code>not-turtel</code> quarantine)</td>
+<td>user-chosen mods dir</td>
+<td>n/a</td>
+<td>n/a</td>
+<td><code>custom.go</code> (full port)</td>
+<td>✅ migrate zip → pack flow</td>
+</tr>
+<tr>
+<td>manual</td>
+<td>menu 13 (zip → cwd)</td>
+<td>user-chosen dir</td>
+<td>n/a</td>
+<td>n/a</td>
+<td><code>manual.go</code></td>
+<td>✅ migrate zip → pack flow</td>
+</tr>
+</tbody>
+</table>
+<h2 id="action-items-ordered">Action items (ordered)<a class="headerlink" href="#action-items-ordered" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>GDLauncher <code>data\instances</code></strong> — teach <code>instancesDirName</code>/<code>PlanInstallDirs</code>
+   that Carbon's instances live one level down (<code>data\instances</code>). Mind the
+   "user chose the instances folder itself" comparison, which today only
+   matches a single path segment.</li>
+<li><strong>CurseForge <code>.curseclient</code></strong> — <code>genCurseForgeInstance</code> should write the
+   marker file (contents = the instance GUID it already generates).</li>
+<li><strong>SKLauncher → vanilla flow</strong> — drop the fake <code>instances\</code> module; route
+   installs to the vanilla writer with game dir
+   <code>%APPDATA%\.minecraft\instances\&lt;name&gt;</code>.</li>
+<li><strong>Polymerium <code>build\</code></strong> — verify on the reference machine whether files
+   placed at the instance root survive/deploy; then set <code>InstanceSubdir</code>.</li>
+<li><strong>Legacy button migration</strong> — swap <code>InstanceWithOptionalZip</code> modules to the
+   <code>PackInstance</code> scaffold (<code>install/packflow.go</code>) launcher by launcher, wiring
+   plan+stage closures from <code>kumi</code> (see the scaffold's doc comment). Delete the
+   dead Discord CDN consts from <code>service.go</code> when the last button is migrated.</li>
+<li><strong>QWERTZ loader enum</strong> — confirm the non-Fabric spellings in QWERTZ's
+   <code>profiles.json</code> on the next machine test (only <code>FABRIC</code> observed).</li>
+<li><strong>Docs</strong> — refresh the public tiers in <code>docs/launchers.md</code> once 1–5 land.</li>
+</ol>
+<h2 id="parked-deliberate-2026-07-11">Parked (deliberate, 2026-07-11)<a class="headerlink" href="#parked-deliberate-2026-07-11" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>.exe</code> (standard + NSIS installer)</li>
-<li><code>.exe</code> (portable)</li>
-<li><code>.exe</code> (UPX-compressed)</li>
-<li><code>.zip</code> (portable archive)</li>
+<li><strong>Technic</strong> — pending the custom-pack question: Technic may be a pack
+  <em>provider</em> only (packs install from its site); <code>installedPacks</code> on the
+  reference machine was empty, so there is no custom-pack row to mirror.</li>
+<li><strong>BakaXL / HMCL</strong> — language barrier; BakaXL's <code>CoreDirectory.json</code> is also
+  still uncaptured (dump v4 will pick it up next run).</li>
+<li><strong>UltimMC</strong> — no obtainable download.</li>
 </ul>
-</div>
-<div class="tabbed-block">
+<h2 id="build-scripts">Build scripts<a class="headerlink" href="#build-scripts" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>.app</code> bundle</li>
-<li><code>.dmg</code> (disk image)</li>
-<li><code>.zip</code> (portable)</li>
+<li><code>scripts/package-modpack.ps1</code> builds the <code>.polypack</code> (manifest + launchers +
+  overrides). It emits a <code>launchers.json</code> entry for <strong>every</strong> launcher above,
+  plus a per-launcher <code>status</code> field (<code>ready</code> / <code>verify</code> / <code>parked</code>) mirroring
+  this matrix so the installer and website can gate options without a schema
+  change (<code>LaunchersFile</code> decodes entries as open maps).</li>
+<li><code>scripts/dump-launcher-trees.ps1</code> (v4) is the evidence pipeline: rerun it on
+  the reference machine after any launcher update and re-verify this matrix
+  against the <code>FILES\</code> copies before flipping a status to ✅.</li>
+<li><code>scripts/wails-build.ps1</code> / <code>docs/building.md</code> cover the app binary itself
+  and are unaffected by per-launcher work.</li>
 </ul>
-</div>
-<div class="tabbed-block">
-<ul>
-<li>AppImage</li>
-<li><code>.deb</code> / <code>.rpm</code></li>
-<li><code>.tar.gz</code></li>
-<li>Flatpak / Snap / AUR (community)</li>
-</ul>
-</div>
-</div>
-</div>
-<p>Each release publishes a <code>SHA256SUMS.txt</code> alongside the builds so downloads can
-be verified.</p>
 
 
 
