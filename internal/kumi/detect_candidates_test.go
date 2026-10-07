@@ -94,7 +94,7 @@ func TestMultiMCCandidatesIncludesPortablePaths(t *testing.T) {
 // MachineTest_01 reference dump (TemporaryDetectRef/MachineTest_01). Each of
 // these was missed by an earlier candidate list: gdlauncher_carbon (not
 // "GDLauncher Carbon"), .dawn (Feather → Dawn rebrand), QWERTZ-Launcher,
-// .minecraftx (XMCL instances) and Trident (Polymerium instances).
+// .minecraftx (XMCL instances). Trident's platform paths are tested separately.
 func TestMachineTestCandidatePaths(t *testing.T) {
 	home := filepath.Join("X:", "Users", "tester")
 	t.Setenv("USERPROFILE", home)
@@ -110,7 +110,6 @@ func TestMachineTestCandidatePaths(t *testing.T) {
 		{"dawn", dawnCandidates(""), filepath.Join(home, "AppData", "Roaming", ".dawn")},
 		{"qwertz", qwertzCandidates(""), filepath.Join(home, "AppData", "Roaming", "QWERTZ-Launcher")},
 		{"xmcl", xmclCandidates(""), filepath.Join(home, ".minecraftx")},
-		{"polymerium", polymeriumCandidates(""), filepath.Join(home, "AppData", "Local", "Trident")},
 	}
 	for _, tc := range cases {
 		joined := strings.ToLower(strings.Join(tc.got, "|"))
@@ -176,6 +175,7 @@ func isolateDiscoveryEnv(t *testing.T) (appData string) {
 		}
 	}
 	t.Setenv("APPDATA", appData) // os.UserConfigDir → launcher cache location
+	t.Setenv("XDG_CONFIG_HOME", appData)
 	t.Setenv("LOCALAPPDATA", filepath.Join(base, "Local"))
 	t.Setenv("USERPROFILE", base)
 	t.Setenv("ProgramData", filepath.Join(base, "ProgramData"))

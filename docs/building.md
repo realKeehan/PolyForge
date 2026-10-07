@@ -4,24 +4,37 @@
 
 | Tool | Minimum version | Notes |
 |------|-----------------|-------|
-| Go | 1.21+ | Backend compilation |
-| Node.js | 18+ | Frontend build toolchain |
+| Go | 1.24+ | `go.mod` recommends toolchain 1.24.7 |
+| Node.js | 20.19+ or 22.12+ | Required by Vite 7; use a supported Node release |
 | npm | (bundled with Node) | Dependency management |
-| Wails CLI | v2 | Desktop shell + bindings |
+| Wails CLI | v2.10.2 | Match the version in `go.mod` |
 | UPX | (optional) | Binary compression (`-UPX` flag) |
 | garble | (optional) | Bound-method obfuscation (`-Obfuscated` flag) |
 
 ## Getting started
 
-1. Install Go 1.21+, Node 18+, and the Wails CLI.
-
-2. Install and build the frontend bundle:
+1. Install Go and Node matching the requirements above. On macOS, install
+   Xcode command line tools as well. Install the matching Wails CLI and check
+   native dependencies:
 
     ```bash
-    cd frontend
-    npm ci
-    npm run build
+    go install github.com/wailsapp/wails/v2/cmd/wails@v2.10.2
+    wails doctor
     ```
+
+2. From the repository root, bootstrap embedded assets on a fresh clone, then
+   build the application:
+
+    ```bash
+    mkdir -p frontend/dist
+    touch frontend/dist/.gitkeep
+    wails build
+    ```
+
+    PowerShell equivalents are `New-Item -ItemType Directory -Force frontend/dist`
+    and `New-Item -ItemType File -Force frontend/dist/.gitkeep`. Wails generates
+    the runtime/bindings before Vite builds the frontend; `npm run build` alone
+    requires those generated files to exist already.
 
 3. From the project root, start the app in development mode:
 

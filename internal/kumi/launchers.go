@@ -99,10 +99,6 @@ func (s *Service) installUltimMC(explicitRoot string) (*ActionResult, error) {
 	return install.UltimMC(s.installDependencies(), candidates, "", emptyZipWarning)
 }
 
-func (s *Service) installPolymerium(explicitRoot string) (*ActionResult, error) {
-	return install.Polymerium(s.installDependencies(), polymeriumCandidates(explicitRoot), "", emptyZipWarning)
-}
-
 func (s *Service) installXMCL(explicitRoot string) (*ActionResult, error) {
 	candidates := withDirDiscovery("xmcl", xmclCandidates(explicitRoot))
 	return install.XMCL(s.installDependencies(), candidates, "", emptyZipWarning)

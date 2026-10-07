@@ -14,7 +14,7 @@ import (
 // buildTestPack writes a plain-zip .polypack with the given overrides-relative
 // files. When withHashes is true the manifest carries overrides.files, so the
 // installer performs integrity verification.
-func buildTestPack(t *testing.T, files map[string]string, withHashes bool) string {
+func buildTestPack(t *testing.T, files map[string]string, withHashes bool, configure ...func(*PackManifest)) string {
 	t.Helper()
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
@@ -35,10 +35,14 @@ func buildTestPack(t *testing.T, files map[string]string, withHashes bool) strin
 		ID:            "test-pack",
 		Name:          "Test Pack",
 		Version:       "1.0.0",
+		Minecraft:     "1.21.1",
 		Overrides:     PackOverrides{Folders: []string{"mods"}, FileCount: len(files)},
 	}
 	if withHashes {
 		manifest.Overrides.Files = packFiles
+	}
+	for _, configureManifest := range configure {
+		configureManifest(&manifest)
 	}
 	mData, err := json.Marshal(manifest)
 	if err != nil {

@@ -49,15 +49,6 @@ func UltimMC(deps Dependencies, candidates []string, zipURL string, warning stri
 	return InstanceWithOptionalZip(deps, "UltimMC", candidates, "instances", "TurtelSMP5", zipURL, warning)
 }
 
-// Polymerium (https://github.com/d3ara1n/Polymerium): instances live in
-// %LOCALAPPDATA%\Trident\instances\<id>.
-// TODO(matrix #4): the live game dir appears to be instances\<id>\build\
-// after Polymerium deploys — files at the instance root may be invisible
-// in-game. Verify on the reference machine before staging overrides here.
-func Polymerium(deps Dependencies, candidates []string, zipURL string, warning string) (*ktypes.ActionResult, error) {
-	return InstanceWithOptionalZip(deps, "Polymerium", candidates, "instances", "TurtelSMP5", zipURL, warning)
-}
-
 // XMCL (https://github.com/Voxelum/x-minecraft-launcher): instances live in
 // %USERPROFILE%\.minecraftx\instances\<name> (the instance root is the game
 // dir), and XMCL rescans that folder on boot, so its Roaming\xmcl

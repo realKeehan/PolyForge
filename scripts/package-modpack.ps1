@@ -593,7 +593,7 @@ $launcherStatus = [ordered]@{
     'freesm'         = 'ready'
     'qwertz'         = 'verify'  # only FABRIC loader enum reference-verified (matrix #6)
     'hmcl'           = 'parked'  # language barrier
-    'polymerium'     = 'verify'  # build\ game-dir question open (matrix #4)
+    'polymerium'     = 'verify'  # Trident import/live adapter; desktop/game acceptance pending
     'xmcl'           = 'ready'
 }
 $launcherEntries = [ordered]@{}

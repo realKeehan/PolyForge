@@ -338,18 +338,6 @@ func ultimMCCandidates(explicit string) []string {
 	)
 }
 
-// Polymerium is inverted relative to most launchers: settings.json sits in
-// %APPDATA%\Polymerium but instances live under %LOCALAPPDATA%\Trident
-// (MachineTest_01), so Trident is probed first for install targeting.
-func polymeriumCandidates(explicit string) []string {
-	return cleanCandidates(
-		explicit,
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "Trident"),
-		filepath.Join(os.Getenv("APPDATA"), "Polymerium"),
-		filepath.Join(os.Getenv("LOCALAPPDATA"), "Polymerium"),
-	)
-}
-
 // XMCL splits config from game data: %APPDATA%\xmcl holds settings plus the
 // instances.json registry, while the instance folders themselves live under
 // %USERPROFILE%\.minecraftx\instances (MachineTest_01). .minecraftx comes

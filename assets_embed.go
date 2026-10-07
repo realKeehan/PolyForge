@@ -5,7 +5,7 @@ import (
 	"io/fs"
 )
 
-//go:embed frontend/dist
+//go:embed all:frontend/dist
 var embeddedAssets embed.FS
 
 func assetsFS() fs.FS {

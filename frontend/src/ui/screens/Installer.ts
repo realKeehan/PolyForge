@@ -23,19 +23,21 @@ interface InstallEvent {
 // Resolves the hosted download URL for a website pack. Password packs captured
 // it when they were unlocked on the Modpack screen; open packs resolve it now
 // (empty password) since the server only reveals the URL on a granted request.
-// A returned URL means "download + install this .polypack"; undefined means the
-// pack has no hosted file and should fall back to the legacy launcher installer.
+// A returned URL means "download + install this .polypack"; an allowed pack
+// without a URL uses a legacy installer where supported. Access/network failures
+// must not silently select a different installation path.
 async function resolveHostedUrl(store: Store, pack: RemotePack): Promise<string | undefined> {
   const stored = store.getState().selectedPackUrl;
   if (stored) return stored;
   if (pack.requiresPassword) return undefined;
-  try {
-    const res = await verifyPackAccess(pack.id, '');
-    return res.granted ? res.url : undefined;
-  } catch (error) {
-    console.error('Could not resolve hosted pack URL', error);
-    return undefined;
+  const res = await verifyPackAccess(pack.id, '');
+  if (res.offline) {
+    throw new Error(`Could not reach the download service for ${pack.name}. Try again, or import a local .polypack file.`);
   }
+  if (!res.granted) {
+    throw new Error(res.error || `Could not get access to ${pack.name}. Return to the pack selection screen and try again.`);
+  }
+  return res.url?.trim() || undefined;
 }
 
 // Runs an install that streams live log lines + progress from the backend. The
@@ -426,11 +428,23 @@ export function renderInstaller(store: Store): HTMLElement {
       const prevLabel = runButton.textContent;
       runButton.disabled = true;
       runButton.textContent = 'Preparing…';
-      packUrl = await resolveHostedUrl(store, remotePack!);
-      runButton.disabled = false;
-      runButton.textContent = prevLabel ?? 'Install';
+      try {
+        packUrl = await resolveHostedUrl(store, remotePack!);
+      } catch (error) {
+        console.error('Could not resolve hosted pack URL', error);
+        setError(error instanceof Error ? error.message : 'Could not get the pack download address. Please try again.');
+        return;
+      } finally {
+        runButton.disabled = false;
+        runButton.textContent = prevLabel ?? 'Install';
+      }
     }
     const isHostedPack = isRemotePack && !!packUrl;
+
+    if (option.id === 'polymerium' && !isLocalPack && !isHostedPack) {
+      setError(`${remotePack?.name ?? 'This pack'} has no .polypack download. Choose another pack or import a local .polypack file.`);
+      return;
+    }
 
     // Determine path. Hosted/local packs install into the chosen directory, so
     // they need one; legacy launcher installs keep their own path rules.
@@ -458,6 +472,7 @@ export function renderInstaller(store: Store): HTMLElement {
     // The selected launcher row tells the backend how to lay out the install
     // (instances/<name>/minecraft, profiles/<name>, ...) and which launcher's
     // instance/profile files to generate after extraction.
+    const installMode = store.getState().cleanInstall ? 'clean' : 'auto';
     if (isHostedPack) {
       await runStreamingInstall(store, {
         mode: 'hostedpack',
@@ -468,6 +483,7 @@ export function renderInstaller(store: Store): HTMLElement {
             packId: remotePack!.id,
             packName: remotePack!.name,
             launcher: option.id,
+            mode: installMode,
           },
         },
         label: `Downloading ${remotePack!.name}…`,
@@ -479,7 +495,7 @@ export function renderInstaller(store: Store): HTMLElement {
         mode: 'localpack',
         payload: {
           path: store.getState().selectedPath,
-          extra: { packPath: localPack!.path, launcher: option.id },
+          extra: { packPath: localPack!.path, launcher: option.id, mode: installMode },
         },
         label: `Installing ${localPack!.name}…`,
       });

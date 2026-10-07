@@ -35,8 +35,6 @@ const DEFAULT_MODPACKS: ModpackDef[] = [
   },
 ];
 
-let cleanInstallPreference = false;
-
 function radioDot(): string {
   return `<span class="radio-dot"><span class="radio-dot__inner"></span></span>`;
 }
@@ -69,7 +67,7 @@ export function renderModpack(store: Store): HTMLElement {
   const toggle = document.createElement('label');
   toggle.className = 'toggle';
   toggle.innerHTML = `
-    <input type="checkbox" class="toggle__input" hidden aria-hidden="true" ${cleanInstallPreference ? 'checked' : ''} />
+    <input type="checkbox" class="toggle__input" hidden aria-hidden="true" ${store.getState().cleanInstall ? 'checked' : ''} />
     <span class="toggle__control" aria-hidden="true"></span>
     <span class="toggle__label">Clean install</span>
   `;
@@ -117,7 +115,7 @@ export function renderModpack(store: Store): HTMLElement {
   const toggleControl = toggle.querySelector('.toggle__control') as HTMLSpanElement;
 
   const updateToggle = () => {
-    cleanInstallPreference = toggleInput.checked;
+    store.setCleanInstall(toggleInput.checked);
     if (toggleInput.checked) {
       toggleControl.classList.add('is-active');
       toggleControl.innerHTML = CHECK_ICON;

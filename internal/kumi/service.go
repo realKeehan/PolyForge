@@ -85,7 +85,7 @@ func (s *Service) Options() []OptionDescriptor {
 		{ID: "fjord", Title: "Fjord Launcher Install", Description: "Install into Fjord Launcher.", RequiresPath: true, PathLabel: "Fjord Root"},
 		{ID: "hmcl", Title: "HMCL Install", Description: "Install into HMCL.", RequiresPath: true, PathLabel: "HMCL Root"},
 		{ID: "ultimmc", Title: "UltimMC Install", Description: "Install into UltimMC.", RequiresPath: true, PathLabel: "UltimMC Root"},
-		{ID: "polymerium", Title: "Polymerium Install", Description: "Install into Polymerium.", RequiresPath: true, PathLabel: "Polymerium Root"},
+		{ID: "polymerium", Title: "Polymerium Install", Description: "Install into Polymerium.", RequiresPath: true, PathLabel: "Polymerium Root", Info: "Select the data directory containing instances."},
 		{ID: "xmcl", Title: "X Minecraft Launcher Install", Description: "Install into X Minecraft Launcher (XMCL).", RequiresPath: true, PathLabel: "XMCL Root"},
 		{ID: "custom", Title: "Custom Install", Description: "Install mods into a custom mods folder.", RequiresPath: true, PathLabel: "Mods Folder"},
 		{ID: "manual", Title: "Manual Install", Description: "Download the manual installation zip to the chosen location.", RequiresPath: true, PathLabel: "Target Folder"},
@@ -135,7 +135,6 @@ var launcherExeNames = map[string][]string{
 	"fjord":          {"fjordlauncher.exe"},
 	"hmcl":           {"HMCL.exe"},
 	"ultimmc":        {"UltimMC.exe"},
-	"polymerium":     {"Polymerium.exe"},
 	"xmcl":           {"xmcl.exe", "X Minecraft Launcher.exe"},
 }
 
@@ -344,8 +343,7 @@ func (s *Service) detectLauncherPath(id string) string {
 
 // installFromLocalPack installs a user-provided .polypack: lays the pack
 // out for the selected launcher (when one was chosen), extracts the
-// overrides, records the installed manifest for future update diffs, and
-// generates the launcher's instance/profile files (see gen_launchers.go).
+// overrides, and writes the launcher's instance/profile and tracking data.
 func (s *Service) installFromLocalPack(payload ExecutionPayload) (*ActionResult, error) {
 	result := NewResult()
 	packPath := strings.TrimSpace(payload.Extra["packPath"])
@@ -435,7 +433,20 @@ func (s *Service) Execute(optionID string, payload ExecutionPayload) (*ActionRes
 	case "ultimmc":
 		return s.installUltimMC(payload.Path)
 	case "polymerium":
-		return s.installPolymerium(payload.Path)
+		if payload.Extra == nil {
+			payload.Extra = map[string]string{}
+		}
+		payload.Extra["launcher"] = "polymerium"
+		if payload.Extra["packPath"] != "" {
+			return s.installFromLocalPack(payload)
+		}
+		if payload.Extra["packUrl"] != "" {
+			return s.installHostedPack(payload)
+		}
+		result := NewResult()
+		result.Success = false
+		result.Error("This launcher requires a local or hosted .polypack.")
+		return result, nil
 	case "xmcl":
 		return s.installXMCL(payload.Path)
 	case "custom":

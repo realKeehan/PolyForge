@@ -7,6 +7,7 @@ function createInitialState(): AppState {
   return {
     step: Step.Loading,
     options: [],
+    cleanInstall: false,
     logs: [],
     busy: false,
     lastResult: null,
@@ -86,6 +87,12 @@ export class Store {
 
   setLocalPack(localPack: PolyPackInfo | undefined) {
     this.state = { ...this.state, localPack };
+    this.emit();
+  }
+
+  setCleanInstall(cleanInstall: boolean) {
+    if (this.state.cleanInstall === cleanInstall) return;
+    this.state = { ...this.state, cleanInstall };
     this.emit();
   }
 

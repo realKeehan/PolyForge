@@ -51,22 +51,27 @@ Supported on Windows, Linux, and macOS.
 
 | Tool | Minimum version | Notes |
 |------|----------------|-------|
-| Go | 1.21+ | Backend compilation |
-| Node.js | 18+ | Frontend build toolchain |
+| Go | 1.24+ | `go.mod` recommends toolchain 1.24.7 |
+| Node.js | 20.19+ or 22.12+ | Required by Vite 7; use a supported Node release |
 | npm | (bundled with Node) | Dependency management |
-| Wails CLI | v2 | Desktop shell + bindings |
+| Wails CLI | v2.10.2 | Match the version in `go.mod` |
 | UPX | (optional) | Binary compression (`-UPX` flag) |
 
 ## Getting started
 
-1. Install Go 1.21+, Node 18+, and the Wails CLI.
+1. Install Go and Node matching the requirements above, then Wails v2.10.2.
+   See [building from source](docs/building.md) for setup instructions.
+   Run `wails doctor` to check native dependencies.
 
-2. Install and build the frontend bundle:
+2. Bootstrap the embedded asset directory on a fresh clone, then let Wails
+   generate bindings, install frontend dependencies and build the application:
    ```bash
-   cd frontend
-   npm ci
-   npm run build
+   mkdir -p frontend/dist
+   touch frontend/dist/.gitkeep
+   wails build
    ```
+   On PowerShell, use `New-Item -ItemType Directory -Force frontend/dist`
+   and `New-Item -ItemType File -Force frontend/dist/.gitkeep` before `wails build`.
 
 3. From the project root start the app in development mode:
 
@@ -139,8 +144,8 @@ If Wails reports `This version of %1 is not compatible with the version of Windo
 | Status | Launchers |
 |--------|-----------|
 | **Supported** | Vanilla Launcher, MultiMC, CurseForge, Modrinth (Theseus), Custom Path, Manual Install |
-| **In progress** | Prism Launcher, ATLauncher, GDLauncher, Technic, PolyMC, Dawn (formerly Feather), BakaXL |
-| **Planned** | Polymerium, X Minecraft Launcher, SK Launcher, Freesm Launcher, PineconeMC (formerly ElyPrism), ShatteredPrism, QWERTZ, Fjord Launcher, HMCL, UltimMC |
+| **In progress** | Polymerium, Prism Launcher, ATLauncher, GDLauncher, Technic, PolyMC, Dawn (formerly Feather), BakaXL |
+| **Planned** | X Minecraft Launcher, SK Launcher, Freesm Launcher, PineconeMC (formerly ElyPrism), ShatteredPrism, QWERTZ, Fjord Launcher, HMCL, UltimMC |
 
 ## Architecture
 

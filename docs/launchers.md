@@ -6,8 +6,8 @@ launcher. Support is rolling out in stages.
 | Status | Launchers |
 |--------|-----------|
 | **Supported** | Vanilla Launcher, MultiMC, CurseForge, Modrinth (Theseus), Custom Path, Manual Install |
-| **In progress** | Prism Launcher, ATLauncher, GDLauncher, Technic, PolyMC, Dawn (formerly Feather), BakaXL |
-| **Planned** | Polymerium, X Minecraft Launcher, SK Launcher, Freesm Launcher, PineconeMC (formerly ElyPrism), ShatteredPrism, QWERTZ, Fjord Launcher, HMCL, UltimMC |
+| **In progress** | Polymerium, Prism Launcher, ATLauncher, GDLauncher, Technic, PolyMC, Dawn (formerly Feather), BakaXL |
+| **Planned** | X Minecraft Launcher, SK Launcher, Freesm Launcher, PineconeMC (formerly ElyPrism), ShatteredPrism, QWERTZ, Fjord Launcher, HMCL, UltimMC |
 
 ## How one pack targets every launcher
 

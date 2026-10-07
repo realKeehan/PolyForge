@@ -16,9 +16,9 @@ import (
 // those mod files from every recorded install — the mechanism for pulling
 // proprietary mods back after a pack has shipped.
 //
-// Safety: only exact filenames located directly inside an install's mods/
-// folder are removed, only for folders that still carry our
-// .polyforge-pack.json marker, and each file is removed at most once.
+// Safety: only exact mod filenames are accepted, only for folders that still
+// carry our .polyforge-pack.json marker, and each file is removed at most once.
+// Native launchers route removal through their registered adapter.
 // ══════════════════════════════════════════════════
 
 // installedPack records where a pack was installed so its mods can be managed
@@ -129,17 +129,55 @@ func applySelfDestruct(manifest *RemoteManifest) []string {
 		if _, err := os.Stat(filepath.Join(inst.Target, installedManifestName)); err != nil {
 			continue
 		}
+		// A launcher-aware record may refer to package entries rather than jars.
+		// Invalid or stale native records must not fall back to direct deletion.
+		data, err := os.ReadFile(filepath.Join(inst.Target, installedManifestName))
+		if err != nil {
+			continue
+		}
+		var layout struct {
+			Launcher string `json:"launcher"`
+		}
+		if err := json.Unmarshal(data, &layout); err != nil {
+			continue
+		}
+		var native *installedPackRecord
+		var removeNative func(string, *PackManifest, string) (bool, error)
+		if layout.Launcher != "" {
+			target, ok := launcherTargets[layout.Launcher]
+			if !ok || target.RemoveMod == nil {
+				continue
+			}
+			native, err = readInstalledPackRecord(inst.Target)
+			if err != nil || native.ID != inst.ID {
+				continue
+			}
+			removeNative = target.RemoveMod
+		}
 		modsDir := filepath.Join(inst.Target, "mods")
 		already := make(map[string]bool, len(inst.Removed))
 		for _, r := range inst.Removed {
 			already[r] = true
 		}
 		for _, name := range wanted {
-			base := filepath.Base(strings.TrimSpace(name))
+			base := strings.TrimSpace(name)
 			if base == "" || base == "." || base == ".." || strings.ContainsAny(base, `/\`) {
 				continue // never traverse out of mods/
 			}
 			if already[base] {
+				continue
+			}
+			if removeNative != nil {
+				removed, err := removeNative(inst.Target, &native.PackManifest, base)
+				if err != nil {
+					continue // leave unhandled so a later launch can retry
+				}
+				if removed {
+					notes = append(notes, "Self-destruct: removed "+base+" from "+installLabel(inst))
+				}
+				inst.Removed = append(inst.Removed, base)
+				already[base] = true
+				changed = true
 				continue
 			}
 			path := filepath.Join(modsDir, base)

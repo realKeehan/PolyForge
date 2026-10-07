@@ -34,7 +34,6 @@ func decodeJSONFile(t *testing.T, path string) map[string]any {
 }
 
 func TestPlanInstallDirs(t *testing.T) {
-	sep := string(os.PathSeparator)
 	cases := []struct {
 		launcher, chosen, name string
 		wantInstance, wantGame string
@@ -68,13 +67,15 @@ func TestPlanInstallDirs(t *testing.T) {
 		{"custom", `C:\somewhere`, "Smoke Pack", `C:\somewhere`, `C:\somewhere`},
 	}
 	for _, c := range cases {
-		gotInstance, gotGame := PlanInstallDirs(c.launcher, c.chosen, c.name)
-		if gotInstance != filepath.Clean(c.wantInstance) || gotGame != filepath.Clean(c.wantGame) {
+		// The examples use Windows notation; exercise the same directory
+		// relationships with native separators on every test platform.
+		native := func(path string) string { return filepath.FromSlash(strings.ReplaceAll(path, `\`, "/")) }
+		gotInstance, gotGame := PlanInstallDirs(c.launcher, native(c.chosen), c.name)
+		if gotInstance != filepath.Clean(native(c.wantInstance)) || gotGame != filepath.Clean(native(c.wantGame)) {
 			t.Errorf("PlanInstallDirs(%q, %q, %q) = (%q, %q), want (%q, %q)",
 				c.launcher, c.chosen, c.name, gotInstance, gotGame, c.wantInstance, c.wantGame)
 		}
 	}
-	_ = sep
 }
 
 func TestSanitizeInstanceName(t *testing.T) {

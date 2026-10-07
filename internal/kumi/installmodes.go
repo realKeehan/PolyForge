@@ -1,6 +1,7 @@
 package kumi
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,10 +38,17 @@ import (
 // writers regenerate anyway.
 // ══════════════════════════════════════════════════
 
-// installedManifestName is the manifest copy an install leaves in its game
-// dir — the record that update diffs, repair verification, and self-destruct
-// all key off.
+// installedManifestName is PolyForge's local install record. It lives in the
+// game directory for file-based installs, or the instance root for adapters.
 const installedManifestName = ".polyforge-pack.json"
+
+// installedPackRecord extends the pack manifest only on disk after installation.
+// Launcher selects the adapter for verification and remote mod removal; older
+// records without it retain the original game-directory behavior.
+type installedPackRecord struct {
+	PackManifest
+	Launcher string `json:"launcher,omitempty"`
+}
 
 // quarantineDirName holds cleaned-out content inside the game dir. Inert for
 // every launcher (loaders only read top-level mods\), and kept out of its own
@@ -67,11 +75,27 @@ func ParseInstallMode(s string) InstallMode {
 // readInstalledPackManifest loads the manifest copy a previous install left
 // in dir, or an error when the dir carries no record.
 func readInstalledPackManifest(dir string) (*PackManifest, error) {
+	record, err := readInstalledPackRecord(dir)
+	if err != nil {
+		return nil, err
+	}
+	return &record.PackManifest, nil
+}
+
+func readInstalledPackRecord(dir string) (*installedPackRecord, error) {
 	data, err := os.ReadFile(filepath.Join(filepath.Clean(dir), installedManifestName))
 	if err != nil {
 		return nil, fmt.Errorf("no installed pack manifest here: %w", err)
 	}
-	return ParsePackManifest(data)
+	manifest, err := ParsePackManifest(data)
+	if err != nil {
+		return nil, err
+	}
+	record := &installedPackRecord{PackManifest: *manifest}
+	if err := json.Unmarshal(data, record); err != nil {
+		return nil, err
+	}
+	return record, nil
 }
 
 // resolveInstallMode turns the requested mode into the effective one for

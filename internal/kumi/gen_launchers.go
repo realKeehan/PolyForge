@@ -713,39 +713,17 @@ func genDawnProfile(instanceDir string, m *PackManifest, info map[string]any, de
 }
 
 // ── Polymerium (Trident) ─────────────────────────
-// profile.json (captured from polyforge_polymerium_test); data.lock.json is
-// produced by the launcher itself on first deploy.
+// Polymerium is the desktop shell; Trident owns the profile and deployment.
 
 func genPolymeriumProfile(instanceDir string, m *PackManifest, info map[string]any, defaults PackLauncherDefaults) ([]string, error) {
-	loader := ""
-	if m.Loader.Version != "" {
-		switch strings.ToLower(m.Loader.Type) {
-		case "fabric":
-			loader = "net.fabricmc:" + m.Loader.Version
-		case "quilt":
-			loader = "org.quiltmc:" + m.Loader.Version
-		case "forge":
-			loader = "net.minecraftforge:" + m.Loader.Version
-		case "neoforge":
-			loader = "net.neoforged:" + m.Loader.Version
-		}
-	}
-	profile := map[string]any{
-		"name": displayNameFrom(info, m),
-		"setup": map[string]any{
-			"source":       nil,
-			"sourceOrders": []any{},
-			"version":      m.Minecraft,
-			"loader":       loader,
-			"packages":     []any{},
-			"rules":        []any{},
-		},
-		"overrides": map[string]any{},
+	profile, err := tridentProfile(instanceDir, m, info, defaults)
+	if err != nil {
+		return nil, err
 	}
 	if err := writeJSONFile(filepath.Join(instanceDir, "profile.json"), profile); err != nil {
 		return nil, err
 	}
-	return []string{"Wrote Polymerium profile.json; the launcher deploys the instance on first open."}, nil
+	return []string{"Wrote profile.json; reopen Polymerium and deploy the instance before launching."}, nil
 }
 
 // ── Modrinth app (Theseus) ───────────────────────

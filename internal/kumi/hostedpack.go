@@ -80,19 +80,42 @@ func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, chosenPat
 		return false
 	}
 	launchersFile := readZipLaunchersFile(reader)
-	instanceName := instanceNameFor(launcherID, packManifest, launchersFile)
-	instanceDir, target := PlanInstallDirs(launcherID, chosenPath, instanceName)
-	if target != filepath.Clean(chosenPath) {
-		s.logStep(result, "info", fmt.Sprintf("Instance directory: %s", instanceDir))
+	plan, err := planPackInstall(launcherID, chosenPath, packManifest, launchersFile, mode)
+	if err != nil {
+		s.logStep(result, "error", err.Error())
+		return false
+	}
+	if plan.ContentDir != filepath.Clean(chosenPath) {
+		s.logStep(result, "info", fmt.Sprintf("Instance directory: %s", plan.InstanceDir))
+	}
+	s.logStep(result, "info", fmt.Sprintf("Install mode: %s", plan.Mode))
+	if plan.Note != "" {
+		s.logStep(result, "info", plan.Note)
+	}
+	if target, ok := launcherTargets[launcherID]; ok && target.Install != nil {
+		notes, err := target.Install(packPath, plan, packManifest, launchersFile)
+		for _, note := range notes {
+			s.logStep(result, "info", note)
+		}
+		if err != nil {
+			s.logStep(result, "error", err.Error())
+			return false
+		}
+	} else if !s.installFileBasedPack(result, packPath, launcherID, packManifest, launchersFile, plan) {
+		return false
 	}
 
-	// Mode semantics run between planning and extraction: decide what the
-	// requested mode means for THIS target, then sweep/quarantine as needed.
-	mode, oldManifest, note := resolveInstallMode(mode, target)
-	s.logStep(result, "info", fmt.Sprintf("Install mode: %s", mode))
-	if note != "" {
-		s.logStep(result, "info", note)
-	}
+	// Registration and completion belong to PolyForge for every executor.
+	recordInstalledPack(packManifest.ID, packManifest.Name, packManifest.Version, plan.RecordDir)
+	s.emitProgress(100, "Done")
+	return true
+}
+
+// installFileBasedPack retains the original extraction/generation flow for
+// launchers without a native executor.
+func (s *Service) installFileBasedPack(result *ActionResult, packPath, launcherID string, packManifest *PackManifest, launchersFile *LaunchersFile, plan packInstallPlan) bool {
+	mode, oldManifest := plan.Mode, plan.Previous
+	instanceDir, target := plan.InstanceDir, plan.ContentDir
 	prepNotes, prepErr := prepareGameDir(mode, target, oldManifest, packManifest)
 	for _, n := range prepNotes {
 		s.logStep(result, "info", n)
@@ -133,10 +156,6 @@ func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, chosenPat
 		return false
 	}
 
-	// Remember where this pack landed so remote mod removal (self-destruct) and
-	// future update checks can find it without re-selecting the launcher.
-	recordInstalledPack(manifest.ID, manifest.Name, manifest.Version, target)
-
 	// Generate the launcher's own instance/profile files (instance.cfg,
 	// mmc-pack.json, launcher_profiles.json entry, ...). A verified install
 	// never fails on generation — worst case the user adds the instance
@@ -153,6 +172,5 @@ func (s *Service) extractAndVerifyPack(result *ActionResult, packPath, chosenPat
 	case launcherID != "":
 		s.logStep(result, "warning", "This launcher has no profile generator yet - add the instance to your launcher manually.")
 	}
-	s.emitProgress(100, "Done")
 	return true
 }

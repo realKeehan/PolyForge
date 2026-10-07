@@ -99,7 +99,8 @@ $launchers = [ordered]@{
     # QWERTZ keeps the exe inside its data dir; instances live in profiles\.
     'qwertz'         = @( (Join-Path $APPDATA 'QWERTZ-Launcher'), (Join-Path $APPDATA 'QWERTZ'), (Join-Path $APPDATA 'qwertz') )
     'hmcl'           = @( (Join-Path $APPDATA '.hmcl'), (Join-Path $USER '.hmcl') )
-    # Polymerium: settings in Roaming\Polymerium, instances in Local\Trident.
+    # Polymerium is Trident's desktop shell. Collect shell settings and core
+    # data separately for diagnostics; only the Trident home holds instances.
     'polymerium'     = @( (Join-Path $LOCAL 'Trident'), (Join-Path $APPDATA 'Polymerium'), (Join-Path $LOCAL 'Polymerium') )
     # XMCL: config + instances.json registry in Roaming\xmcl, instance
     # folders under %USERPROFILE%\.minecraftx\instances.
@@ -148,7 +149,7 @@ $schemaNames = @(
     '.minecraft.json',
     'profiles.json',      # QWERTZ profile registry (launcher root)
     'content-index.json', # Dawn per-profile content index
-    'data.lock.json',     # Polymerium per-instance lock
+    'data.lock.json',     # Trident per-instance lock
     'CoreDirectory.json', # BakaXL game-dir pointers
     'installedPacks',     # Technic installed-pack registry
     '.curseclient'        # CurseForge per-instance marker

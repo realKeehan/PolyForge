@@ -122,6 +122,7 @@ export interface AppState {
   options: OptionDescriptor[];
   modpacks?: RemotePack[];
   localPack?: PolyPackInfo;
+  cleanInstall: boolean;
   selectedMode?: Mode;
   selectedModpack?: string;
   /** Resolved download URL for the selected hosted pack (empty for legacy/launcher-ZIP packs). */

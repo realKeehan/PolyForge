@@ -27,8 +27,8 @@ import (
 // gen_launchers.go for the per-launcher writers and install-layout planning.
 // ══════════════════════════════════════════════════
 
-// PackManifest identifies a pack and lists its mods. The Mods slice is the
-// only input to update decisions.
+// PackManifest identifies a pack and lists its mods and shipped files. Mods
+// provide change summaries; Overrides.Files records installation ownership.
 type PackManifest struct {
 	SchemaVersion int           `json:"schemaVersion"`
 	ID            string        `json:"id"`
@@ -355,11 +355,19 @@ func hashFile(path string) (string, int64, error) {
 // (.polyforge-pack.json) left at install time. Powers a "verify / repair" pass
 // and the pre-flight check before an update.
 func VerifyInstalledPack(installDir string) (*PackManifest, IntegrityReport, error) {
-	manifest, err := readInstalledPackManifest(installDir)
+	record, err := readInstalledPackRecord(installDir)
 	if err != nil {
 		return nil, IntegrityReport{}, err
 	}
-	return manifest, verifyFilesOnDisk(filepath.Clean(installDir), manifest.Overrides.Files), nil
+	contentDir := filepath.Clean(installDir)
+	if record.Launcher != "" {
+		target, ok := launcherTargets[record.Launcher]
+		if !ok {
+			return &record.PackManifest, IntegrityReport{}, fmt.Errorf("unknown installed launcher %q", record.Launcher)
+		}
+		contentDir = filepath.Join(contentDir, target.InstanceSubdir)
+	}
+	return &record.PackManifest, verifyFilesOnDisk(contentDir, record.Overrides.Files), nil
 }
 
 // ── Local pack install (manual profile mode) ─────
@@ -378,6 +386,22 @@ func installLocalPack(packPath, targetDir string) (files int, manifest *PackMani
 		return 0, nil, IntegrityReport{}, err
 	}
 
+	files, err = extractPackOverrides(reader, targetDir)
+	if err != nil {
+		return files, manifest, IntegrityReport{}, err
+	}
+	cleanTarget := filepath.Clean(targetDir)
+	// Installed manifest copy — update diffs and repair verify against this.
+	if data, jsonErr := json.MarshalIndent(manifest, "", "  "); jsonErr == nil {
+		_ = os.WriteFile(filepath.Join(cleanTarget, installedManifestName), data, 0o644)
+	}
+	report = verifyFilesOnDisk(cleanTarget, manifest.Overrides.Files)
+	return files, manifest, report, nil
+}
+
+// extractPackOverrides only extracts files. Callers write PolyForge's install
+// record separately from the launcher's own instance metadata.
+func extractPackOverrides(reader *zip.Reader, targetDir string) (files int, err error) {
 	cleanTarget := filepath.Clean(targetDir)
 	for _, f := range reader.File {
 		rel, ok := strings.CutPrefix(f.Name, "overrides/")
@@ -390,34 +414,30 @@ func installLocalPack(packPath, targetDir string) (files int, manifest *PackMani
 			continue
 		}
 		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-			return files, manifest, IntegrityReport{}, err
+			return files, err
 		}
 		rc, err := f.Open()
 		if err != nil {
-			return files, manifest, IntegrityReport{}, err
+			return files, err
 		}
 		out, err := os.Create(dest)
 		if err != nil {
 			rc.Close()
-			return files, manifest, IntegrityReport{}, err
+			return files, err
 		}
 		_, copyErr := io.Copy(out, rc)
 		rc.Close()
-		out.Close()
+		closeErr := out.Close()
 		if copyErr != nil {
-			return files, manifest, IntegrityReport{}, copyErr
+			return files, copyErr
+		}
+		if closeErr != nil {
+			return files, closeErr
 		}
 		files++
 	}
 
-	// Installed manifest copy — update diffs and repair verify against this.
-	if data, jsonErr := json.MarshalIndent(manifest, "", "  "); jsonErr == nil {
-		_ = os.WriteFile(filepath.Join(cleanTarget, installedManifestName), data, 0o644)
-	}
-
-	// Verify what actually landed on disk against the manifest's checksums.
-	report = verifyFilesOnDisk(cleanTarget, manifest.Overrides.Files)
-	return files, manifest, report, nil
+	return files, nil
 }
 
 // ── Dynamic per-launcher generation ──────────────
@@ -434,11 +454,23 @@ type LauncherTarget struct {
 	// InstanceSubdir is where overrides/ land relative to the launcher's
 	// instance root, e.g. "minecraft" or ".minecraft" or "" (root).
 	InstanceSubdir string
+	// RecordAtInstanceRoot opts into PolyForge's metadata-based instance
+	// selection. Content can live below the instance while records stay at root.
+	RecordAtInstanceRoot bool
+	// InstanceKey formats a preferred instance key from pack metadata only.
+	// nil retains instanceNameFor's existing behavior.
+	InstanceKey func(m *PackManifest, l *LaunchersFile) string
+	// Install applies a prepared PolyForge plan to a native launcher layout.
+	// nil retains the file-based extraction/generation pipeline.
+	Install func(packPath string, plan packInstallPlan, m *PackManifest, l *LaunchersFile) ([]string, error)
 	// Generate writes the launcher-specific files (profile/instance configs)
 	// from the pack manifest + info fields into instanceDir, returning
 	// human-readable notes for the install log. nil = not implemented
 	// (overrides still get extracted; the profile is added manually).
 	Generate func(instanceDir string, m *PackManifest, info map[string]any, defaults PackLauncherDefaults) ([]string, error)
+	// RemoveMod updates a native instance when removing a recorded pack mod.
+	// nil uses the original direct deletion from the recorded game directory.
+	RemoveMod func(instanceDir string, m *PackManifest, name string) (bool, error)
 }
 
 // launcherTargets is the generation registry. Subdirs reflect the layouts
@@ -480,12 +512,14 @@ var launcherTargets = map[string]LauncherTarget{
 	"freesm":         {ID: "freesm", InstanceSubdir: "minecraft", Generate: genMMCInstance(true)},
 	"qwertz":         {ID: "qwertz", InstanceSubdir: "", Generate: genQwertzProfile}, // profiles\<name> is the game dir
 	"hmcl":           {ID: "hmcl", InstanceSubdir: ""},
-	// TODO(machine-test): the machine test 2 Trident tree shows the live game
-	// dir is instances\<id>\build\ (options.txt/mods/saves sit there after
-	// deploy), so overrides extracted to the instance root may be invisible
-	// in-game. Verify on the reference machine, then likely switch to "build".
-	"polymerium": {ID: "polymerium", InstanceSubdir: "", Generate: genPolymeriumProfile},
-	"xmcl":       {ID: "xmcl", InstanceSubdir: "", Generate: genXMCLInstance}, // instance root is the game dir (.minecraftx\instances\<name>)
+	// Polymerium is Trident's desktop shell. Pack files are import sources;
+	// Trident projects them into build/ (the live layer) during deployment.
+	"polymerium": {
+		ID: "polymerium", InstanceSubdir: "import", RecordAtInstanceRoot: true,
+		InstanceKey: tridentInstanceKey, Install: installTridentPack,
+		Generate: genPolymeriumProfile, RemoveMod: removeTridentPackMod,
+	},
+	"xmcl": {ID: "xmcl", InstanceSubdir: "", Generate: genXMCLInstance}, // instance root is the game dir (.minecraftx\instances\<name>)
 }
 
 // InstanceSubdirFor returns where a launcher expects the pack's overrides,
